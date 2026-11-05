@@ -1,0 +1,28 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+//
+// cheriot_mem_sys FPV under dvsim: one entry per formal task to run as a regression (the task
+// script is kept outside this repository). Every entry imports cheriot_mem_sys_fpv_common_cfg.hjson
+// and names its task. Checker 1's liveness tasks and the other checkers' tasks are proven in the
+// session the main run opens; add an entry here to run one as a regression.
+//   dvsim hw/ip/cheriot_mem_sys/fpv/cheriot_mem_sys_fpv_cfgs.hjson [--select-cfgs <name>]
+{
+  flow:     formal
+  sub_flow: fpv
+  name:     cheriot_mem_sys_fpv
+
+  import_cfgs: [// common server configuration for results upload
+                "{proj_root}/hw/data/common_project_cfg.hjson"]
+
+  rel_path: "hw/ip/cheriot_mem_sys/fpv/summary"
+
+  use_cfgs: [
+             // Checker 1 (tag path): every check but the liveness ones.
+             {
+               name: cheriot_mem_sys_tag_path_main_fpv
+               import_cfgs: ["{proj_root}/hw/ip/cheriot_mem_sys/fpv/cheriot_mem_sys_fpv_common_cfg.hjson"]
+               exports: [{TASKS: "task_TagPath_Main"}, {PROVE: "task_TagPath_Main"}]
+             }
+            ]
+}
