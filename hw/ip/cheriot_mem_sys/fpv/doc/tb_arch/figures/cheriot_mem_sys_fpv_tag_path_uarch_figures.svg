@@ -1,0 +1,1065 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1140" height="13850" viewBox="0 0 1140 13850">
+<view id="fig1" viewBox="0 0 831 683"/>
+<view id="fig2" viewBox="0 703 1140 772"/>
+<view id="fig3" viewBox="0 1495 900 806"/>
+<view id="fig4" viewBox="0 2321 900 711"/>
+<view id="fig5" viewBox="0 3052 894 3300"/>
+<view id="fig6" viewBox="0 6372 893 2167"/>
+<view id="fig7" viewBox="0 8559 870 1604"/>
+<view id="fig8" viewBox="0 10183 890 1423"/>
+<view id="fig9" viewBox="0 11626 890 1450"/>
+<view id="fig10" viewBox="0 13096 1113 754"/>
+<svg x="0" y="0" width="831" height="683" viewBox="-10 27 831 683" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="-10" y="27" width="831" height="683" fill="#ffffff"/>
+<rect x="560" y="560" width="250.36" height="140" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="0" y="40" width="160" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="80" y="68.03" font-size="14" font-weight="bold" text-anchor="middle">core</text>
+<text x="80" y="82.6" font-size="11" fill="#5c5c5c" text-anchor="middle">free requests, A1-A5, A9</text>
+<rect x="0" y="200" width="160" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="80" y="228.03" font-size="14" font-weight="bold" text-anchor="middle">engine's tag filter</text>
+<text x="80" y="242.6" font-size="11" fill="#5c5c5c" text-anchor="middle">blackbox: free, C3a</text>
+<rect x="270" y="40" width="220" height="60" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="380" y="68.03" font-size="14" font-weight="bold" text-anchor="middle">core's tag filter</text>
+<text x="380" y="82.6" font-size="11" fill="#5c5c5c" text-anchor="middle">with its WTRC</text>
+<rect x="270" y="200" width="220" height="60" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="380" y="234.9" font-size="14" text-anchor="middle">2:1 tag arbiter</text>
+<rect x="270" y="310" width="220" height="50" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="380" y="339.9" font-size="14" text-anchor="middle">tag clear squash</text>
+<rect x="270" y="420" width="220" height="60" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="380" y="454.9" font-size="14" text-anchor="middle">RMW filter</text>
+<rect x="620" y="40" width="160" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="700" y="68.03" font-size="14" font-weight="bold" text-anchor="middle">xbar_main</text>
+<text x="700" y="82.6" font-size="11" fill="#5c5c5c" text-anchor="middle">free answers, A7</text>
+<rect x="620" y="420" width="160" height="60" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="700" y="448.02" font-size="14" font-weight="bold" text-anchor="middle">alert sender</text>
+<text x="700" y="462.6" font-size="11" fill="#5c5c5c" text-anchor="middle">request observed (D12)</text>
+<rect x="270" y="600" width="220" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="380" y="628.02" font-size="14" font-weight="bold" text-anchor="middle">tag access checker</text>
+<text x="380" y="642.6" font-size="11" fill="#5c5c5c" text-anchor="middle">blackbox: free answers</text>
+<polygon points="160,70 174,81 174,75 256,75 256,81 270,70 256,59 256,65 174,65 174,59" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="490,70 504,81 504,75 606,75 606,81 620,70 606,59 606,65 504,65 504,59" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="380,100 369,114 375,114 375,186 369,186 380,200 391,186 385,186 385,114 391,114" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="160,230 174,241 174,235 256,235 256,241 270,230 256,219 256,225 174,225 174,219" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="380,260 369,274 375,274 375,296 369,296 380,310 391,296 385,296 385,274 391,274" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="380,360 369,374 375,374 375,406 369,406 380,420 391,406 385,406 385,374 391,374" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="380,480 369,494 375,494 375,586 369,586 380,600 391,586 385,586 385,494 391,494" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="620,450 611,453.5 611,446.5" fill="#b0262b"/>
+<polyline points="490,450 612,450" fill="none" stroke="#b0262b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="700,420 696.5,411 703.5,411" fill="#b0262b"/>
+<polyline points="490,88 580,88 580,390 700,390 700,412" fill="none" stroke="#b0262b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="270,335 261,338.5 261,331.5" fill="#7a7a7a"/>
+<polyline points="80,260 80,335 262,335" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
+<rect x="570" y="574" width="28" height="16" rx="2" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
+<rect x="570" y="598" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="570" y="622" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="570" y1="654" x2="598" y2="654" fill="none" stroke="#b0262b" stroke-width="1.4"/>
+<line x1="570" y1="678" x2="598" y2="678" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3"/>
+<text x="215" y="51.15" font-size="14" fill="#2b2b2b" text-anchor="middle">cored_tl_d</text>
+<text x="555" y="51.15" font-size="14" fill="#2b2b2b" text-anchor="middle">cored_tl_h</text>
+<text x="395" y="154.9" font-size="14" fill="#2b2b2b">meta port: input 0</text>
+<text x="215" y="211.15" font-size="14" fill="#2b2b2b" text-anchor="middle">input 1</text>
+<text x="395" y="394.9" font-size="14" fill="#2b2b2b">RMW upstream</text>
+<text x="395" y="544.9" font-size="14" fill="#2b2b2b">RMW downstream</text>
+<text x="555" y="442.7" font-size="12" font-family="monospace" fill="#b0262b" text-anchor="middle">faults</text>
+<text x="584" y="243.2" font-size="12" font-family="monospace" fill="#b0262b">WTRC fault</text>
+<text x="175" y="327.7" font-size="12" font-family="monospace" fill="#7a7a7a" text-anchor="middle">engine's clear</text>
+<text x="608" y="586.55" font-size="13">Design (RTL)</text>
+<text x="608" y="610.55" font-size="13">Testbench</text>
+<text x="608" y="634.55" font-size="13">Blackbox: its outputs are free</text>
+<text x="608" y="658.55" font-size="13">Alert path</text>
+<text x="608" y="682.55" font-size="13">Watch and control</text>
+</svg>
+<svg x="0" y="703" width="1140" height="772" viewBox="-10 -10 1140 772" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="-10" y="-10" width="1140" height="772" fill="#ffffff"/>
+<rect x="0" y="0" width="1120" height="630" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="165" y="40" width="940" height="575" rx="6" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
+<rect x="400" y="70" width="690" height="525" rx="6" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="0" y="660" width="346.24" height="92" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="15" y="270" width="125" height="70" rx="4" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="77.5" y="303.02" font-size="14" font-weight="bold" text-anchor="middle">Formal tool</text>
+<text x="77.5" y="317.6" font-size="11" fill="#5c5c5c" text-anchor="middle">free inputs</text>
+<rect x="185" y="110" width="145" height="320" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="257.5" y="268.02" font-size="14" font-weight="bold" text-anchor="middle">Tag path</text>
+<text x="257.5" y="282.6" font-size="11" fill="#5c5c5c" text-anchor="middle">real RTL</text>
+<rect x="185" y="460" width="205" height="115" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="287.5" y="508.65" font-size="14" font-weight="bold" text-anchor="middle">Cut in checker 1's tasks</text>
+<text x="287.5" y="523.23" font-size="11" fill="#5c5c5c" text-anchor="middle">engine, access checkers,</text>
+<text x="287.5" y="536.98" font-size="11" fill="#5c5c5c" text-anchor="middle">4:1 arbiter, registers</text>
+<rect x="415" y="115" width="320" height="70" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="575" y="148.03" font-size="14" font-weight="bold" text-anchor="middle">TL-UL ABVIPs</text>
+<text x="575" y="162.6" font-size="11" fill="#5c5c5c" text-anchor="middle">core, xbar, m1, tags</text>
+<rect x="755" y="115" width="320" height="70" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="915" y="141.15" font-size="14" font-weight="bold" text-anchor="middle">Own rules (ENV_RULE)</text>
+<text x="915" y="155.72" font-size="11" fill="#5c5c5c" text-anchor="middle">A1, A3-A7, A9, C3a, C10, C11;</text>
+<text x="915" y="169.47" font-size="11" fill="#5c5c5c" text-anchor="middle">task-only: C3b; formal only: P5, A10, C1</text>
+<rect x="415" y="250" width="115" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="472.5" y="278.02" font-size="14" font-weight="bold" text-anchor="middle">Adapter</text>
+<text x="472.5" y="292.6" font-size="11" fill="#5c5c5c" text-anchor="middle">port events</text>
+<rect x="665" y="225" width="170" height="50" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="750" y="248.03" font-size="14" font-weight="bold" text-anchor="middle">Tag filter model</text>
+<text x="750" y="262.6" font-size="11" fill="#5c5c5c" text-anchor="middle">entries</text>
+<rect x="665" y="295" width="170" height="50" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="750" y="318.02" font-size="14" font-weight="bold" text-anchor="middle">Tracker</text>
+<text x="750" y="332.6" font-size="11" fill="#5c5c5c" text-anchor="middle">one core request</text>
+<rect x="665" y="365" width="170" height="50" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="750" y="388.02" font-size="14" font-weight="bold" text-anchor="middle">RMW model</text>
+<text x="750" y="402.6" font-size="11" fill="#5c5c5c" text-anchor="middle">one operation</text>
+<rect x="945" y="225" width="130" height="260" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="1010" y="353.02" font-size="14" font-weight="bold" text-anchor="middle">Properties</text>
+<text x="1010" y="367.6" font-size="11" fill="#5c5c5c" text-anchor="middle">asserts, covers</text>
+<rect x="415" y="510" width="420" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="625" y="538.02" font-size="14" font-weight="bold" text-anchor="middle">TL-UL ABVIPs, CheckBoth</text>
+<text x="625" y="552.6" font-size="11" fill="#5c5c5c" text-anchor="middle">m0, rmw: the links between real blocks</text>
+<polygon points="185,305 176,308.5 176,301.5" fill="#2b2b2b"/>
+<polyline points="140,305 177,305" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="330,150 339,146.5 339,153.5" fill="#2b2b2b"/>
+<polyline points="415,150 338,150" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="415,280 406,283.5 406,276.5" fill="#2b2b2b"/>
+<polyline points="330,280 407,280" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="665,320 656,323.5 656,316.5" fill="#2b2b2b"/>
+<polyline points="530,280 597.5,280 597.5,320 657,320" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="665,250 656,253.5 656,246.5" fill="#2b2b2b"/>
+<polyline points="530,280 597.5,280 597.5,250 657,250" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="665,390 656,393.5 656,386.5" fill="#2b2b2b"/>
+<polyline points="530,280 597.5,280 597.5,390 657,390" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="945,250 936,253.5 936,246.5" fill="#2b2b2b"/>
+<polyline points="835,250 937,250" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="945,320 936,323.5 936,316.5" fill="#2b2b2b"/>
+<polyline points="835,320 937,320" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="945,390 936,393.5 936,386.5" fill="#2b2b2b"/>
+<polyline points="835,390 937,390" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="945,465 936,468.5 936,461.5" fill="#2b2b2b"/>
+<polyline points="472.5,310 472.5,465 937,465" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="10" y="674" width="28" height="16" rx="2" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
+<rect x="10" y="698" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="10" y="722" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="8" y="20.68" font-size="13" font-family="monospace" font-weight="bold" fill="#444444">cheriot_mem_sys_fpv_env: the shared FPV top</text>
+<text x="173" y="60.67" font-size="13" font-family="monospace" font-weight="bold" fill="#3d5f8f">cheriot_mem_sys (u_dut)</text>
+<text x="408" y="90.67" font-size="13" font-family="monospace" font-weight="bold" fill="#5b8f43">u_fpv_checker.u_tpchk_checker: checks and rules</text>
+<text x="372.5" y="142.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">assume</text>
+<text x="372.5" y="272.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">observe</text>
+<text x="563.75" y="272.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">events</text>
+<text x="890" y="312.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">predictions</text>
+<text x="708.75" y="457.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">events</text>
+<text x="48" y="686.55" font-size="13">Design (RTL)</text>
+<text x="48" y="710.55" font-size="13">Testbench</text>
+<text x="48" y="734.55" font-size="13">Cut in checker 1's tasks: its outputs are free</text>
+</svg>
+<svg x="0" y="1495" width="900" height="806" viewBox="-10 -10 900 806" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="-10" y="-10" width="900" height="806" fill="#ffffff"/>
+<rect x="0" y="0" width="560" height="420" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="590" y="0" width="290" height="420" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="0" y="470" width="560" height="170" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="0" y="670" width="161.7" height="116" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="10" y="40" width="180" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="100" y="75.53" font-size="14" font-weight="bold" text-anchor="middle">(1) From the core</text>
+<text x="100" y="90.1" font-size="11" fill="#5c5c5c" text-anchor="middle">u_abvip_core</text>
+<rect x="10" y="135" width="180" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="100" y="170.53" font-size="14" font-weight="bold" text-anchor="middle">(2) From xbar_main</text>
+<text x="100" y="185.1" font-size="11" fill="#5c5c5c" text-anchor="middle">u_abvip_xbar</text>
+<rect x="10" y="230" width="180" height="75" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="100" y="265.52" font-size="14" font-weight="bold" text-anchor="middle">(3) From meta path</text>
+<text x="100" y="280.1" font-size="11" fill="#5c5c5c" text-anchor="middle">arbiter, RMW (RTL)</text>
+<rect x="225" y="40" width="100" height="360" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="275" y="218.03" font-size="14" font-weight="bold" text-anchor="middle">Tag filter</text>
+<text x="275" y="232.6" font-size="11" fill="#5c5c5c" text-anchor="middle">RTL</text>
+<rect x="365" y="40" width="170" height="75" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="450" y="75.53" font-size="14" font-weight="bold" text-anchor="middle">(4) To xbar_main</text>
+<text x="450" y="90.1" font-size="11" fill="#5c5c5c" text-anchor="middle">cored_tl_h</text>
+<rect x="365" y="135" width="170" height="75" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="450" y="170.53" font-size="14" font-weight="bold" text-anchor="middle">(5) To meta path</text>
+<text x="450" y="185.1" font-size="11" fill="#5c5c5c" text-anchor="middle">meta port</text>
+<rect x="365" y="230" width="170" height="75" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="450" y="265.52" font-size="14" font-weight="bold" text-anchor="middle">(6) To the core</text>
+<text x="450" y="280.1" font-size="11" fill="#5c5c5c" text-anchor="middle">cored_tl_d</text>
+<rect x="365" y="325" width="170" height="75" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="450" y="360.52" font-size="14" font-weight="bold" text-anchor="middle">(7) To the alert</text>
+<text x="450" y="375.1" font-size="11" fill="#5c5c5c" text-anchor="middle">WTRC fault</text>
+<polygon points="225,77.5 216,81 216,74" fill="#2b2b2b"/>
+<polyline points="190,77.5 217,77.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="225,172.5 216,176 216,169" fill="#2b2b2b"/>
+<polyline points="190,172.5 217,172.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="225,267.5 216,271 216,264" fill="#2b2b2b"/>
+<polyline points="190,267.5 217,267.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="365,77.5 356,81 356,74" fill="#2b2b2b"/>
+<polyline points="325,77.5 357,77.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="365,172.5 356,176 356,169" fill="#2b2b2b"/>
+<polyline points="325,172.5 357,172.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="365,267.5 356,271 356,264" fill="#2b2b2b"/>
+<polyline points="325,267.5 357,267.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="365,362.5 356,366 356,359" fill="#2b2b2b"/>
+<polyline points="325,362.5 357,362.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="600" y="40" width="270" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="735" y="75.53" font-size="14" font-weight="bold" text-anchor="middle">Forwarded right?</text>
+<text x="735" y="90.1" font-size="11" fill="#5c5c5c" text-anchor="middle">tf_forward, wtrc_store</text>
+<rect x="600" y="135" width="270" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="735" y="156.78" font-size="14" font-weight="bold" text-anchor="middle">Right meta request?</text>
+<text x="735" y="171.35" font-size="11" fill="#5c5c5c" text-anchor="middle">tf_lookup, tf_meta_request,</text>
+<text x="735" y="185.1" font-size="11" fill="#5c5c5c" text-anchor="middle">wtrc_store, wtrc_compare;</text>
+<text x="735" y="198.85" font-size="11" fill="#5c5c5c" text-anchor="middle">answer taken: tf_flow</text>
+<rect x="600" y="230" width="270" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="735" y="251.78" font-size="14" font-weight="bold" text-anchor="middle">Right answer?</text>
+<text x="735" y="266.35" font-size="11" fill="#5c5c5c" text-anchor="middle">tf_forward, tf_sticky_tag, tf_errors,</text>
+<text x="735" y="280.1" font-size="11" fill="#5c5c5c" text-anchor="middle">tf_flow, wtrc_store, wtrc_compare,</text>
+<text x="735" y="293.85" font-size="11" fill="#5c5c5c" text-anchor="middle">wtrc_faults</text>
+<rect x="600" y="325" width="270" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="735" y="360.52" font-size="14" font-weight="bold" text-anchor="middle">Right alert?</text>
+<text x="735" y="375.1" font-size="11" fill="#5c5c5c" text-anchor="middle">wtrc_compare, wtrc_faults</text>
+<polygon points="600,77.5 591,81 591,74" fill="#2b2b2b"/>
+<polyline points="535,77.5 592,77.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="600,172.5 591,176 591,169" fill="#2b2b2b"/>
+<polyline points="535,172.5 592,172.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="600,267.5 591,271 591,264" fill="#2b2b2b"/>
+<polyline points="535,267.5 592,267.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="600,362.5 591,366 591,359" fill="#2b2b2b"/>
+<polyline points="535,362.5 592,362.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="20" y="490" width="160" height="50" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="100" y="513.02" font-size="14" font-weight="bold" text-anchor="middle">Entries</text>
+<text x="100" y="527.6" font-size="11" fill="#5c5c5c" text-anchor="middle">one per request</text>
+<rect x="20" y="560" width="160" height="50" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="100" y="583.02" font-size="14" font-weight="bold" text-anchor="middle">Capture, WTRC</text>
+<text x="100" y="597.6" font-size="11" fill="#5c5c5c" text-anchor="middle">sequence state</text>
+<rect x="215" y="525" width="160" height="50" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="295" y="548.02" font-size="14" font-weight="bold" text-anchor="middle">Spec rules</text>
+<text x="295" y="562.6" font-size="11" fill="#5c5c5c" text-anchor="middle">from the spec</text>
+<rect x="410" y="525" width="130" height="50" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="475" y="548.02" font-size="14" font-weight="bold" text-anchor="middle">Predictions</text>
+<text x="475" y="562.6" font-size="11" fill="#5c5c5c" text-anchor="middle">for (4) to (7)</text>
+<polygon points="215,540 206,543.5 206,536.5" fill="#2b2b2b"/>
+<polyline points="180,515 197.5,515 197.5,540 207,540" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="215,560 206,563.5 206,556.5" fill="#2b2b2b"/>
+<polyline points="180,585 197.5,585 197.5,560 207,560" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="410,550 401,553.5 401,546.5" fill="#2b2b2b"/>
+<polyline points="375,550 402,550" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="95,470 91.5,461 98.5,461" fill="#2b2b2b"/>
+<polyline points="95,420 95,462" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="735,420 738.5,429 731.5,429" fill="#b0127a"/>
+<polyline points="540,550 735,550 735,428" fill="none" stroke="#b0127a" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="10" y="684" width="28" height="16" rx="2" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
+<rect x="10" y="708" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<line x1="10" y1="740" x2="38" y2="740" fill="none" stroke="#2b2b2b" stroke-width="1.4"/>
+<line x1="10" y1="764" x2="38" y2="764" fill="none" stroke="#b0127a" stroke-width="1.4"/>
+<text x="8" y="20.68" font-size="13" font-weight="bold" fill="#444444">Observed: the tag filter's ports</text>
+<text x="598" y="20.68" font-size="13" font-weight="bold" fill="#444444">Checked: properties</text>
+<text x="552" y="628.42" font-size="13" font-weight="bold" fill="#444444" text-anchor="end">Modeled: tag filter model</text>
+<text x="99" y="449.2" font-size="12" font-family="monospace" fill="#2b2b2b">observes (1) to (7)</text>
+<text x="731" y="489.2" font-size="12" font-family="monospace" fill="#b0127a" text-anchor="end">predicts (4) to (7)</text>
+<text x="48" y="696.55" font-size="13">Design (RTL)</text>
+<text x="48" y="720.55" font-size="13">Testbench</text>
+<text x="48" y="744.55" font-size="13">Observed event</text>
+<text x="48" y="768.55" font-size="13">Prediction</text>
+</svg>
+<svg x="0" y="2321" width="900" height="711" viewBox="-10 -10 900 711" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="-10" y="-10" width="900" height="711" fill="#ffffff"/>
+<rect x="0" y="0" width="560" height="325" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="590" y="0" width="290" height="325" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="0" y="375" width="560" height="170" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="0" y="575" width="161.7" height="116" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="10" y="40" width="180" height="75" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="100" y="75.53" font-size="14" font-weight="bold" text-anchor="middle">(1) From the arbiter</text>
+<text x="100" y="90.1" font-size="11" fill="#5c5c5c" text-anchor="middle">after the squash (RTL)</text>
+<rect x="10" y="135" width="180" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="100" y="170.53" font-size="14" font-weight="bold" text-anchor="middle">(2) From tag access</text>
+<text x="100" y="185.1" font-size="11" fill="#5c5c5c" text-anchor="middle">u_abvip_tags</text>
+<rect x="225" y="40" width="100" height="265" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="275" y="170.53" font-size="14" font-weight="bold" text-anchor="middle">RMW filter</text>
+<text x="275" y="185.1" font-size="11" fill="#5c5c5c" text-anchor="middle">RTL</text>
+<rect x="365" y="40" width="170" height="75" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="450" y="75.53" font-size="14" font-weight="bold" text-anchor="middle">(3) To tag access</text>
+<text x="450" y="90.1" font-size="11" fill="#5c5c5c" text-anchor="middle">Get, write-back</text>
+<rect x="365" y="135" width="170" height="75" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="450" y="170.53" font-size="14" font-weight="bold" text-anchor="middle">(4) To the arbiter</text>
+<text x="450" y="185.1" font-size="11" fill="#5c5c5c" text-anchor="middle">a_ready, answer</text>
+<rect x="365" y="230" width="170" height="75" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="450" y="265.52" font-size="14" font-weight="bold" text-anchor="middle">(5) To the alert</text>
+<text x="450" y="280.1" font-size="11" fill="#5c5c5c" text-anchor="middle">device, integrity faults</text>
+<polygon points="225,77.5 216,81 216,74" fill="#2b2b2b"/>
+<polyline points="190,77.5 217,77.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="225,172.5 216,176 216,169" fill="#2b2b2b"/>
+<polyline points="190,172.5 217,172.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="365,77.5 356,81 356,74" fill="#2b2b2b"/>
+<polyline points="325,77.5 357,77.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="365,172.5 356,176 356,169" fill="#2b2b2b"/>
+<polyline points="325,172.5 357,172.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="365,267.5 356,271 356,264" fill="#2b2b2b"/>
+<polyline points="325,267.5 357,267.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="600" y="40" width="270" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="735" y="61.77" font-size="14" font-weight="bold" text-anchor="middle">Right downstream request?</text>
+<text x="735" y="76.35" font-size="11" fill="#5c5c5c" text-anchor="middle">rmw_read, rmw_write_skip,</text>
+<text x="735" y="90.1" font-size="11" fill="#5c5c5c" text-anchor="middle">rmw_write_back, rmw_single_op,</text>
+<text x="735" y="103.85" font-size="11" fill="#5c5c5c" text-anchor="middle">rmw_errors</text>
+<rect x="600" y="135" width="270" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="735" y="156.78" font-size="14" font-weight="bold" text-anchor="middle">Right accept and answer?</text>
+<text x="735" y="171.35" font-size="11" fill="#5c5c5c" text-anchor="middle">rmw_read, rmw_write_skip,</text>
+<text x="735" y="185.1" font-size="11" fill="#5c5c5c" text-anchor="middle">rmw_write_back, rmw_single_op,</text>
+<text x="735" y="198.85" font-size="11" fill="#5c5c5c" text-anchor="middle">rmw_errors</text>
+<rect x="600" y="230" width="270" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="735" y="265.52" font-size="14" font-weight="bold" text-anchor="middle">Right fault?</text>
+<text x="735" y="280.1" font-size="11" fill="#5c5c5c" text-anchor="middle">contracts A8</text>
+<polygon points="600,77.5 591,81 591,74" fill="#2b2b2b"/>
+<polyline points="535,77.5 592,77.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="600,172.5 591,176 591,169" fill="#2b2b2b"/>
+<polyline points="535,172.5 592,172.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="600,267.5 591,271 591,264" fill="#2b2b2b"/>
+<polyline points="535,267.5 592,267.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="20" y="395" width="160" height="50" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="100" y="418.02" font-size="14" font-weight="bold" text-anchor="middle">Operation</text>
+<text x="100" y="432.6" font-size="11" fill="#5c5c5c" text-anchor="middle">one at a time</text>
+<rect x="20" y="465" width="160" height="50" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="100" y="488.02" font-size="14" font-weight="bold" text-anchor="middle">Errors seen</text>
+<text x="100" y="502.6" font-size="11" fill="#5c5c5c" text-anchor="middle">since reset</text>
+<rect x="215" y="430" width="160" height="50" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="295" y="453.02" font-size="14" font-weight="bold" text-anchor="middle">Spec rules</text>
+<text x="295" y="467.6" font-size="11" fill="#5c5c5c" text-anchor="middle">Bit(W, b), Upd(W, b, t)</text>
+<rect x="410" y="430" width="130" height="50" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="475" y="453.02" font-size="14" font-weight="bold" text-anchor="middle">Predictions</text>
+<text x="475" y="467.6" font-size="11" fill="#5c5c5c" text-anchor="middle">for (3) to (5)</text>
+<polygon points="215,445 206,448.5 206,441.5" fill="#2b2b2b"/>
+<polyline points="180,420 197.5,420 197.5,445 207,445" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="215,465 206,468.5 206,461.5" fill="#2b2b2b"/>
+<polyline points="180,490 197.5,490 197.5,465 207,465" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="410,455 401,458.5 401,451.5" fill="#2b2b2b"/>
+<polyline points="375,455 402,455" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="95,375 91.5,366 98.5,366" fill="#2b2b2b"/>
+<polyline points="95,325 95,367" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="735,325 738.5,334 731.5,334" fill="#b0127a"/>
+<polyline points="540,455 735,455 735,333" fill="none" stroke="#b0127a" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="10" y="589" width="28" height="16" rx="2" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
+<rect x="10" y="613" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<line x1="10" y1="645" x2="38" y2="645" fill="none" stroke="#2b2b2b" stroke-width="1.4"/>
+<line x1="10" y1="669" x2="38" y2="669" fill="none" stroke="#b0127a" stroke-width="1.4"/>
+<text x="8" y="20.68" font-size="13" font-weight="bold" fill="#444444">Observed: the RMW filter's ports</text>
+<text x="598" y="20.68" font-size="13" font-weight="bold" fill="#444444">Checked: properties</text>
+<text x="552" y="533.42" font-size="13" font-weight="bold" fill="#444444" text-anchor="end">Modeled: RMW model</text>
+<text x="99" y="354.2" font-size="12" font-family="monospace" fill="#2b2b2b">observes (1) to (4)</text>
+<text x="731" y="394.2" font-size="12" font-family="monospace" fill="#b0127a" text-anchor="end">predicts (3) to (5)</text>
+<text x="48" y="601.55" font-size="13">Design (RTL)</text>
+<text x="48" y="625.55" font-size="13">Testbench</text>
+<text x="48" y="649.55" font-size="13">Observed event</text>
+<text x="48" y="673.55" font-size="13">Prediction</text>
+</svg>
+<svg x="0" y="3052" width="894" height="3300" viewBox="0 -10 894 3300" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="0" y="-10" width="894" height="3300" fill="#ffffff"/>
+<rect x="10" y="3136" width="406.19" height="116" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="170" y="0" width="460" height="54" rx="27" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="400" y="25.02" font-size="14" font-weight="bold" text-anchor="middle">A capability load: W0, then W1</text>
+<text x="400" y="39.6" font-size="11" fill="#5c5c5c" text-anchor="middle">the core presents one Get per word on cored_tl_d; both are in flight together</text>
+<polygon points="400,134 396.5,125 403.5,125" fill="#2b2b2b"/>
+<polyline points="400,54 400,126" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="180" y="134" width="704" height="6" rx="4" fill="#2b2b2b" stroke="#2b2b2b" stroke-width="1.2"/>
+<rect x="10" y="180" width="380" height="198" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="200,180 196.5,171 203.5,171" fill="#2b2b2b"/>
+<polyline points="200,140 200,172" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="10" y="414" width="380" height="144" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="200,414 196.5,405 203.5,405" fill="#2b2b2b"/>
+<polyline points="200,378 200,406" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="200,604 320,649 200,694 80,649" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="200" y="638.2" font-size="12" text-anchor="middle">CHERIoT mode on</text>
+<text x="200" y="653.2" font-size="12" text-anchor="middle">and W0 hinted?</text>
+<text x="200" y="668.2" font-size="12" text-anchor="middle">is_lookup</text>
+<polygon points="200,604 196.5,595 203.5,595" fill="#2b2b2b"/>
+<polyline points="200,558 200,596" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="10" y="724" width="380" height="180" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="200,724 196.5,715 203.5,715" fill="#2b2b2b"/>
+<polyline points="200,694 200,716" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="10" y="940" width="380" height="126" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="200,940 196.5,931 203.5,931" fill="#2b2b2b"/>
+<polyline points="200,904 200,932" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="10" y="1102" width="380" height="162" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="200,1102 196.5,1093 203.5,1093" fill="#2b2b2b"/>
+<polyline points="200,1066 200,1094" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="10" y="1300" width="380" height="144" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="200,1300 196.5,1291 203.5,1291" fill="#2b2b2b"/>
+<polyline points="200,1264 200,1292" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="320,649 404,649 404,1494 200,1494" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<circle cx="200" cy="1494" r="3" fill="#2b2b2b"/>
+<polyline points="200,1444 200,1494" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="10" y="1520" width="380" height="162" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="200,1520 196.5,1511 203.5,1511" fill="#2b2b2b"/>
+<polyline points="200,1494 200,1512" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="10" y="1718" width="380" height="144" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="200,1718 196.5,1709 203.5,1709" fill="#2b2b2b"/>
+<polyline points="200,1682 200,1710" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="410" y="180" width="450" height="90" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="635,180 631.5,171 638.5,171" fill="#2b2b2b"/>
+<polyline points="635,140 635,172" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="410" y="306" width="450" height="72" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="635,306 631.5,297 638.5,297" fill="#2b2b2b"/>
+<polyline points="635,270 635,298" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="410" y="414" width="450" height="90" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="635,414 631.5,405 638.5,405" fill="#2b2b2b"/>
+<polyline points="635,378 635,406" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="200,1892 196.5,1883 203.5,1883" fill="#2b2b2b"/>
+<polyline points="200,1862 200,1884" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="635,1892 631.5,1883 638.5,1883" fill="#2b2b2b"/>
+<polyline points="635,504 635,1884" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="180" y="1892" width="704" height="6" rx="4" fill="#2b2b2b" stroke="#2b2b2b" stroke-width="1.2"/>
+<rect x="80" y="1980" width="640" height="144" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,1980 396.5,1971 403.5,1971" fill="#2b2b2b"/>
+<polyline points="400,1898 400,1972" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="2164" width="640" height="126" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,2164 396.5,2155 403.5,2155" fill="#2b2b2b"/>
+<polyline points="400,2124 400,2156" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="400,2330 530,2385 400,2440 270,2385" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="400" y="2374.2" font-size="12" text-anchor="middle">Either of W0's</text>
+<text x="400" y="2389.2" font-size="12" text-anchor="middle">answers has d_error?</text>
+<text x="400" y="2404.2" font-size="12" text-anchor="middle">exp_err</text>
+<polygon points="400,2330 396.5,2321 403.5,2321" fill="#2b2b2b"/>
+<polyline points="400,2290 400,2322" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="10" y="2484" width="380" height="108" rx="4" fill="#fbeaea" stroke="#b85450" stroke-width="1.2"/>
+<rect x="10" y="2628" width="380" height="108" rx="4" fill="#fbeaea" stroke="#b85450" stroke-width="1.2"/>
+<polygon points="200,2628 196.5,2619 203.5,2619" fill="#2b2b2b"/>
+<polyline points="200,2592 200,2620" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="200,2484 196.5,2475 203.5,2475" fill="#2b2b2b"/>
+<polyline points="270,2385 200,2385 200,2476" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="410" y="2484" width="450" height="108" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="635,2484 631.5,2475 638.5,2475" fill="#2b2b2b"/>
+<polyline points="530,2385 635,2385 635,2476" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="200,2736 200,2764 400,2764" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="635,2592 635,2764 400,2764" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<circle cx="400" cy="2764" r="3" fill="#2b2b2b"/>
+<rect x="80" y="2804" width="640" height="126" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,2804 396.5,2795 403.5,2795" fill="#2b2b2b"/>
+<polyline points="400,2764 400,2796" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="2970" width="640" height="126" rx="4" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1.2"/>
+<polygon points="400,2970 396.5,2961 403.5,2961" fill="#2b2b2b"/>
+<polyline points="400,2930 400,2962" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="20" y="3150" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="20" y="3174" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1"/>
+<rect x="20" y="3198" width="28" height="16" rx="2" fill="#fbeaea" stroke="#b85450" stroke-width="1"/>
+<rect x="20" y="3222" width="28" height="16" rx="2" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1"/>
+<text x="388" y="75.85" font-size="11" font-style="italic" fill="#2f5f9e" text-anchor="end">e.g. W0 at 0x1000_1238, then W1 at 0x1000_123C</text>
+<text x="884" y="110.2" font-size="12" font-weight="bold" fill="#2b2b2b" text-anchor="end">fork: Request phase: the core presents W0, then W1 one access</text>
+<text x="884" y="126.2" font-size="12" font-weight="bold" fill="#2b2b2b" text-anchor="end">later</text>
+<text x="208" y="164.2" font-size="12" font-style="italic" fill="#2b2b2b">W0: 64-bit aligned and hinted</text>
+<text x="20" y="198.2" font-size="12" font-weight="bold" fill="#2b2b2b">1. Forward W0 to xbar_main unchanged, once (a</text>
+<text x="20" y="216.2" font-size="12" font-weight="bold" fill="#2b2b2b">capability store to the NVM goes to the WTRC</text>
+<text x="20" y="234.2" font-size="12" font-weight="bold" fill="#2b2b2b">instead)</text>
+<text x="20" y="252.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_TF_01a, REQ_TF_01b, REQ_TF_01c,</text>
+<text x="20" y="270.2" font-size="12" font-weight="bold" fill="#2b2b2b">REQ_TF_16a)</text>
+<text x="24" y="287.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: xbar_req_fire, presented_cap_store</text>
+<text x="20" y="305.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfReq_ForwardedUnchanged</text>
+<text x="20" y="323.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfReq_NoExtraXbarReq</text>
+<text x="20" y="341.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. Get of 0x1000_1238 on the host port in the cycle W0 is</text>
+<text x="20" y="359.85" font-size="11" font-style="italic" fill="#2f5f9e">presented</text>
+<text x="20" y="432.2" font-size="12" font-weight="bold" fill="#2b2b2b">2. Same cycle: store W0's entry in the metadata</text>
+<text x="20" y="450.2" font-size="12" font-weight="bold" fill="#2b2b2b">FIFO: its kind, whether it looks up, its address and</text>
+<text x="20" y="468.2" font-size="12" font-weight="bold" fill="#2b2b2b">source; entries leave in request order</text>
+<text x="20" y="486.2" font-size="12" font-weight="bold" fill="#2b2b2b">(contract C6)</text>
+<text x="24" y="503.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: allocate, new_entry</text>
+<text x="20" y="521.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_Contracts_CoreRspInOrder</text>
+<text x="20" y="539.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. entry 0 = KindLoadW0, lookup yes</text>
+<text x="208" y="712.2" font-size="12" fill="#2b2b2b">yes</text>
+<text x="20" y="742.2" font-size="12" font-weight="bold" fill="#2b2b2b">3. Same cycle as step 1: one meta request; no</text>
+<text x="20" y="760.2" font-size="12" font-weight="bold" fill="#2b2b2b">access without a lookup makes one, and none at all</text>
+<text x="20" y="778.2" font-size="12" font-weight="bold" fill="#2b2b2b">outside CHERIoT mode</text>
+<text x="20" y="796.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_TF_02, REQ_TF_03, REQ_TF_04)</text>
+<text x="24" y="813.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: meta_is_lookup, ena, is_tagged</text>
+<text x="20" y="831.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfLookup_MetaReqSameCycle</text>
+<text x="20" y="849.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfLookup_NoUnneededLookup</text>
+<text x="20" y="867.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. hinted W0 in the SRAM, CHERIoT mode on: one meta</text>
+<text x="20" y="885.85" font-size="11" font-style="italic" fill="#2f5f9e">request now; a Get to a peripheral makes none</text>
+<text x="20" y="958.2" font-size="12" font-weight="bold" fill="#2b2b2b">4. The meta request names the tag word and the</text>
+<text x="20" y="976.2" font-size="12" font-weight="bold" fill="#2b2b2b">tag bit of W0's address</text>
+<text x="20" y="994.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_TF_05a, REQ_TF_05b)</text>
+<text x="24" y="1011.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: tag_word, tag_bit</text>
+<text x="20" y="1029.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfMetaReq_TagWordAndBit</text>
+<text x="20" y="1047.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. 0x1000_1238: word 0x1100_8C48, bit 7</text>
+<text x="20" y="1120.2" font-size="12" font-weight="bold" fill="#2b2b2b">5. A read's meta request is a Get; a write's carries</text>
+<text x="20" y="1138.2" font-size="12" font-weight="bold" fill="#2b2b2b">the write's own tag</text>
+<text x="20" y="1156.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_TF_06)</text>
+<text x="24" y="1173.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: is_wr, is_get</text>
+<text x="20" y="1191.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfMetaReq_WrCarriesTag</text>
+<text x="20" y="1209.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfMetaReq_GetOnlyForRead</text>
+<text x="20" y="1227.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. W0 is a read: a Get, no tag to write; a capability store to the</text>
+<text x="20" y="1245.85" font-size="11" font-style="italic" fill="#2f5f9e">SRAM carries tag 1</text>
+<text x="20" y="1318.2" font-size="12" font-weight="bold" fill="#2b2b2b">6. Hold the meta request, its tag and its bit select</text>
+<text x="20" y="1336.2" font-size="12" font-weight="bold" fill="#2b2b2b">unchanged until the meta port takes it</text>
+<text x="20" y="1354.2" font-size="12" font-weight="bold" fill="#2b2b2b">(contract C7)</text>
+<text x="24" y="1371.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: is_lookup_now</text>
+<text x="20" y="1389.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_Contracts_CoreMetaReqHeld</text>
+<text x="20" y="1407.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. word 0x1100_8C48 and bit 7 stay on the meta port until</text>
+<text x="20" y="1425.85" font-size="11" font-style="italic" fill="#2f5f9e">taken</text>
+<text x="326" y="643.2" font-size="12" fill="#2b2b2b">no</text>
+<text x="20" y="1538.2" font-size="12" font-weight="bold" fill="#2b2b2b">7. Accept W0 on cored_tl_d once xbar_main has</text>
+<text x="20" y="1556.2" font-size="12" font-weight="bold" fill="#2b2b2b">taken the forward (the request side, no answer yet),</text>
+<text x="20" y="1574.2" font-size="12" font-weight="bold" fill="#2b2b2b">and always in the end</text>
+<text x="20" y="1592.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_TF_01a, REQ_TF_15a)</text>
+<text x="24" y="1609.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: presented_d</text>
+<text x="20" y="1627.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfReq_AcceptedAfterXbar</text>
+<text x="20" y="1645.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfFlow_ReqEventuallyAccepted</text>
+<text x="20" y="1663.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. accepted in the cycle the host port takes it, or after</text>
+<text x="20" y="1736.2" font-size="12" font-weight="bold" fill="#2b2b2b">8. If W0 looked up, take the meta answer in the</text>
+<text x="20" y="1754.2" font-size="12" font-weight="bold" fill="#2b2b2b">cycle it is offered, even while the xbar answer is</text>
+<text x="20" y="1772.2" font-size="12" font-weight="bold" fill="#2b2b2b">still to come</text>
+<text x="20" y="1790.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_TF_14)</text>
+<text x="24" y="1807.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: meta_rsp_vld</text>
+<text x="20" y="1825.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfFlow_MetaRspTaken</text>
+<text x="20" y="1843.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. the meta answer brings tag 1</text>
+<text x="643" y="164.2" font-size="12" font-style="italic" fill="#2b2b2b">W1: not 64-bit aligned</text>
+<text x="420" y="198.2" font-size="12" font-weight="bold" fill="#2b2b2b">9. Forward W1 to xbar_main and accept it, as W0 (steps 1 and</text>
+<text x="420" y="216.2" font-size="12" font-weight="bold" fill="#2b2b2b">7)</text>
+<text x="424" y="233.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: xbar_req_fire</text>
+<text x="420" y="251.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. Get of 0x1000_123C</text>
+<text x="420" y="324.2" font-size="12" font-weight="bold" fill="#2b2b2b">10. Same cycle: store W1's entry behind W0's</text>
+<text x="424" y="341.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: new_entry</text>
+<text x="420" y="359.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. entry 1 = KindLoadW1, lookup no</text>
+<text x="420" y="432.2" font-size="12" font-weight="bold" fill="#2b2b2b">11. No meta request: W1 is not a hinted W0, so it fails the</text>
+<text x="420" y="450.2" font-size="12" font-weight="bold" fill="#2b2b2b">lookup decision</text>
+<text x="424" y="467.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: is_lookup</text>
+<text x="420" y="485.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. nothing on the meta port</text>
+<text x="884" y="1918.2" font-size="12" font-weight="bold" fill="#2b2b2b" text-anchor="end">join: Both words are in flight; the FIFO holds W0 then W1.</text>
+<text x="884" y="1934.2" font-size="12" font-weight="bold" fill="#2b2b2b" text-anchor="end">Response phase: the answers go back to the core in that order</text>
+<text x="90" y="1998.2" font-size="12" font-weight="bold" fill="#2b2b2b">12. Answer W0 to the core in the cycle its last part arrives (the xbar answer or the meta</text>
+<text x="90" y="2016.2" font-size="12" font-weight="bold" fill="#2b2b2b">answer), never earlier</text>
+<text x="90" y="2034.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_TF_16b)</text>
+<text x="94" y="2051.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: head_xbar_rsp_seen, head_meta_rsp_seen, head_parts_seen</text>
+<text x="90" y="2069.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfReq_RspOnLastPart</text>
+<text x="90" y="2087.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfReq_RspNotEarly</text>
+<text x="90" y="2105.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. xbar answer in cycle 3, meta answer in cycle 4: W0 is answered in cycle 4</text>
+<text x="90" y="2182.2" font-size="12" font-weight="bold" fill="#2b2b2b">13. W0's answer: the xbar answer's opcode, size, source, data and integrity, with the meta</text>
+<text x="90" y="2200.2" font-size="12" font-weight="bold" fill="#2b2b2b">answer's tag. That tag is kept for W1</text>
+<text x="90" y="2218.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_TF_07, REQ_TF_08)</text>
+<text x="94" y="2235.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: trk_head, trk_xbar_answer_now, head_tag, capture_d</text>
+<text x="90" y="2253.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfReq_RspHasXbarFields</text>
+<text x="90" y="2271.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. AccessAckData, size 2, tag 1; tag 1 is kept</text>
+<text x="20" y="2502.2" font-size="12" font-weight="bold" fill="#2b2b2b">Answer the core with d_error set</text>
+<text x="20" y="2520.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_TF_12a)</text>
+<text x="24" y="2537.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: core_rsp_vld_checked</text>
+<text x="20" y="2555.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfErr_CauseGivesErr</text>
+<text x="20" y="2573.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. meta answer with d_error -&gt; W0's answer has d_error</text>
+<text x="20" y="2646.2" font-size="12" font-weight="bold" fill="#2b2b2b">Only the meta answer has the error? Keep the xbar</text>
+<text x="20" y="2664.2" font-size="12" font-weight="bold" fill="#2b2b2b">answer's response integrity as it came</text>
+<text x="20" y="2682.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_TF_13)</text>
+<text x="24" y="2699.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: meta_err_merged</text>
+<text x="20" y="2717.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfErr_MergedErrKeepsIntg</text>
+<text x="262" y="2379.2" font-size="12" fill="#2b2b2b" text-anchor="end">yes</text>
+<text x="420" y="2502.2" font-size="12" font-weight="bold" fill="#2b2b2b">14. d_error stays clear</text>
+<text x="420" y="2520.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_TF_12b)</text>
+<text x="424" y="2537.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: exp_err</text>
+<text x="420" y="2555.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfErr_NoErrWithoutCause</text>
+<text x="420" y="2573.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. W0 answered with tag 1, d_error = 0</text>
+<text x="538" y="2379.2" font-size="12" fill="#2b2b2b">no</text>
+<text x="90" y="2822.2" font-size="12" font-weight="bold" fill="#2b2b2b">15. Answer W1 after W0, once its xbar answer is in, with the tag kept from W0, then</text>
+<text x="90" y="2840.2" font-size="12" font-weight="bold" fill="#2b2b2b">cleared; any other answer is untagged</text>
+<text x="90" y="2858.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_TF_09, REQ_TF_11a, REQ_TF_11c)</text>
+<text x="94" y="2875.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: head_tag, capture_d, head_tag_checked</text>
+<text x="90" y="2893.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfStickyTag_RspTagFollowsRule</text>
+<text x="90" y="2911.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. W1 answered with tag 1; the kept tag is cleared</text>
+<text x="90" y="2988.2" font-size="12" font-weight="bold" fill="#2b2b2b">Each word answered exactly once; every accepted request is answered in the end</text>
+<text x="90" y="3006.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_TF_15b)</text>
+<text x="94" y="3023.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: pop</text>
+<text x="90" y="3041.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfFlow_NoExtraRsp</text>
+<text x="90" y="3059.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TfFlow_ReqEventuallyAnswered</text>
+<text x="90" y="3077.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. W0 answered, then W1; no third answer</text>
+<text x="58" y="3162.55" font-size="13">A step: its rule, then the signals and asserts behind it</text>
+<text x="58" y="3186.55" font-size="13">A decision on a signal</text>
+<text x="58" y="3210.55" font-size="13">Error path</text>
+<text x="58" y="3234.55" font-size="13">Start and end of one operation</text>
+<text x="10" y="3276.2" font-size="12" fill="#7a7a7a">✓ the asserts that check the step (tpchk_checker.sv); blue: the worked example.</text>
+</svg>
+<svg x="0" y="6372" width="893" height="2167" viewBox="0 -10 893 2167" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="0" y="-10" width="893" height="2167" fill="#ffffff"/>
+<rect x="10" y="2003" width="406.19" height="116" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="170" y="0" width="460" height="54" rx="27" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="400" y="25.02" font-size="14" font-weight="bold" text-anchor="middle">A capability store to the NVM</text>
+<text x="400" y="39.6" font-size="11" fill="#5c5c5c" text-anchor="middle">W0 at the lower word, then W1 at the upper word, of one capability</text>
+<rect x="80" y="134" width="640" height="108" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,134 396.5,125 403.5,125" fill="#2b2b2b"/>
+<polyline points="400,54 400,126" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="282" width="640" height="108" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,282 396.5,273 403.5,273" fill="#2b2b2b"/>
+<polyline points="400,242 400,274" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="430" width="640" height="126" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,430 396.5,421 403.5,421" fill="#2b2b2b"/>
+<polyline points="400,390 400,422" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="596" width="640" height="72" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,596 396.5,587 403.5,587" fill="#2b2b2b"/>
+<polyline points="400,556 400,588" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="400,708 530,743 400,778 270,743" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="400" y="739.7" font-size="12" text-anchor="middle">Faulty word?</text>
+<text x="400" y="754.7" font-size="12" text-anchor="middle">head_faulty</text>
+<polygon points="400,708 396.5,699 403.5,699" fill="#2b2b2b"/>
+<polyline points="400,668 400,700" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="570" y="707" width="290" height="162" rx="4" fill="#fbeaea" stroke="#b85450" stroke-width="1.2"/>
+<rect x="570" y="905" width="290" height="90" rx="4" fill="#fbeaea" stroke="#b85450" stroke-width="1.2"/>
+<polygon points="715,905 711.5,896 718.5,896" fill="#2b2b2b"/>
+<polyline points="715,869 715,897" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="570,743 561,746.5 561,739.5" fill="#2b2b2b"/>
+<polyline points="530,743 562,743" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="1035" width="640" height="144" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,1035 396.5,1026 403.5,1026" fill="#2b2b2b"/>
+<polyline points="400,778 400,1027" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="1219" width="640" height="144" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,1219 396.5,1210 403.5,1210" fill="#2b2b2b"/>
+<polyline points="400,1179 400,1211" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="400,1403 530,1458 400,1513 270,1458" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="400" y="1447.2" font-size="12" text-anchor="middle">W0 and W1 both</text>
+<text x="400" y="1462.2" font-size="12" text-anchor="middle">matched?</text>
+<text x="400" y="1477.2" font-size="12" text-anchor="middle">both_words_matched</text>
+<polygon points="400,1403 396.5,1394 403.5,1394" fill="#2b2b2b"/>
+<polyline points="400,1363 400,1395" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="570" y="1422" width="290" height="90" rx="4" fill="#fbeaea" stroke="#b85450" stroke-width="1.2"/>
+<polygon points="570,1458 561,1461.5 561,1454.5" fill="#2b2b2b"/>
+<polyline points="530,1458 562,1458" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="1553" width="640" height="126" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,1553 396.5,1544 403.5,1544" fill="#2b2b2b"/>
+<polyline points="400,1513 400,1545" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="1719" width="640" height="126" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,1719 396.5,1710 403.5,1710" fill="#2b2b2b"/>
+<polyline points="400,1679 400,1711" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="400,1845 400,1869" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="860,950 880,950" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="860,1467 880,1467" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<circle cx="880" cy="1467" r="3" fill="#2b2b2b"/>
+<polyline points="880,950 880,1869 400,1869" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<circle cx="400" cy="1869" r="3" fill="#2b2b2b"/>
+<rect x="80" y="1909" width="640" height="54" rx="4" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1.2"/>
+<polygon points="400,1909 396.5,1900 403.5,1900" fill="#2b2b2b"/>
+<polyline points="400,1869 400,1901" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="20" y="2017" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="20" y="2041" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1"/>
+<rect x="20" y="2065" width="28" height="16" rx="2" fill="#fbeaea" stroke="#b85450" stroke-width="1"/>
+<rect x="20" y="2089" width="28" height="16" rx="2" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1"/>
+<text x="388" y="75.85" font-size="11" font-style="italic" fill="#2f5f9e" text-anchor="end">e.g. W0 = 0x0000_0000 to 0x3000_0000, then W1 =</text>
+<text x="388" y="91.85" font-size="11" font-style="italic" fill="#2f5f9e" text-anchor="end">0x0020_0200 to 0x3000_0004; the NVM holds the same words</text>
+<text x="90" y="152.2" font-size="12" font-weight="bold" fill="#2b2b2b">1. Turn each word into a full-word Get of the word it targets: no write reaches the NVM</text>
+<text x="90" y="170.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_WTRC_01)</text>
+<text x="94" y="187.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: is_nvm_cap_store, presented_cap_store</text>
+<text x="90" y="205.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_WtrcStore_SentAsFullGet</text>
+<text x="90" y="223.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. Get of 4 bytes at 0x3000_0000 for W0, later at 0x3000_0004 for W1</text>
+<text x="90" y="300.2" font-size="12" font-weight="bold" fill="#2b2b2b">2. In the same cycle as step 1: the Get carries a recomputed, valid command integrity</text>
+<text x="90" y="318.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_WTRC_02)</text>
+<text x="94" y="335.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: is_cmd_intg_ok</text>
+<text x="90" y="353.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_WtrcStore_GetCmdIntgValid</text>
+<text x="90" y="371.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. the Get's command integrity is computed for the Get, not copied from the store</text>
+<text x="90" y="448.2" font-size="12" font-weight="bold" fill="#2b2b2b">3. In the same cycle as step 1, no lookup: W0 sends no meta request; W1 sends none</text>
+<text x="90" y="466.2" font-size="12" font-weight="bold" fill="#2b2b2b">except its tag write (step 7)</text>
+<text x="90" y="484.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_WTRC_03)</text>
+<text x="94" y="501.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: is_lookup, meta_is_tag_wr</text>
+<text x="90" y="519.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_WtrcStore_NoTagLookup</text>
+<text x="90" y="537.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. No meta request while 0x3000_0000 is stored</text>
+<text x="90" y="614.2" font-size="12" font-weight="bold" fill="#2b2b2b">4. The NVM answers each Get</text>
+<text x="94" y="631.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: xbar_rsp_vld, head_xbar_rsp_seen</text>
+<text x="90" y="649.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. NVM answers 0x0000_0000 for 0x3000_0000, then 0x0020_0200 for 0x3000_0004</text>
+<text x="580" y="725.2" font-size="12" font-weight="bold" fill="#2b2b2b">Out of sequence, partial, bad command</text>
+<text x="580" y="743.2" font-size="12" font-weight="bold" fill="#2b2b2b">or data integrity, or bad NVM response</text>
+<text x="580" y="761.2" font-size="12" font-weight="bold" fill="#2b2b2b">integrity: answer with d_error; the tag</text>
+<text x="580" y="779.2" font-size="12" font-weight="bold" fill="#2b2b2b">stays as it was</text>
+<text x="580" y="797.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_WTRC_10)</text>
+<text x="584" y="814.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: new_out_of_seq,</text>
+<text x="584" y="832.85" font-size="11" font-family="monospace" fill="#2b2b2b">xbar_rsp_intg_bad</text>
+<text x="580" y="850.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_WtrcFaults_FaultyWordErr</text>
+<text x="580" y="923.2" font-size="12" font-weight="bold" fill="#2b2b2b">Raise the alert request, at some point</text>
+<text x="580" y="941.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_WTRC_11)</text>
+<text x="584" y="958.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: word_cause_now</text>
+<text x="580" y="976.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_WtrcFaults_FaultyWordAlert</text>
+<text x="538" y="737.2" font-size="12" fill="#2b2b2b">yes</text>
+<text x="408" y="796.2" font-size="12" fill="#2b2b2b">no</text>
+<text x="90" y="1053.2" font-size="12" font-weight="bold" fill="#2b2b2b">5. Compare the word with the NVM's data and integrity: W0 gets d_error exactly when it</text>
+<text x="90" y="1071.2" font-size="12" font-weight="bold" fill="#2b2b2b">differs; its result is kept for W1</text>
+<text x="90" y="1089.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_WTRC_04a, REQ_WTRC_04b)</text>
+<text x="94" y="1106.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: xbar_rsp_data_equal, xbar_rsp_match, head_match, w0_matched_d</text>
+<text x="90" y="1124.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_WtrcCompare_W0ErrOnMismatch</text>
+<text x="90" y="1142.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. W0 = 0x0000_0000 equals the NVM's word at 0x3000_0000, same data integrity: it matches, answered</text>
+<text x="90" y="1160.85" font-size="11" font-style="italic" fill="#2f5f9e">without d_error</text>
+<text x="90" y="1237.2" font-size="12" font-weight="bold" fill="#2b2b2b">6. Only after its NVM answer, each word is answered AccessAck, untagged, to its</text>
+<text x="90" y="1255.2" font-size="12" font-weight="bold" fill="#2b2b2b">a_source, with a valid response integrity</text>
+<text x="90" y="1273.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_WTRC_04a, REQ_WTRC_04b, REQ_WTRC_05, REQ_WTRC_08)</text>
+<text x="94" y="1290.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: head_vld_cap_store</text>
+<text x="90" y="1308.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_WtrcCompare_RspAfterNvm</text>
+<text x="90" y="1326.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_WtrcStore_UntaggedAccessAck</text>
+<text x="90" y="1344.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. AccessAck without a tag for 0x3000_0000, then for 0x3000_0004</text>
+<text x="580" y="1440.2" font-size="12" font-weight="bold" fill="#2b2b2b">No tag write; answer W1 with d_error</text>
+<text x="580" y="1458.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_WTRC_08)</text>
+<text x="584" y="1475.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: w0_matched_d</text>
+<text x="580" y="1493.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_WtrcCompare_W1ErrOnMismatch</text>
+<text x="538" y="1452.2" font-size="12" fill="#2b2b2b">no</text>
+<text x="408" y="1531.2" font-size="12" fill="#2b2b2b">yes</text>
+<text x="90" y="1571.2" font-size="12" font-weight="bold" fill="#2b2b2b">7. W1's NVM answer turns into one write of tag 1 to the capability's tag bit; while it is</text>
+<text x="90" y="1589.2" font-size="12" font-weight="bold" fill="#2b2b2b">owed, the meta port carries only it</text>
+<text x="90" y="1607.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_WTRC_06)</text>
+<text x="94" y="1624.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: tag_wr_set_now, tag_wr_addr, tag_wr_bit</text>
+<text x="90" y="1642.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_WtrcCompare_OnlyOwedTagWr</text>
+<text x="90" y="1660.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. Tag write of 1 to meta word 0x1100_0C00, bit 0</text>
+<text x="90" y="1737.2" font-size="12" font-weight="bold" fill="#2b2b2b">8. Answer W1 only after the tag write's answer, with d_error exactly when that answer has</text>
+<text x="90" y="1755.2" font-size="12" font-weight="bold" fill="#2b2b2b">it</text>
+<text x="90" y="1773.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_WTRC_06, REQ_WTRC_07)</text>
+<text x="94" y="1790.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: head_w1, head_meta_rsp_seen, head_meta_err</text>
+<text x="90" y="1808.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_WtrcCompare_W1AfterTagWr</text>
+<text x="90" y="1826.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. Tag write answered without d_error, so W1 is answered AccessAck without d_error</text>
+<text x="90" y="1927.2" font-size="12" font-weight="bold" fill="#2b2b2b">W1's answer closes the capability; the next W0 may be taken in that cycle</text>
+<text x="94" y="1944.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: w1_done_now, cap_state_now</text>
+<text x="58" y="2029.55" font-size="13">A step: its rule, then the signals and asserts behind it</text>
+<text x="58" y="2053.55" font-size="13">A decision on a signal</text>
+<text x="58" y="2077.55" font-size="13">Error path</text>
+<text x="58" y="2101.55" font-size="13">Start and end of one operation</text>
+<text x="10" y="2143.2" font-size="12" fill="#7a7a7a">✓ the asserts that check the step (tpchk_checker.sv); blue: the worked example.</text>
+</svg>
+<svg x="0" y="8559" width="870" height="1604" viewBox="0 -10 870 1604" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="0" y="-10" width="870" height="1604" fill="#ffffff"/>
+<rect x="10" y="1440" width="406.19" height="116" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="170" y="0" width="460" height="54" rx="27" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="400" y="25.02" font-size="14" font-weight="bold" text-anchor="middle">A tag request r is presented on input i</text>
+<text x="400" y="39.6" font-size="11" fill="#5c5c5c" text-anchor="middle">input 0: the core's tag filter; input 1: the engine's tag filter</text>
+<polygon points="400,118 530,153 400,188 270,153" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="400" y="149.7" font-size="12" text-anchor="middle">Request alone (other</text>
+<text x="400" y="164.7" font-size="12" text-anchor="middle">input idle)?</text>
+<polygon points="400,118 396.5,109 403.5,109" fill="#2b2b2b"/>
+<polyline points="400,54 400,110" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="10" y="232" width="380" height="144" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="200,232 196.5,223 203.5,223" fill="#2b2b2b"/>
+<polyline points="270,153 200,153 200,224" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="410" y="232" width="450" height="126" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="635,232 631.5,223 638.5,223" fill="#2b2b2b"/>
+<polyline points="530,153 635,153 635,224" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="200,376 200,404 400,404" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="635,358 635,404 400,404" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<circle cx="400" cy="404" r="3" fill="#2b2b2b"/>
+<rect x="80" y="444" width="640" height="126" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,444 396.5,435 403.5,435" fill="#2b2b2b"/>
+<polyline points="400,404 400,436" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="610" width="640" height="126" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,610 396.5,601 403.5,601" fill="#2b2b2b"/>
+<polyline points="400,570 400,602" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="776" width="640" height="126" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,776 396.5,767 403.5,767" fill="#2b2b2b"/>
+<polyline points="400,736 400,768" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="942" width="640" height="144" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,942 396.5,933 403.5,933" fill="#2b2b2b"/>
+<polyline points="400,902 400,934" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="1126" width="640" height="144" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,1126 396.5,1117 403.5,1117" fill="#2b2b2b"/>
+<polyline points="400,1086 400,1118" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="1310" width="640" height="90" rx="4" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1.2"/>
+<polygon points="400,1310 396.5,1301 403.5,1301" fill="#2b2b2b"/>
+<polyline points="400,1270 400,1302" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="20" y="1454" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="20" y="1478" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1"/>
+<rect x="20" y="1502" width="28" height="16" rx="2" fill="#fbeaea" stroke="#b85450" stroke-width="1"/>
+<rect x="20" y="1526" width="28" height="16" rx="2" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1"/>
+<text x="388" y="75.85" font-size="11" font-style="italic" fill="#2f5f9e" text-anchor="end">e.g. a_source 0x05 on input 0 and on input 1</text>
+<text x="20" y="250.2" font-size="12" font-weight="bold" fill="#2b2b2b">1. A lone request leaves the arbiter in the cycle it is</text>
+<text x="20" y="268.2" font-size="12" font-weight="bold" fill="#2b2b2b">presented, as Fwd(r, i)</text>
+<text x="20" y="286.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_ARB_09)</text>
+<text x="24" y="303.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: arb_ev</text>
+<text x="20" y="321.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_ArbFlow_AloneSameCycle</text>
+<text x="20" y="339.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. the core's write alone leaves in the same cycle with</text>
+<text x="20" y="357.85" font-size="11" font-style="italic" fill="#2f5f9e">a_source 0x0A</text>
+<text x="262" y="147.2" font-size="12" fill="#2b2b2b" text-anchor="end">yes</text>
+<text x="420" y="250.2" font-size="12" font-weight="bold" fill="#2b2b2b">2. Both inputs present: a request held on either input is</text>
+<text x="420" y="268.2" font-size="12" font-weight="bold" fill="#2b2b2b">accepted at some point, if the RMW filter keeps accepting</text>
+<text x="420" y="286.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_ARB_08)</text>
+<text x="420" y="303.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_ArbFlow_NoStarvation</text>
+<text x="420" y="321.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. both writes (a_source 0x05) together: one leaves first, the other later, as</text>
+<text x="420" y="339.85" font-size="11" font-style="italic" fill="#2f5f9e">0x0A and 0x0B</text>
+<text x="538" y="147.2" font-size="12" fill="#2b2b2b">no</text>
+<text x="90" y="462.2" font-size="12" font-weight="bold" fill="#2b2b2b">3. Forward the accepted request in the same cycle as Fwd(r, i): its own tag and bit select,</text>
+<text x="90" y="480.2" font-size="12" font-weight="bold" fill="#2b2b2b">a_source = (a_source &lt;&lt; 1) | i</text>
+<text x="90" y="498.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_ARB_01, REQ_ARB_03, REQ_ARB_04)</text>
+<text x="94" y="515.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: fwd_source, is_fwd</text>
+<text x="90" y="533.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_ArbReq_KeepsOwnSideband</text>
+<text x="90" y="551.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. core's write: 0x05 leaves as 0x0A; engine's write: 0x05 leaves as 0x0B</text>
+<text x="90" y="628.2" font-size="12" font-weight="bold" fill="#2b2b2b">4. In the same cycle as step 3: the output is Fwd(r, i) of the input a_source bit 0 names,</text>
+<text x="90" y="646.2" font-size="12" font-weight="bold" fill="#2b2b2b">taken with it; none is invented</text>
+<text x="90" y="664.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_ARB_01, REQ_ARB_02)</text>
+<text x="94" y="681.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: req_input, arb_ev</text>
+<text x="90" y="699.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_ArbReq_FromNamedInput</text>
+<text x="90" y="717.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. output a_source 0x0B: bit 0 is 1, so input 1's request, taken with input 1</text>
+<text x="90" y="794.2" font-size="12" font-weight="bold" fill="#2b2b2b">5. In the same cycle as step 3: the core's request (input 0) reaches the RMW filter exactly</text>
+<text x="90" y="812.2" font-size="12" font-weight="bold" fill="#2b2b2b">as the arbiter forwards it</text>
+<text x="90" y="830.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_ARB_11)</text>
+<text x="94" y="847.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: req_input</text>
+<text x="90" y="865.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_ArbReq_CoreReqUnchanged</text>
+<text x="90" y="883.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. the core's write arrives at the RMW filter with a_source 0x0A, unchanged</text>
+<text x="90" y="960.2" font-size="12" font-weight="bold" fill="#2b2b2b">6. The RMW filter answers with d_source s: the answer goes to input s &amp; 1 only, in the</text>
+<text x="90" y="978.2" font-size="12" font-weight="bold" fill="#2b2b2b">same cycle</text>
+<text x="90" y="996.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_ARB_05, REQ_ARB_10)</text>
+<text x="94" y="1013.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: rsp_input, rmw_ev</text>
+<text x="90" y="1031.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_ArbRsp_ToItsInput</text>
+<text x="90" y="1049.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_ArbFlow_RspAtOnce</text>
+<text x="90" y="1067.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. d_source 0x0A: bit 0 is 0, so input 0 only; d_source 0x0B: input 1 only</text>
+<text x="90" y="1144.2" font-size="12" font-weight="bold" fill="#2b2b2b">7. In the same cycle as step 6: the answer reaches the input with d_source shifted back (s</text>
+<text x="90" y="1162.2" font-size="12" font-weight="bold" fill="#2b2b2b">&gt;&gt; 1), every other field and tag unchanged</text>
+<text x="90" y="1180.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_ARB_06, REQ_ARB_07)</text>
+<text x="94" y="1197.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: rsp_input, is_same_rsp_but_source</text>
+<text x="90" y="1215.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_ArbRsp_SourceShiftedBack</text>
+<text x="90" y="1233.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_ArbRsp_FieldsUnchanged</text>
+<text x="90" y="1251.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. 0x0A reaches input 0 as 0x05; 0x0B reaches input 1 as 0x05</text>
+<text x="90" y="1328.2" font-size="12" font-weight="bold" fill="#2b2b2b">Answer taken in the cycle its input takes it; none lost</text>
+<text x="90" y="1346.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_ARB_05)</text>
+<text x="94" y="1363.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: rsp_input, rmw_ev</text>
+<text x="90" y="1381.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_ArbRsp_TakenWithInput</text>
+<text x="58" y="1466.55" font-size="13">A step: its rule, then the signals and asserts behind it</text>
+<text x="58" y="1490.55" font-size="13">A decision on a signal</text>
+<text x="58" y="1514.55" font-size="13">Error path</text>
+<text x="58" y="1538.55" font-size="13">Start and end of one operation</text>
+<text x="10" y="1580.2" font-size="12" fill="#7a7a7a">✓ the asserts that check the step (tpchk_checker.sv); blue: the worked example.</text>
+</svg>
+<svg x="0" y="10183" width="890" height="1423" viewBox="0 -10 890 1423" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="0" y="-10" width="890" height="1423" fill="#ffffff"/>
+<rect x="10" y="1259" width="406.19" height="116" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="170" y="0" width="460" height="54" rx="27" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="400" y="25.02" font-size="14" font-weight="bold" text-anchor="middle">A tag read fires upstream</text>
+<text x="400" y="39.6" font-size="11" fill="#5c5c5c" text-anchor="middle">bit b of meta word A, with a_source s</text>
+<rect x="80" y="118" width="640" height="108" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,118 396.5,109 403.5,109" fill="#2b2b2b"/>
+<polyline points="400,54 400,110" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="266" width="640" height="144" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,266 396.5,257 403.5,257" fill="#2b2b2b"/>
+<polyline points="400,226 400,258" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="450" width="640" height="108" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,450 396.5,441 403.5,441" fill="#2b2b2b"/>
+<polyline points="400,410 400,442" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="400,598 530,643 400,688 270,643" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="400" y="632.2" font-size="12" text-anchor="middle">Get answered with</text>
+<text x="400" y="647.2" font-size="12" text-anchor="middle">d_error?</text>
+<text x="400" y="662.2" font-size="12" text-anchor="middle">fill_err</text>
+<polygon points="400,598 396.5,589 403.5,589" fill="#2b2b2b"/>
+<polyline points="400,558 400,590" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="570" y="607" width="290" height="108" rx="4" fill="#fbeaea" stroke="#b85450" stroke-width="1.2"/>
+<polygon points="570,643 561,646.5 561,639.5" fill="#2b2b2b"/>
+<polyline points="530,643 562,643" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="755" width="640" height="126" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,755 396.5,746 403.5,746" fill="#2b2b2b"/>
+<polyline points="400,688 400,747" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="921" width="640" height="126" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,921 396.5,912 403.5,912" fill="#2b2b2b"/>
+<polyline points="400,881 400,913" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="400,1047 400,1071" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="860,661 880,661" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="880,661 880,1071 400,1071" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<circle cx="400" cy="1071" r="3" fill="#2b2b2b"/>
+<rect x="80" y="1111" width="640" height="108" rx="4" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1.2"/>
+<polygon points="400,1111 396.5,1102 403.5,1102" fill="#2b2b2b"/>
+<polyline points="400,1071 400,1103" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="20" y="1273" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="20" y="1297" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1"/>
+<rect x="20" y="1321" width="28" height="16" rx="2" fill="#fbeaea" stroke="#b85450" stroke-width="1"/>
+<rect x="20" y="1345" width="28" height="16" rx="2" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1"/>
+<text x="388" y="75.85" font-size="11" font-style="italic" fill="#2f5f9e" text-anchor="end">e.g. b = 8, A = 0x1100_8C48, s = 0x02</text>
+<text x="90" y="136.2" font-size="12" font-weight="bold" fill="#2b2b2b">1. Get the meta word at the read's address, with the read's a_source</text>
+<text x="90" y="154.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_RMW_01)</text>
+<text x="94" y="171.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: tags_get_vld, tags_get_op</text>
+<text x="90" y="189.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwRead_GetOfMetaWord</text>
+<text x="90" y="207.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. Get of 0x1100_8C48 with a_source 0x02</text>
+<text x="90" y="284.2" font-size="12" font-weight="bold" fill="#2b2b2b">2. In the same cycle as step 1: the Get is taken with the read's acceptance, and nothing</text>
+<text x="90" y="302.2" font-size="12" font-weight="bold" fill="#2b2b2b">else goes downstream</text>
+<text x="90" y="320.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_RMW_16)</text>
+<text x="94" y="337.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: tags_get_vld_passthrough, tags_writeback_vld_allowed</text>
+<text x="90" y="355.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwSingleOp_GetWithAccept</text>
+<text x="90" y="373.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwSingleOp_NothingElseDownstream</text>
+<text x="90" y="391.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. the Get fires in the cycle the read is accepted; no write-back</text>
+<text x="90" y="468.2" font-size="12" font-weight="bold" fill="#2b2b2b">3. Fill: the word W arrives and the filter takes it</text>
+<text x="90" y="486.2" font-size="12" font-weight="bold" fill="#2b2b2b">(contract C4)</text>
+<text x="94" y="503.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: tags_fill_vld, fill_err, meta_word</text>
+<text x="90" y="521.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_Contracts_TagsRspTaken</text>
+<text x="90" y="539.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. W = 0x0000_0180 arrives</text>
+<text x="580" y="625.2" font-size="12" font-weight="bold" fill="#2b2b2b">Pass the Get's d_error up: answer the</text>
+<text x="580" y="643.2" font-size="12" font-weight="bold" fill="#2b2b2b">read with d_error</text>
+<text x="580" y="661.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_RMW_14)</text>
+<text x="584" y="678.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: fill_vld_seen, rmw_rsp_vld</text>
+<text x="580" y="696.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwErr_ErrPassedUp</text>
+<text x="538" y="637.2" font-size="12" fill="#2b2b2b">yes</text>
+<text x="408" y="706.2" font-size="12" fill="#2b2b2b">no</text>
+<text x="90" y="773.2" font-size="12" font-weight="bold" fill="#2b2b2b">4. Answer after the Fill: the tag is Bit(W, b) and d_error is clear</text>
+<text x="90" y="791.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_RMW_02, REQ_RMW_17)</text>
+<text x="94" y="808.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: rmw_rsp_vld, meta_word, bit_of</text>
+<text x="90" y="826.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwRead_ReturnsTagBit</text>
+<text x="90" y="844.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwErr_NoErrWithoutCause</text>
+<text x="90" y="862.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. bit 8 of 0x0000_0180 is 1, so the tag is 1, no d_error</text>
+<text x="90" y="939.2" font-size="12" font-weight="bold" fill="#2b2b2b">5. In the same cycle as step 4's answer: a next read presented then is accepted, if</text>
+<text x="90" y="957.2" font-size="12" font-weight="bold" fill="#2b2b2b">downstream is ready</text>
+<text x="90" y="975.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_RMW_11)</text>
+<text x="94" y="992.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: rmw_rd_rsp_fire, rmw_req_rdy_allowed</text>
+<text x="90" y="1010.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwRead_BackToBackAccepted</text>
+<text x="90" y="1028.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. the next read is accepted in the cycle this answer is taken</text>
+<text x="90" y="1129.2" font-size="12" font-weight="bold" fill="#2b2b2b">Every operation answered; every request presented is accepted</text>
+<text x="90" y="1147.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_RMW_15)</text>
+<text x="94" y="1164.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: rmw_rsp_op_vld</text>
+<text x="90" y="1182.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwSingleOp_EveryOpAnswered</text>
+<text x="90" y="1200.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_Contracts_RmwReqAccepted</text>
+<text x="58" y="1285.55" font-size="13">A step: its rule, then the signals and asserts behind it</text>
+<text x="58" y="1309.55" font-size="13">A decision on a signal</text>
+<text x="58" y="1333.55" font-size="13">Error path</text>
+<text x="58" y="1357.55" font-size="13">Start and end of one operation</text>
+<text x="10" y="1399.2" font-size="12" fill="#7a7a7a">✓ the asserts that check the step (tpchk_checker.sv); blue: the worked example.</text>
+</svg>
+<svg x="0" y="11626" width="890" height="1450" viewBox="0 -10 890 1450" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="0" y="-10" width="890" height="1450" fill="#ffffff"/>
+<rect x="10" y="1286" width="406.19" height="116" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="170" y="0" width="460" height="54" rx="27" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="400" y="25.02" font-size="14" font-weight="bold" text-anchor="middle">A tag write fires upstream</text>
+<text x="400" y="39.6" font-size="11" fill="#5c5c5c" text-anchor="middle">tag t, bit b of meta word A</text>
+<rect x="80" y="118" width="640" height="126" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,118 396.5,109 403.5,109" fill="#2b2b2b"/>
+<polyline points="400,54 400,110" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="80" y="284" width="640" height="90" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="400,284 396.5,275 403.5,275" fill="#2b2b2b"/>
+<polyline points="400,244 400,276" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="400,414 530,464 400,514 270,464" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="400" y="453.2" font-size="12" text-anchor="middle">Read answered with</text>
+<text x="400" y="468.2" font-size="12" text-anchor="middle">d_error?</text>
+<text x="400" y="483.2" font-size="12" text-anchor="middle">fill_err</text>
+<polygon points="400,414 396.5,405 403.5,405" fill="#2b2b2b"/>
+<polyline points="400,374 400,406" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="570" y="428" width="290" height="108" rx="4" fill="#fbeaea" stroke="#b85450" stroke-width="1.2"/>
+<polygon points="570,464 561,467.5 561,460.5" fill="#2b2b2b"/>
+<polyline points="530,464 562,464" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="400,576 530,621 400,666 270,621" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="400" y="610.2" font-size="12" text-anchor="middle">Stored bit already</text>
+<text x="400" y="625.2" font-size="12" text-anchor="middle">equal to the tag?</text>
+<text x="400" y="640.2" font-size="12" text-anchor="middle">tag_unchanged</text>
+<polygon points="400,576 396.5,567 403.5,567" fill="#2b2b2b"/>
+<polyline points="400,514 400,568" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="10" y="710" width="380" height="144" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="200,710 196.5,701 203.5,701" fill="#2b2b2b"/>
+<polyline points="270,621 200,621 200,702" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="410" y="710" width="450" height="198" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<rect x="410" y="944" width="450" height="108" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="635,944 631.5,935 638.5,935" fill="#2b2b2b"/>
+<polyline points="635,908 635,936" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="635,710 631.5,701 638.5,701" fill="#2b2b2b"/>
+<polyline points="530,621 635,621 635,702" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="200,854 200,1080 400,1080" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="635,1052 635,1080 400,1080" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="860,482 880,482" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="880,482 880,1080 635,1080" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<circle cx="635" cy="1080" r="3" fill="#2b2b2b"/>
+<circle cx="400" cy="1080" r="3" fill="#2b2b2b"/>
+<rect x="80" y="1120" width="640" height="126" rx="4" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1.2"/>
+<polygon points="400,1120 396.5,1111 403.5,1111" fill="#2b2b2b"/>
+<polyline points="400,1080 400,1112" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="20" y="1300" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="20" y="1324" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1"/>
+<rect x="20" y="1348" width="28" height="16" rx="2" fill="#fbeaea" stroke="#b85450" stroke-width="1"/>
+<rect x="20" y="1372" width="28" height="16" rx="2" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1"/>
+<text x="388" y="75.85" font-size="11" font-style="italic" fill="#2f5f9e" text-anchor="end">e.g. t = 1, b = 8, A = 0x1100_8C48</text>
+<text x="90" y="136.2" font-size="12" font-weight="bold" fill="#2b2b2b">1. In the cycle the write is accepted (or later, if downstream is busy): read the whole meta</text>
+<text x="90" y="154.2" font-size="12" font-weight="bold" fill="#2b2b2b">word, with the write's a_source</text>
+<text x="90" y="172.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_RMW_03, REQ_RMW_09)</text>
+<text x="94" y="189.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: tags_get_vld_allowed, tags_get_op, tags_get_vld</text>
+<text x="90" y="207.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwWrSkip_FullWordGetFirst</text>
+<text x="90" y="225.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. Get of 0x1100_8C48, full word</text>
+<text x="90" y="302.2" font-size="12" font-weight="bold" fill="#2b2b2b">2. Fill: the word W arrives</text>
+<text x="90" y="320.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_RMW_03)</text>
+<text x="94" y="337.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: tags_fill_vld, fill_err, meta_word</text>
+<text x="90" y="355.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. W = 0x0000_0080: its bit 8 is 0, the tag is 1, so they differ</text>
+<text x="580" y="446.2" font-size="12" font-weight="bold" fill="#2b2b2b">No write-back; answer with d_error</text>
+<text x="580" y="464.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_RMW_13, REQ_RMW_14)</text>
+<text x="584" y="481.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: pending_wr_filled</text>
+<text x="580" y="499.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwErr_GetErrStopsWrite</text>
+<text x="580" y="517.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwErr_ErrPassedUp</text>
+<text x="538" y="458.2" font-size="12" fill="#2b2b2b">yes</text>
+<text x="408" y="532.2" font-size="12" fill="#2b2b2b">no</text>
+<text x="20" y="728.2" font-size="12" font-weight="bold" fill="#2b2b2b">3. Skip the write-back; answer AccessAck</text>
+<text x="20" y="746.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_RMW_04, REQ_RMW_05)</text>
+<text x="24" y="763.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: writeback_needed, rmw_rsp_vld</text>
+<text x="20" y="781.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwWrSkip_NoWriteBack</text>
+<text x="20" y="799.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwWrSkip_AnsweredAccessAck</text>
+<text x="20" y="817.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. not this example (bit 8 is 0, the tag is 1); a write of tag 0</text>
+<text x="20" y="835.85" font-size="11" font-style="italic" fill="#2f5f9e">would answer AccessAck with no write-back</text>
+<text x="262" y="615.2" font-size="12" fill="#2b2b2b" text-anchor="end">yes</text>
+<text x="420" y="728.2" font-size="12" font-weight="bold" fill="#2b2b2b">4. Write back Upd(W, b, t): a full-word PutFullData to the</text>
+<text x="420" y="746.2" font-size="12" font-weight="bold" fill="#2b2b2b">same word, only bit b changed, fresh integrity, the write's</text>
+<text x="420" y="764.2" font-size="12" font-weight="bold" fill="#2b2b2b">a_source</text>
+<text x="420" y="782.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_RMW_06, REQ_RMW_07, REQ_RMW_09)</text>
+<text x="424" y="799.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: tags_writeback_vld_allowed, writeback_word_o,</text>
+<text x="424" y="817.85" font-size="11" font-family="monospace" fill="#2b2b2b">tags_writeback_vld</text>
+<text x="420" y="835.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwWrBack_CarriesUpdatedWord</text>
+<text x="420" y="853.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwWrBack_FullPutSameWord</text>
+<text x="420" y="871.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwWrBack_KeepsWrSource</text>
+<text x="420" y="889.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. PutFullData 0x0000_0180 to 0x1100_8C48</text>
+<text x="420" y="962.2" font-size="12" font-weight="bold" fill="#2b2b2b">5. Pass the write-back's answer up as the write's answer</text>
+<text x="420" y="980.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_RMW_08)</text>
+<text x="424" y="997.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: tags_writeback_ack_vld, tags_writeback_rsp_vld</text>
+<text x="420" y="1015.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwWrBack_RspPassedUp</text>
+<text x="420" y="1033.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. AccessAck, no d_error</text>
+<text x="538" y="615.2" font-size="12" fill="#2b2b2b">no</text>
+<text x="90" y="1138.2" font-size="12" font-weight="bold" fill="#2b2b2b">Answered once, never before its Fill; the next request may fire</text>
+<text x="90" y="1156.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_RMW_05, REQ_RMW_10, REQ_RMW_15)</text>
+<text x="94" y="1173.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: rmw_req_rdy_allowed</text>
+<text x="90" y="1191.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwWrSkip_RspAfterGetRsp</text>
+<text x="90" y="1209.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwSingleOp_OneAtATime</text>
+<text x="90" y="1227.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_RmwSingleOp_OneRspPerOp</text>
+<text x="58" y="1312.55" font-size="13">A step: its rule, then the signals and asserts behind it</text>
+<text x="58" y="1336.55" font-size="13">A decision on a signal</text>
+<text x="58" y="1360.55" font-size="13">Error path</text>
+<text x="58" y="1384.55" font-size="13">Start and end of one operation</text>
+<text x="10" y="1426.2" font-size="12" fill="#7a7a7a">✓ the asserts that check the step (tpchk_checker.sv); blue: the worked example.</text>
+</svg>
+<svg x="0" y="13096" width="1113" height="754" viewBox="0 -10 1113 754" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="0" y="-10" width="1113" height="754" fill="#ffffff"/>
+<rect x="10" y="590" width="406.19" height="116" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="170" y="0" width="460" height="54" rx="27" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="400" y="25.02" font-size="14" font-weight="bold" text-anchor="middle">Fault causes on the tag path, watched at the same time</text>
+<text x="400" y="39.6" font-size="11" fill="#5c5c5c" text-anchor="middle">a meta SRAM answer the RMW filter takes</text>
+<polygon points="400,150 396.5,141 403.5,141" fill="#2b2b2b"/>
+<polyline points="400,54 400,142" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="162.5" y="150" width="940.5" height="6" rx="4" fill="#2b2b2b" stroke="#2b2b2b" stroke-width="1.2"/>
+<rect x="10" y="196" width="345" height="180" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="182.5,196 179,187 186,187" fill="#2b2b2b"/>
+<polyline points="182.5,156 182.5,188" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="375" y="196" width="345" height="198" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="547.5,196 544,187 551,187" fill="#2b2b2b"/>
+<polyline points="547.5,156 547.5,188" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="740" y="196" width="345" height="162" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<polygon points="912.5,196 909,187 916,187" fill="#2b2b2b"/>
+<polyline points="912.5,156 912.5,188" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="182.5,424 179,415 186,415" fill="#2b2b2b"/>
+<polyline points="182.5,376 182.5,416" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="547.5,424 544,415 551,415" fill="#2b2b2b"/>
+<polyline points="547.5,394 547.5,416" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="912.5,424 909,415 916,415" fill="#2b2b2b"/>
+<polyline points="912.5,358 912.5,416" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="162.5" y="424" width="940.5" height="6" rx="4" fill="#2b2b2b" stroke="#2b2b2b" stroke-width="1.2"/>
+<rect x="80" y="496" width="640" height="54" rx="4" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1.2"/>
+<polygon points="400,496 396.5,487 403.5,487" fill="#2b2b2b"/>
+<polyline points="400,430 400,488" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="20" y="604" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="20" y="628" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1"/>
+<rect x="20" y="652" width="28" height="16" rx="2" fill="#fbeaea" stroke="#b85450" stroke-width="1"/>
+<rect x="20" y="676" width="28" height="16" rx="2" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1"/>
+<text x="388" y="75.85" font-size="11" font-style="italic" fill="#2f5f9e" text-anchor="end">e.g. the Get of meta word 0x1100_0C00 is answered with</text>
+<text x="388" y="91.85" font-size="11" font-style="italic" fill="#2f5f9e" text-anchor="end">d_error = 1</text>
+<text x="1103" y="142.2" font-size="12" font-weight="bold" fill="#2b2b2b" text-anchor="end">fork: every cycle, each cause is watched on its own</text>
+<text x="190.5" y="180.2" font-size="12" font-style="italic" fill="#2b2b2b">RMW filter: device error</text>
+<text x="20" y="214.2" font-size="12" font-weight="bold" fill="#2b2b2b">1. A meta SRAM answer taken with d_error: the</text>
+<text x="20" y="232.2" font-size="12" font-weight="bold" fill="#2b2b2b">device fault input rises only after one since</text>
+<text x="20" y="250.2" font-size="12" font-weight="bold" fill="#2b2b2b">reset, and the alert request rises at some point</text>
+<text x="20" y="268.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_TAG_07, contract C8)</text>
+<text x="24" y="285.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: tags_rsp_err, device_err_seen_d</text>
+<text x="20" y="303.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_Contracts_RmwDevFaultCaused</text>
+<text x="20" y="321.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TagAlerts_DevErrRaisesAlert</text>
+<text x="20" y="339.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. d_error = 1 taken on the answer for 0x1100_0C00:</text>
+<text x="20" y="357.85" font-size="11" font-style="italic" fill="#2f5f9e">the fault input may rise from that cycle on</text>
+<text x="555.5" y="180.2" font-size="12" font-style="italic" fill="#2b2b2b">RMW filter: integrity error</text>
+<text x="385" y="214.2" font-size="12" font-weight="bold" fill="#2b2b2b">2. An answer taken with broken rsp_intg or</text>
+<text x="385" y="232.2" font-size="12" font-weight="bold" fill="#2b2b2b">data_intg: the integrity fault input rises only</text>
+<text x="385" y="250.2" font-size="12" font-weight="bold" fill="#2b2b2b">after one since reset; the alert request rises at</text>
+<text x="385" y="268.2" font-size="12" font-weight="bold" fill="#2b2b2b">some point</text>
+<text x="385" y="286.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_TAG_08, contract C8)</text>
+<text x="389" y="303.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: tags_rsp_intg_bad, intg_err_seen_d</text>
+<text x="385" y="321.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_Contracts_RmwIntgFaultCaused</text>
+<text x="385" y="339.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_TagAlerts_IntgErrRaisesAlert</text>
+<text x="385" y="357.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. the answer for 0x1100_0C00 with a wrong rsp_intg:</text>
+<text x="385" y="375.85" font-size="11" font-style="italic" fill="#2f5f9e">the fault input may rise from that cycle on</text>
+<text x="920.5" y="180.2" font-size="12" font-style="italic" fill="#2b2b2b">WTRC: a fault cause</text>
+<text x="750" y="214.2" font-size="12" font-weight="bold" fill="#2b2b2b">3. The WTRC's fault input rises only after one</text>
+<text x="750" y="232.2" font-size="12" font-weight="bold" fill="#2b2b2b">of its causes since reset</text>
+<text x="750" y="250.2" font-size="12" font-weight="bold" fill="#2b2b2b">(REQ_WTRC_09, REQ_TAG_10, contract C8)</text>
+<text x="754" y="267.85" font-size="11" font-family="monospace" fill="#2b2b2b">signals: cause_seen_d, word_cause_now,</text>
+<text x="754" y="285.85" font-size="11" font-family="monospace" fill="#2b2b2b">out_of_seq_cause_now</text>
+<text x="750" y="303.85" font-size="11" font-family="monospace" fill="#7a7a7a">✓ assert_WtrcCompare_NoAlertWithoutCause</text>
+<text x="750" y="321.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. A W0 to 0x3000_0000 with a bad command integrity</text>
+<text x="750" y="339.85" font-size="11" font-style="italic" fill="#2f5f9e">is a cause; a data mismatch is not</text>
+<text x="1103" y="450.2" font-size="12" font-weight="bold" fill="#2b2b2b" text-anchor="end">join: any one cause is enough for the fatal alert request</text>
+<text x="90" y="514.2" font-size="12" font-weight="bold" fill="#2b2b2b">The fatal alert request is raised</text>
+<text x="90" y="531.85" font-size="11" font-style="italic" fill="#2f5f9e">e.g. the alert request is high at some point after the d_error answer</text>
+<text x="58" y="616.55" font-size="13">A step: its rule, then the signals and asserts behind it</text>
+<text x="58" y="640.55" font-size="13">A decision on a signal</text>
+<text x="58" y="664.55" font-size="13">Error path</text>
+<text x="58" y="688.55" font-size="13">Start and end of one operation</text>
+<text x="10" y="730.2" font-size="12" fill="#7a7a7a">✓ the asserts that check the step (tpchk_checker.sv); blue: the worked example.</text>
+</svg>
+</svg>

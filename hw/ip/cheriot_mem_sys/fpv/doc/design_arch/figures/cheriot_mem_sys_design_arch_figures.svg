@@ -1,0 +1,267 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1052" height="2028" viewBox="0 0 1052 2028">
+<view id="fig1" viewBox="0 0 810 816"/>
+<view id="fig2" viewBox="0 836 1052 1192"/>
+<svg x="0" y="0" width="810" height="816" viewBox="-10 -10 810 816" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="-10" y="-10" width="810" height="816" fill="#ffffff"/>
+<rect x="250" y="0" width="380" height="620" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="520" y="680" width="211.62" height="116" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="0" y="30" width="100" height="50" rx="4" fill="#f3effa" stroke="#7e6bb5" stroke-width="1.2"/>
+<text x="50" y="59.9" font-size="14" text-anchor="middle">Ibex core</text>
+<rect x="290" y="30" width="170" height="50" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="375" y="51.15" font-size="14" text-anchor="middle">tag filter</text>
+<text x="375" y="68.65" font-size="14" text-anchor="middle">(core)</text>
+<rect x="670" y="30" width="120" height="50" rx="4" fill="#f3effa" stroke="#7e6bb5" stroke-width="1.2"/>
+<text x="730" y="59.9" font-size="14" font-family="monospace" text-anchor="middle">xbar_main</text>
+<rect x="290" y="130" width="170" height="50" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="375" y="159.9" font-size="14" text-anchor="middle">2:1 tag arbiter</text>
+<rect x="500" y="130" width="110" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="555" y="151.15" font-size="14" text-anchor="middle">TBRE</text>
+<text x="555" y="168.65" font-size="14" text-anchor="middle">tag filter</text>
+<rect x="290" y="230" width="170" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="375" y="259.9" font-size="14" text-anchor="middle">tag clear squash</text>
+<rect x="290" y="330" width="170" height="50" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="375" y="359.9" font-size="14" text-anchor="middle">RMW filter</text>
+<rect x="290" y="430" width="170" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="375" y="451.15" font-size="14" text-anchor="middle">access checker</text>
+<text x="375" y="468.65" font-size="14" text-anchor="middle">(tag regions)</text>
+<rect x="290" y="530" width="170" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="375" y="551.15" font-size="14" font-family="monospace" text-anchor="middle">tlul_socket_m1</text>
+<text x="375" y="568.65" font-size="14" font-family="monospace" text-anchor="middle">4:1</text>
+<rect x="500" y="530" width="110" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="555" y="551.15" font-size="14" text-anchor="middle">other 3</text>
+<text x="555" y="568.65" font-size="14" text-anchor="middle">checkers</text>
+<rect x="290" y="700" width="170" height="50" rx="4" fill="#f3effa" stroke="#7e6bb5" stroke-width="1.2"/>
+<text x="375" y="729.9" font-size="14" text-anchor="middle">meta SRAM</text>
+<polygon points="290,55 281,58.5 281,51.5" fill="#2b2b2b"/>
+<polyline points="100,55 282,55" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="670,55 661,58.5 661,51.5" fill="#2b2b2b"/>
+<polyline points="460,55 662,55" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="375,130 371.5,121 378.5,121" fill="#2b2b2b"/>
+<polyline points="375,80 375,122" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="460,155 469,151.5 469,158.5" fill="#2b2b2b"/>
+<polyline points="500,155 468,155" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="375,230 371.5,221 378.5,221" fill="#2b2b2b"/>
+<polyline points="375,180 375,222" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="375,330 371.5,321 378.5,321" fill="#2b2b2b"/>
+<polyline points="375,280 375,322" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="375,430 371.5,421 378.5,421" fill="#2b2b2b"/>
+<polyline points="375,380 375,422" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="375,530 371.5,521 378.5,521" fill="#2b2b2b"/>
+<polyline points="375,480 375,522" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="460,555 469,551.5 469,558.5" fill="#2b2b2b"/>
+<polyline points="500,555 468,555" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="375,700 371.5,691 378.5,691" fill="#2b2b2b"/>
+<polyline points="375,580 375,692" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="530" y="694" width="28" height="16" rx="2" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
+<rect x="530" y="718" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1"/>
+<rect x="530" y="742" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="530" y="766" width="28" height="16" rx="2" fill="#f3effa" stroke="#7e6bb5" stroke-width="1"/>
+<text x="258" y="20.68" font-size="13" font-weight="bold" fill="#444444">cheriot_mem_sys</text>
+<text x="195" y="47.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">cored_tl_d</text>
+<text x="565" y="47.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">cored_tl_h</text>
+<text x="379" y="109.2" font-size="12" font-family="monospace" fill="#2b2b2b">meta port</text>
+<text x="379" y="644.2" font-size="12" font-family="monospace" fill="#2b2b2b">meta_sram_tl</text>
+<text x="568" y="706.55" font-size="13">Verified in this plan</text>
+<text x="568" y="730.55" font-size="13">Other logic</text>
+<text x="568" y="754.55" font-size="13">Revocation Engine plan</text>
+<text x="568" y="778.55" font-size="13">Outside the subsystem</text>
+</svg>
+<svg x="0" y="836" width="1052" height="1192" viewBox="10 -10 1052 1192" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="10" y="-10" width="1052" height="1192" fill="#ffffff"/>
+<rect x="140" y="0" width="300" height="120" rx="6" fill="#ffffff" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="220" y="160" width="780" height="500" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="440" y="330" width="340" height="200" rx="6" fill="#f3effa" stroke="#7e6bb5" stroke-width="1"/>
+<rect x="20" y="960" width="258.43" height="212" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="360" y="960" width="602" height="200" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="160" y="45" width="110" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="215" y="74.9" font-size="14" font-weight="bold" text-anchor="middle">Ibex core</text>
+<rect x="290" y="45" width="130" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="355" y="68.03" font-size="14" font-weight="bold" text-anchor="middle">TRVK filter</text>
+<text x="355" y="82.6" font-size="11" fill="#5c5c5c" text-anchor="middle">load barrier</text>
+<rect x="280" y="230" width="150" height="60" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="355" y="258.02" font-size="14" font-weight="bold" text-anchor="middle">Tag filter</text>
+<text x="355" y="272.6" font-size="11" fill="#5c5c5c" text-anchor="middle">fork and join</text>
+<rect x="455" y="235" width="80" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="495" y="256.15" font-size="14" font-weight="bold" text-anchor="middle">2:1 tag</text>
+<text x="495" y="273.65" font-size="14" font-weight="bold" text-anchor="middle">arbiter</text>
+<rect x="555" y="235" width="90" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="600" y="256.15" font-size="14" font-weight="bold" text-anchor="middle">Tag clear</text>
+<text x="600" y="273.65" font-size="14" font-weight="bold" text-anchor="middle">squash</text>
+<rect x="665" y="235" width="100" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="715" y="264.9" font-size="14" font-weight="bold" text-anchor="middle">RMW filter</text>
+<rect x="800" y="180" width="110" height="40" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="855" y="198.03" font-size="14" font-weight="bold" text-anchor="middle">Checker</text>
+<text x="855" y="212.6" font-size="11" fill="#5c5c5c" text-anchor="middle">core TRVK</text>
+<rect x="800" y="235" width="110" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="855" y="258.02" font-size="14" font-weight="bold" text-anchor="middle">Checker</text>
+<text x="855" y="272.6" font-size="11" fill="#5c5c5c" text-anchor="middle">tags</text>
+<rect x="800" y="320" width="110" height="40" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="855" y="338.02" font-size="14" font-weight="bold" text-anchor="middle">Checker</text>
+<text x="855" y="352.6" font-size="11" fill="#5c5c5c" text-anchor="middle">TBRE TRVK</text>
+<rect x="800" y="390" width="110" height="40" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="855" y="408.02" font-size="14" font-weight="bold" text-anchor="middle">Checker</text>
+<text x="855" y="422.6" font-size="11" fill="#5c5c5c" text-anchor="middle">window</text>
+<rect x="935" y="175" width="40" height="260" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="955" y="309.9" font-size="14" text-anchor="middle">4:1</text>
+<rect x="368" y="380" width="60" height="40" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="398" y="404.9" font-size="14" font-weight="bold" text-anchor="middle">CSRs</text>
+<rect x="555" y="380" width="90" height="40" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="600" y="404.9" font-size="14" font-weight="bold" text-anchor="middle">Engine</text>
+<rect x="665" y="380" width="90" height="40" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="710" y="404.9" font-size="14" font-weight="bold" text-anchor="middle">TRVK</text>
+<rect x="455" y="460" width="150" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="530" y="483.02" font-size="14" font-weight="bold" text-anchor="middle">Tag filter</text>
+<text x="530" y="497.6" font-size="11" fill="#5c5c5c" text-anchor="middle">tag-only writes</text>
+<rect x="20" y="720" width="130" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="85" y="743.02" font-size="14" font-weight="bold" text-anchor="middle">Debug</text>
+<text x="85" y="757.6" font-size="11" fill="#5c5c5c" text-anchor="middle">SBA host</text>
+<rect x="180" y="720" width="720" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="540" y="749.9" font-size="14" font-family="monospace" font-weight="bold" text-anchor="middle">xbar_main</text>
+<rect x="190" y="835" width="110" height="60" rx="4" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="245" y="863.02" font-size="14" font-weight="bold" text-anchor="middle">ROM</text>
+<text x="245" y="877.6" font-size="11" fill="#5c5c5c" text-anchor="middle">192 KiB</text>
+<rect x="320" y="835" width="120" height="60" rx="4" fill="#fff6e0" stroke="#c99a2e" stroke-width="1.2"/>
+<text x="380" y="863.02" font-size="14" font-weight="bold" text-anchor="middle">Main SRAM</text>
+<text x="380" y="877.6" font-size="11" fill="#5c5c5c" text-anchor="middle">128 KiB</text>
+<rect x="460" y="835" width="160" height="60" rx="4" fill="#fff6e0" stroke="#c99a2e" stroke-width="1.2"/>
+<text x="540" y="863.02" font-size="14" font-weight="bold" text-anchor="middle">Secondary SRAM</text>
+<text x="540" y="877.6" font-size="11" fill="#5c5c5c" text-anchor="middle">64 KiB</text>
+<rect x="640" y="835" width="130" height="60" rx="4" fill="#fff6e0" stroke="#c99a2e" stroke-width="1.2"/>
+<text x="705" y="863.02" font-size="14" font-weight="bold" text-anchor="middle">NVM (RRAM)</text>
+<text x="705" y="877.6" font-size="11" fill="#5c5c5c" text-anchor="middle">2 MiB</text>
+<rect x="875" y="835" width="160" height="60" rx="4" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="955" y="863.02" font-size="14" font-weight="bold" text-anchor="middle">Meta SRAM</text>
+<text x="955" y="877.6" font-size="11" fill="#5c5c5c" text-anchor="middle">bitmap and tags</text>
+<polygon points="290,70 281,73.5 281,66.5" fill="#b0127a"/>
+<polyline points="270,70 282,70" fill="none" stroke="#b0127a" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="355,230 351.5,221 358.5,221" fill="#b0127a"/>
+<polyline points="355,95 355,222" fill="none" stroke="#b0127a" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="200,720 196.5,711 203.5,711" fill="#2b2b2b"/>
+<polyline points="200,95 200,712" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="355,720 351.5,711 358.5,711" fill="#2b2b2b"/>
+<polyline points="355,290 355,712" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="855,180 851.5,171 858.5,171" fill="#2b2b2b"/>
+<polyline points="420,70 855,70 855,172" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="455,260 446,263.5 446,256.5" fill="#b0127a"/>
+<polyline points="430,260 447,260" fill="none" stroke="#b0127a" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="555,260 546,263.5 546,256.5" fill="#b0127a"/>
+<polyline points="535,260 547,260" fill="none" stroke="#b0127a" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="665,260 656,263.5 656,256.5" fill="#b0127a"/>
+<polyline points="645,260 657,260" fill="none" stroke="#b0127a" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="800,260 791,263.5 791,256.5" fill="#2b2b2b"/>
+<polyline points="765,260 792,260" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="665,400 656,403.5 656,396.5" fill="#b0127a"/>
+<polyline points="645,400 657,400" fill="none" stroke="#b0127a" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="605,485 614,481.5 614,488.5" fill="#b0127a"/>
+<polyline points="710,420 710,485 613,485" fill="none" stroke="#b0127a" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="540,460 536.5,451 543.5,451" fill="#b0127a"/>
+<polyline points="600,420 600,440 540,440 540,452" fill="none" stroke="#b0127a" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="495,285 498.5,294 491.5,294" fill="#b0127a"/>
+<polyline points="495,460 495,293" fill="none" stroke="#b0127a" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="600,285 603.5,294 596.5,294" fill="#7a7a7a"/>
+<polyline points="600,380 600,293" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
+<polygon points="800,340 791,343.5 791,336.5" fill="#2b2b2b"/>
+<polyline points="755,400 790,400 790,340 792,340" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="530,720 526.5,711 533.5,711" fill="#2b2b2b"/>
+<polyline points="530,510 530,712" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="935,200 926,203.5 926,196.5" fill="#2b2b2b"/>
+<polyline points="910,200 927,200" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="935,260 926,263.5 926,256.5" fill="#2b2b2b"/>
+<polyline points="910,260 927,260" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="935,340 926,343.5 926,336.5" fill="#2b2b2b"/>
+<polyline points="910,340 927,340" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="935,410 926,413.5 926,406.5" fill="#2b2b2b"/>
+<polyline points="910,410 927,410" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="955,835 951.5,826 958.5,826" fill="#2b2b2b"/>
+<polyline points="955,435 955,827" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="180,745 171,748.5 171,741.5" fill="#2b2b2b"/>
+<polyline points="150,745 172,745" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="398,420 401.5,429 394.5,429" fill="#2b2b2b"/>
+<polyline points="398,720 398,428" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="428,400 437,396.5 437,403.5" fill="#7a7a7a"/>
+<polygon points="555,400 546,403.5 546,396.5" fill="#7a7a7a"/>
+<polyline points="436,400 547,400" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
+<polygon points="855,430 858.5,439 851.5,439" fill="#2b2b2b"/>
+<polyline points="855,720 855,438" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="245,835 241.5,826 248.5,826" fill="#2b2b2b"/>
+<polyline points="245,770 245,827" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="380,835 376.5,826 383.5,826" fill="#2b2b2b"/>
+<polyline points="380,770 380,827" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="540,835 536.5,826 543.5,826" fill="#2b2b2b"/>
+<polyline points="540,770 540,827" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="705,835 701.5,826 708.5,826" fill="#2b2b2b"/>
+<polyline points="705,770 705,827" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="30" y="974" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1"/>
+<rect x="30" y="998" width="28" height="16" rx="2" fill="#f3effa" stroke="#7e6bb5" stroke-width="1"/>
+<rect x="30" y="1022" width="28" height="16" rx="2" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1"/>
+<rect x="30" y="1046" width="28" height="16" rx="2" fill="#fff6e0" stroke="#c99a2e" stroke-width="1"/>
+<polygon points="44,1072 50,1078 44,1084 38,1078" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<line x1="30" y1="1102" x2="58" y2="1102" fill="none" stroke="#2b2b2b" stroke-width="1.4"/>
+<line x1="30" y1="1126" x2="58" y2="1126" fill="none" stroke="#b0127a" stroke-width="1.4"/>
+<line x1="30" y1="1150" x2="58" y2="1150" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3"/>
+<line x1="370" y1="1018" x2="952" y2="1018" stroke="#9a9a9a" stroke-width="1"/>
+<line x1="370" y1="1040" x2="952" y2="1040" stroke="#e3e3e3" stroke-width="1"/>
+<line x1="370" y1="1062" x2="952" y2="1062" stroke="#e3e3e3" stroke-width="1"/>
+<line x1="370" y1="1084" x2="952" y2="1084" stroke="#e3e3e3" stroke-width="1"/>
+<line x1="370" y1="1106" x2="952" y2="1106" stroke="#e3e3e3" stroke-width="1"/>
+<line x1="370" y1="1128" x2="952" y2="1128" stroke="#e3e3e3" stroke-width="1"/>
+<text x="148" y="20.68" font-size="13" font-family="monospace" font-weight="bold" fill="#444444">rv_core_ibex</text>
+<text x="228" y="180.68" font-size="13" font-family="monospace" font-weight="bold" fill="#444444">cheriot_mem_sys</text>
+<text x="448" y="350.68" font-size="13" font-weight="bold" fill="#5a4a96">TBRE</text>
+<text x="470" y="919.2" font-size="12" fill="#5c5c5c" text-anchor="middle">one tag region, 192 KiB</text>
+<text x="190" y="404.2" font-size="12" font-family="monospace" fill="#2b2b2b" transform="rotate(-90 190 400)">instruction fetch</text>
+<text x="608" y="312.2" font-size="12" font-family="monospace" fill="#5c5c5c">clear, watch</text>
+<text x="465" y="384.2" font-size="12" font-family="monospace" fill="#5c5c5c" text-anchor="middle">TBRE_*</text>
+<polygon points="355,154 361,160 355,166 349,160" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="365" y="150.2" font-size="12" font-family="monospace" fill="#2b2b2b">cored_tl_d</text>
+<polygon points="855,154 861,160 855,166 849,160" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="865" y="150.2" font-size="12" font-family="monospace" fill="#2b2b2b">corerevbm_tl</text>
+<polygon points="398,654 404,660 398,666 392,660" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="408" y="680.2" font-size="12" font-family="monospace" fill="#2b2b2b">regs_tl_d</text>
+<polygon points="355,654 361,660 355,666 349,660" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="345" y="680.2" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="end">cored_tl_h</text>
+<polygon points="530,654 536,660 530,666 524,660" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="540" y="680.2" font-size="12" font-family="monospace" fill="#2b2b2b">tbre_tl_h, read-only</text>
+<polygon points="855,654 861,660 855,666 849,660" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="865" y="680.2" font-size="12" font-family="monospace" fill="#2b2b2b">revbm_tl_d</text>
+<polygon points="955,654 961,660 955,666 949,660" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="965" y="680.2" font-size="12" font-family="monospace" fill="#2b2b2b">meta_sram_tl</text>
+<text x="68" y="986.55" font-size="13">Logic</text>
+<text x="68" y="1010.55" font-size="13">Revocation engine (TBRE)</text>
+<text x="68" y="1034.55" font-size="13">Memory</text>
+<text x="68" y="1058.55" font-size="13">Memory that holds capabilities</text>
+<text x="68" y="1082.55" font-size="13">Port of cheriot_mem_sys</text>
+<text x="68" y="1106.55" font-size="13">TL-UL</text>
+<text x="68" y="1130.55" font-size="13">TL-UL with the capability tag</text>
+<text x="68" y="1154.55" font-size="13">Watch and control</text>
+<text x="370" y="983.55" font-size="13" font-weight="bold">Address map, as seen from xbar_main</text>
+<text x="370" y="1011.2" font-size="12" font-weight="bold">Memory</text>
+<text x="490" y="1011.2" font-size="12" font-weight="bold">Address range</text>
+<text x="690" y="1011.2" font-size="12" font-weight="bold">Size</text>
+<text x="760" y="1011.2" font-size="12" font-weight="bold">Its tags in the meta SRAM</text>
+<text x="370" y="1033.2" font-size="12">ROM</text>
+<text x="490" y="1033.2" font-size="12" font-family="monospace">0x0004_0000-0x0006_FFFF</text>
+<text x="690" y="1033.2" font-size="12">192 KiB</text>
+<text x="760" y="1033.2" font-size="12" font-family="monospace">none</text>
+<text x="370" y="1055.2" font-size="12">Main SRAM</text>
+<text x="490" y="1055.2" font-size="12" font-family="monospace">0x1000_0000-0x1001_FFFF</text>
+<text x="690" y="1055.2" font-size="12">128 KiB</text>
+<text x="760" y="1055.2" font-size="12" font-family="monospace">0x1100_8C00-0x1100_93FF</text>
+<text x="370" y="1077.2" font-size="12">Secondary SRAM</text>
+<text x="490" y="1077.2" font-size="12" font-family="monospace">0x1002_0000-0x1002_FFFF</text>
+<text x="690" y="1077.2" font-size="12">64 KiB</text>
+<text x="760" y="1077.2" font-size="12" font-family="monospace">0x1100_9400-0x1100_97FF</text>
+<text x="370" y="1099.2" font-size="12">NVM (RRAM)</text>
+<text x="490" y="1099.2" font-size="12" font-family="monospace">0x3000_0000-0x301F_FFFF</text>
+<text x="690" y="1099.2" font-size="12">2 MiB</text>
+<text x="760" y="1099.2" font-size="12" font-family="monospace">0x1100_0C00-0x1100_8BFF</text>
+<text x="370" y="1121.2" font-size="12">Bitmap window</text>
+<text x="490" y="1121.2" font-size="12" font-family="monospace">0x1100_0000-0x1100_0BFF</text>
+<text x="690" y="1121.2" font-size="12">3 KiB</text>
+<text x="760" y="1121.2" font-size="12" font-family="monospace">it is the bitmap</text>
+<text x="370" y="1143.2" font-size="12">Meta SRAM</text>
+<text x="490" y="1143.2" font-size="12" font-family="monospace">not on xbar_main</text>
+<text x="690" y="1143.2" font-size="12">38 KiB</text>
+<text x="760" y="1143.2" font-size="12" font-family="monospace">-</text>
+</svg>
+</svg>
