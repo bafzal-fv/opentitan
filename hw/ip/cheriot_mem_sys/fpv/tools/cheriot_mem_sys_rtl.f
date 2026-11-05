@@ -1,0 +1,67 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+//
+// The RTL of cheriot_mem_sys and its packages, in compile order, relative to the repo root.
+// tools/verify.sh reads it for lint and writes the Jasper file list from it.
++incdir+hw/ip/prim/rtl
+hw/top_earlgrey/rtl/top_pkg.sv
+hw/ip/prim/rtl/prim_util_pkg.sv
+hw/ip/prim/rtl/prim_mubi_pkg.sv
+hw/ip/prim/rtl/prim_secded_pkg.sv
+hw/ip/prim/rtl/prim_count_pkg.sv
+hw/ip/prim/rtl/prim_subreg_pkg.sv
+hw/ip/prim/rtl/prim_alert_pkg.sv
+hw/ip/tlul/rtl/tlul_pkg.sv
+hw/vendor/lowrisc_ibex/rtl/ibex_cheriot_pkg.sv
+hw/ip/cheriot_mem_sys/rtl/cheriot_mem_sys_reg_pkg.sv
+hw/ip/cheriot_mem_sys/rtl/cheriot_mem_sys.sv
+hw/ip/prim/rtl/prim_alert_sender.sv
+hw/ip/prim/rtl/prim_sec_anchor_flop.sv
+hw/ip/prim_generic/rtl/prim_flop.sv
+hw/ip/prim/rtl/prim_sec_anchor_buf.sv
+hw/ip/prim_generic/rtl/prim_buf.sv
+hw/ip/prim/rtl/prim_diff_decode.sv
+hw/ip/prim_generic/rtl/prim_xnor2.sv
+hw/ip/prim_generic/rtl/prim_flop_2sync.sv
+hw/ip/prim/rtl/prim_cdc_rand_delay.sv
+hw/ip/cheriot_mem_sys/rtl/cheriot_tbre.sv
+hw/ip/cheriot_mem_sys/rtl/cheriot_tag_filter.sv
+hw/ip/cheriot_mem_sys/rtl/cheriot_wtrc.sv
+hw/ip/tlul/rtl/tlul_rsp_intg_gen.sv
+hw/ip/tlul/rtl/tlul_data_integ_enc.sv
+hw/ip/prim/rtl/prim_secded_inv_39_32_enc.sv
+hw/ip/prim/rtl/prim_secded_inv_64_57_enc.sv
+hw/ip/tlul/rtl/tlul_rsp_intg_chk.sv
+hw/ip/tlul/rtl/tlul_data_integ_dec.sv
+hw/ip/prim/rtl/prim_secded_inv_39_32_dec.sv
+hw/ip/prim/rtl/prim_secded_inv_64_57_dec.sv
+hw/ip/prim/rtl/prim_fifo_sync.sv
+hw/ip/prim/rtl/prim_fifo_sync_cnt.sv
+hw/ip/prim/rtl/prim_count.sv
+hw/ip/tlul/rtl/tlul_cmd_intg_chk.sv
+hw/vendor/pulp_common_cells/rtl/stream_join_dynamic.sv
+hw/vendor/pulp_common_cells/rtl/stream_fork_dynamic.sv
+hw/vendor/pulp_common_cells/rtl/stream_fork.sv
+hw/ip/cheriot_mem_sys/rtl/cheriot_socket_m1.sv
+hw/ip/prim/rtl/prim_arbiter_tree.sv
+hw/ip/prim/rtl/prim_arbiter_ppc.sv
+hw/ip/prim/rtl/prim_leading_one_ppc.sv
+hw/ip/tlul/rtl/tlul_fifo_sync.sv
+hw/ip/cheriot_mem_sys/rtl/cheriot_trvk_tlul.sv
+hw/ip/cheriot_mem_sys/rtl/cheriot_trvk_core.sv
+hw/ip/cheriot_mem_sys/rtl/cheriot_tbre_mover.sv
+hw/ip/prim/rtl/prim_intr_hw.sv
+hw/ip/tlul/rtl/tlul_socket_m1.sv
+hw/ip/cheriot_mem_sys/rtl/cheriot_access_check.sv
+hw/ip/tlul/rtl/tlul_err_resp.sv
+hw/ip/tlul/rtl/tlul_socket_1n.sv
+hw/ip/cheriot_mem_sys/rtl/cheriot_rmw_filter.sv
+hw/ip/cheriot_mem_sys/rtl/cheriot_mem_sys_regs_reg_top.sv
+hw/ip/prim/rtl/prim_subreg_ext.sv
+hw/ip/prim/rtl/prim_subreg.sv
+hw/ip/prim/rtl/prim_subreg_arb.sv
+hw/ip/tlul/rtl/tlul_adapter_reg.sv
+hw/ip/tlul/rtl/tlul_err.sv
+hw/ip/prim/rtl/prim_reg_we_check.sv
+hw/ip/prim/rtl/prim_onehot_check.sv
