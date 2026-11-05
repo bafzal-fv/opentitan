@@ -1,0 +1,28 @@
+CAPI=2:
+# Copyright lowRISC contributors (OpenTitan project).
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+name: "lowrisc:fpv:tlul_abvip_selfcheck_fpv"
+description: "Self-check of the TL-UL ABVIP: one instance of each role on one free link"
+
+filesets:
+  files_formal:
+    depend:
+      - lowrisc:dv:tlul_abvip
+    files:
+      - tlul_abvip_selfcheck.sv
+    file_type: systemVerilogSource
+
+targets:
+  default: &default_target
+    # Only makes the file list for Jasper.
+    default_tool: icarus
+    filesets:
+      - files_formal
+    toplevel: tlul_abvip_selfcheck
+
+  formal:
+    <<: *default_target
+
+  lint:
+    <<: *default_target
