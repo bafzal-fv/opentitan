@@ -12,7 +12,22 @@
   rel_path:     "hw/ip/cheriot_mem_sys/{sub_flow}/{tool}/{name}"
   cov:          false
 
+  // LOCAL ONLY, not for an upstream pull request: Jasper runs the check script's dvsim wrapper
+  // instead of fpv.tcl. dvsim takes MEMSYS_JG_SCRIPT (the wrapper's path) and MEMSYS_JG_DIR (its
+  // folder, exported as FPV_DIR) from the environment, and stops with an unknown-wildcard error
+  // when either is unset.
+  overrides: [
+    {
+      name:  build_opts
+      value: ["{batch_mode_prefix} {MEMSYS_JG_SCRIPT}",
+              "-proj jgproject",
+              "-allow_unsupported_OS"]
+    }
+  ]
+
   exports: [
+    // LOCAL ONLY: the check script's folder.
+    { FPV_DIR: "{MEMSYS_JG_DIR}" },
     // The file list fusesoc writes where Jasper runs.
     { FILES:   "lowrisc_fpv_cheriot_mem_sys_fpv_0.1.scr" },
     // ProofMaster and the prove cache off: a regression result is one to report.

@@ -52,7 +52,10 @@ interface, and the other assumes it. The TB architecture lists them, in its Cont
    dvsim hw/ip/cheriot_mem_sys/fpv/cheriot_mem_sys_fpv_cfgs.hjson --gui    # the Jasper GUI
    ```
 
-   The formal tool's task script is kept outside this repository.
+   The formal tool's task script is kept outside this repository. Local only, not for an
+   upstream pull request: the dvsim cfg takes the script's path from `MEMSYS_JG_SCRIPT` and its
+   folder from `MEMSYS_JG_DIR`; export both before running dvsim (the private repository's
+   `run_memsys_fpv.sh` does). Unset, dvsim stops with an unknown-wildcard error.
 
 | dvsim run | Formal task |
 |---|---|
