@@ -25,6 +25,10 @@ filesets:
     files:
       - pinmux_fpv_regmap_pkg.sv
       - regwen_chk.sv
+% if enable_strap_sampling:
+      - jtag_tap_chk.sv
+      - pinmux_jtag_harness.sv
+% endif
     file_type: systemVerilogSource
 
 generate:
