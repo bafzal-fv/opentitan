@@ -1,0 +1,117 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+{
+  name: "pinmux"
+  // Each testpoint is one section of the pinmux FPV testplan document, which states its
+  // rule, checks, cases and edge cases. The register block is checked by the generated
+  // CSR checker (imported testplan).
+  import_testplans: ["hw/dv/tools/dvsim/testplans/fpv_csr_testplan.hjson"]
+  testpoints: [
+    {
+      name: pad_listen
+      desc: '''Every peripheral input reads what its select names.'''
+      stage: V1
+      tests: ["pinmux_env_fpv"]
+    }
+    {
+      name: pad_output
+      desc: '''Every awake pad drives what its select names.'''
+      stage: V1
+      tests: ["pinmux_env_fpv"]
+    }
+    {
+      name: pad_sleep
+      desc: '''A pad in sleep mode holds its sleep value until software releases it.'''
+      stage: V2
+      tests: ["pinmux_env_fpv"]
+    }
+    {
+      name: pad_attr
+      desc: '''A pad gets exactly the attributes software reads back.'''
+      stage: V2
+      tests: ["pinmux_env_fpv"]
+    }
+    {
+      name: regwen
+      desc: '''A lock closes once and freezes its registers.'''
+      stage: V2
+      tests: ["pinmux_env_fpv"]
+    }
+    {
+      name: bus
+      desc: '''Every request is answered by the TL-UL rules, with correct integrity codes.'''
+      stage: V2
+      tests: ["pinmux_env_fpv"]
+    }
+    {
+      name: alert
+      desc: '''The fatal alert follows a bus integrity error or an alert test, and nothing else.'''
+      stage: V2S
+      tests: ["pinmux_env_fpv"]
+    }
+    {
+      name: wakeup
+      desc: '''Each detector sets its cause bit on its pattern, and only then.'''
+      stage: V2
+      tests: ["pinmux_env_fpv"]
+    }
+    {
+      name: usb_conn
+      desc: '''Every module port carries the pinmux signal of the same role.'''
+      stage: V2
+      tests: ["pinmux_env_fpv"]
+    }
+    {
+      name: strap
+      desc: '''Each TAP strap is sampled when the life cycle allows and holds otherwise.'''
+      stage: V2S
+      tests: ["pinmux_env_fpv"]
+    }
+    {
+      name: dft_strap
+      desc: '''The DFT straps are sampled once at boot in the test states and held.'''
+      stage: V2S
+      tests: ["pinmux_env_fpv"]
+    }
+    {
+      name: latch
+      desc: '''The debug permission is taken at boot, cleared on a transition, kept otherwise.'''
+      stage: V2S
+      tests: ["pinmux_env_fpv"]
+    }
+    {
+      name: jtag
+      desc: '''The TAP the straps ask for is connected only while its gate allows.'''
+      stage: V2S
+      tests: ["pinmux_env_fpv"]
+    }
+    {
+      name: jtag_pad
+      desc: '''While a TAP is connected, the five JTAG pads belong to it.'''
+      stage: V2
+      tests: ["pinmux_env_fpv"]
+    }
+    {
+      name: reset_state
+      desc: '''Every input reads 0 and every MIO pad is high-Z out of reset. This follows from
+             the other testpoints of this environment; the testplan names the premises.'''
+      stage: V2
+      tests: ["pinmux_env_fpv"]
+    }
+    {
+      name: lock_effect
+      desc: '''A locked setting keeps its effect. This follows from the other testpoints of this
+             environment; the testplan names the premises.'''
+      stage: V2
+      tests: ["pinmux_env_fpv"]
+    }
+    {
+      name: jtag_free_pads
+      desc: '''The JTAG pads are ordinary pads while no TAP is connected. This follows from the
+             other testpoints of this environment; the testplan names the premises.'''
+      stage: V2
+      tests: ["pinmux_env_fpv"]
+    }
+  ]
+}
