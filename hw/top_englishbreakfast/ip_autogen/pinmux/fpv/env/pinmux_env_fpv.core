@@ -25,6 +25,8 @@ filesets:
     files:
       - pinmux_fpv_regmap_pkg.sv
       - regwen_chk.sv
+      - pad_listen_chk.sv
+      - pinmux_listen_harness.sv
       - jtag_tap_chk.sv
       - pinmux_jtag_harness.sv
     file_type: systemVerilogSource

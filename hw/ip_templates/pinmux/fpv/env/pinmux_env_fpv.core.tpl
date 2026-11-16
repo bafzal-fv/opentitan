@@ -25,6 +25,8 @@ filesets:
     files:
       - pinmux_fpv_regmap_pkg.sv
       - regwen_chk.sv
+      - pad_listen_chk.sv
+      - pinmux_listen_harness.sv
 % if enable_strap_sampling:
       - jtag_tap_chk.sv
       - pinmux_jtag_harness.sv
