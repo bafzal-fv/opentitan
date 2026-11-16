@@ -158,6 +158,13 @@
                rel_path: "hw/top_earlgrey/ip_autogen/pinmux/fpv/lint/{tool}"
              }
              {
+               name: pinmux_env_fpv
+               fusesoc_core: lowrisc:earlgrey_fpv:pinmux_env_fpv
+               import_cfgs: ["{proj_root}/hw/lint/tools/dvsim/common_lint_cfg.hjson"]
+               additional_fusesoc_argument: "--mapping=lowrisc:systems:top_earlgrey:0.1"
+               rel_path: "hw/top_earlgrey/ip_autogen/pinmux/fpv/env/lint/{tool}"
+             }
+             {
                name: top_earlgrey_rv_plic_fpv
                fusesoc_core: lowrisc:earlgrey_ip:rv_plic_fpv
                import_cfgs: ["{proj_root}/hw/lint/tools/dvsim/common_lint_cfg.hjson"]

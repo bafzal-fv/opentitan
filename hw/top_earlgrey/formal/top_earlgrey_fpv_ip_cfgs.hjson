@@ -43,6 +43,32 @@
                exp_fail_hjson: "{proj_root}/hw/top_earlgrey/ip_autogen/pinmux/fpv/pinmux_chip_expected_failure.hjson"
              }
 
+             // Pinmux FPV environment bound into pinmux (fpv/env): the main run, both clocks at
+             // one rate and one reset at the start.
+             {
+               name: pinmux_env_fpv
+               dut: pinmux
+               fusesoc_core: lowrisc:earlgrey_fpv:pinmux_env_fpv
+               import_cfgs: ["{proj_root}/hw/formal/tools/dvsim/common_fpv_cfg.hjson"]
+               rel_path: "hw/top_earlgrey/ip_autogen/pinmux/{sub_flow}/{tool}/env"
+               defines: "FPV_ALERT_NO_SIGINT_ERR"
+               cov: true
+               // "-batch", or empty under dvsim --gui, so a run can tell batch from GUI.
+               exports: [{JG_BATCH_MODE: "{batch_mode_prefix}"}, {PINMUX_FPV_RUN: "main"}]
+             }
+
+             // The same environment with the always-on clock at a quarter of the main clock.
+             {
+               name: pinmux_env_fpv_slow_aon
+               dut: pinmux
+               fusesoc_core: lowrisc:earlgrey_fpv:pinmux_env_fpv
+               import_cfgs: ["{proj_root}/hw/formal/tools/dvsim/common_fpv_cfg.hjson"]
+               rel_path: "hw/top_earlgrey/ip_autogen/pinmux/{sub_flow}/{tool}/env_slow_aon"
+               defines: "FPV_ALERT_NO_SIGINT_ERR+PINMUX_FPV_AON_RATIO=4"
+               cov: false
+               exports: [{JG_BATCH_MODE: "{batch_mode_prefix}"}, {PINMUX_FPV_RUN: "slow_aon"}]
+             }
+
              {
                name: rv_plic_fpv
                dut: rv_plic_tb
