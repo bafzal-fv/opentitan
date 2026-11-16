@@ -30,6 +30,7 @@ filesets:
       - pinmux_output_harness.sv
       - wkup_detector_chk.sv
       - pinmux_wakeup_harness.sv
+      - pinmux_usb_harness.sv
 % if enable_strap_sampling:
       - jtag_tap_chk.sv
       - pinmux_jtag_harness.sv
