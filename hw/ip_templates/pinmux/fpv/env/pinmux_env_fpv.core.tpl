@@ -27,6 +27,7 @@ filesets:
       - regwen_chk.sv
       - pad_listen_chk.sv
       - pinmux_listen_harness.sv
+      - pinmux_output_harness.sv
 % if enable_strap_sampling:
       - jtag_tap_chk.sv
       - pinmux_jtag_harness.sv
