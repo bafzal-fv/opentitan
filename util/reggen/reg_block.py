@@ -15,7 +15,8 @@ from reggen.clocking import Clocking, ClockingItem
 from reggen.field import Field
 from reggen.interrupt import Interrupt, IntrType
 from reggen.signal import Signal
-from reggen.lib import check_int, check_list, check_str_dict, check_str
+from reggen.lib import (check_int, check_list, check_str_dict, check_str,
+                        get_basename)
 from reggen.multi_register import MultiRegister, EmptyMultiRegException
 from reggen.params import ReggenParams
 from reggen.register import Register
@@ -663,6 +664,63 @@ class RegBlock:
     def get_addr_width(self) -> int:
         '''Calculate the number of bits to address every byte of the block'''
         return (self.offset - 1).bit_length()
+
+    def field_inst_names(self) -> dict[tuple[Register, Field], tuple[str, str]]:
+        '''Return the names every generator uses for each field of the block
+
+        The result maps (register, field) to (fsig_name, finst_name): fsig_name
+        is the path used to index into the hw2reg / reg2hw structures (such as
+        "my_reg.my_field" or "my_multireg[3]") and finst_name is the name
+        prefixed onto local signals and the subreg instance (such as
+        "my_reg_my_field"). reg_top.sv.tpl and the FPV CSR templates share it,
+        so the RTL's instance paths and the generated checker always agree.
+        '''
+        finst_names = {}
+        for r in self.all_regs:
+            if isinstance(r, MultiRegister):
+                r0 = r.pregs[0]
+                srs = r.cregs
+            else:
+                r0 = r
+                srs = [r]
+
+            reg_name = r0.name.lower()
+            fld_count = 0
+            for sr_idx, sr in enumerate(srs):
+                sr_name = sr.name.lower()
+                for fld in sr.fields:
+                    if isinstance(r, MultiRegister):
+                        sig_idx = fld_count if r.is_homogeneous() else sr_idx
+                        fsig_pfx = '{}[{}]'.format(reg_name, sig_idx)
+                    else:
+                        fsig_pfx = reg_name
+
+                    fld_count += 1
+
+                    fld_name = fld.name.lower()
+                    if len(sr.fields) == 1:
+                        finst_name = sr_name
+                        fsig_name = fsig_pfx
+                    else:
+                        finst_name = sr_name + '_' + fld_name
+                        if isinstance(r, MultiRegister):
+                            if r.is_homogeneous():
+                                fsig_name = fsig_pfx
+                            else:
+                                fsig_name = '{}.{}'.format(
+                                    fsig_pfx, get_basename(fld_name))
+                        else:
+                            fsig_name = '{}.{}'.format(fsig_pfx, fld_name)
+
+                    # The inregwen field is internal
+                    if (not isinstance(r, MultiRegister) and
+                            sr.inregwen is not None and
+                            sr.is_homogeneous(inregwen=True)):
+                        fsig_name = fsig_pfx
+
+                    finst_names[(sr, fld)] = (fsig_name, finst_name)
+
+        return finst_names
 
     def has_shadowed_reg(self) -> bool:
         '''Returns true if reg block contains shadowed regs'''
