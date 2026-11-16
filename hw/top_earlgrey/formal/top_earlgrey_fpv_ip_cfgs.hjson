@@ -55,6 +55,16 @@
                cov: true
                // "-batch", or empty under dvsim --gui, so a run can tell batch from GUI.
                exports: [{JG_BATCH_MODE: "{batch_mode_prefix}"}, {PINMUX_FPV_RUN: "main"}]
+               // LOCAL ONLY, not for an upstream pull request: Jasper runs the script that
+               // PINMUX_JG_SCRIPT names (taken from the environment) instead of fpv.tcl.
+               overrides: [
+                 {
+                   name:  "build_opts"
+                   value: ["{batch_mode_prefix} {PINMUX_JG_SCRIPT}",
+                           "-proj jgproject",
+                           "-allow_unsupported_OS"]
+                 }
+               ]
              }
 
              // The same environment with the always-on clock at a quarter of the main clock.
@@ -67,6 +77,16 @@
                defines: "FPV_ALERT_NO_SIGINT_ERR+PINMUX_FPV_AON_RATIO=4"
                cov: false
                exports: [{JG_BATCH_MODE: "{batch_mode_prefix}"}, {PINMUX_FPV_RUN: "slow_aon"}]
+               // LOCAL ONLY, not for an upstream pull request: Jasper runs the script that
+               // PINMUX_JG_SCRIPT names (taken from the environment) instead of fpv.tcl.
+               overrides: [
+                 {
+                   name:  "build_opts"
+                   value: ["{batch_mode_prefix} {PINMUX_JG_SCRIPT}",
+                           "-proj jgproject",
+                           "-allow_unsupported_OS"]
+                 }
+               ]
              }
 
              {
