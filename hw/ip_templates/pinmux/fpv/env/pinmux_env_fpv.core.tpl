@@ -35,6 +35,8 @@ filesets:
       - jtag_tap_chk.sv
       - pinmux_jtag_harness.sv
 % endif
+      - pinmux_fpv_env.sv
+      - pinmux_fpv_env_bind.sv
     file_type: systemVerilogSource
 
 generate:

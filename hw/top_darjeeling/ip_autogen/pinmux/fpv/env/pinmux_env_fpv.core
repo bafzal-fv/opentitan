@@ -31,6 +31,8 @@ filesets:
       - wkup_detector_chk.sv
       - pinmux_wakeup_harness.sv
       - pinmux_usb_harness.sv
+      - pinmux_fpv_env.sv
+      - pinmux_fpv_env_bind.sv
     file_type: systemVerilogSource
 
 generate:
