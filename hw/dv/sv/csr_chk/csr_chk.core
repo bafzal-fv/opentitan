@@ -1,0 +1,22 @@
+CAPI=2:
+# Copyright lowRISC contributors (OpenTitan project).
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+name: "lowrisc:dv:csr_chk"
+description: "Rules package of the generated CSR checkers (<ip>_csr_chk)"
+
+filesets:
+  files_dv:
+    depend:
+      - lowrisc:virtual_constants:top_pkg
+      - lowrisc:prim:mubi_pkg
+      - lowrisc:tlul:headers
+      - lowrisc:dv:tlul_abvip
+    files:
+      - csr_chk_pkg.sv
+    file_type: systemVerilogSource
+
+targets:
+  default:
+    filesets:
+      - files_dv
