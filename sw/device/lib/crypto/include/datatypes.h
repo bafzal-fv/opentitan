@@ -564,8 +564,10 @@ enum {
   sizeof(otcrypto_key_config_t) / sizeof(uint32_t) +
   /* checksum and keyblob_length fields */
   2 +
-  /* RSA-4096 keyblob: 2 shares of 512 bytes each */
-  2 * (4096 / 8 / sizeof(uint32_t)) +
+  /* RSA-4096 keyblob: d0, d1, n (512 bytes each) and 32-bit checksum */
+  3 * (4096 / 8 / sizeof(uint32_t)) + 1 +
+  /* AES-KWP 64-bit semiblock alignment padding */
+  ((sizeof(otcrypto_key_config_t) / sizeof(uint32_t) + 1) % 2) +
   /* AES-KWP 64-bit integrity prefix */
   2,
 };
@@ -643,6 +645,26 @@ typedef struct otcrypto_hash_digest {
   /// Digest length in 32-bit words.
   size_t len;
 } otcrypto_hash_digest_t;
+
+enum {
+  /**
+   * Size of an opaque streaming hash context in 32-bit words.
+   * Holds a hash mode word plus the largest underlying streaming hash context
+   * (`kOtcryptoSha2CtxStructWords` = 88 words).
+   */
+  kOtcryptoHashCtxStructWords = 89,
+};
+
+/**
+ * Opaque streaming hash context for signature generation and verification.
+ *
+ * Representation is internal to the hash implementation; initialize with
+ * #otcrypto_hash_init and update with #otcrypto_hash_update before passing to
+ * a `*_hash_sign_verify_final` or `*_hash_verify_final` function.
+ */
+typedef struct otcrypto_hash_context {
+  uint32_t data[kOtcryptoHashCtxStructWords];
+} otcrypto_hash_context_t;
 
 /**
  * Lock state value indicating the cryptolib is locked specifically due to an

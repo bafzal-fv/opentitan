@@ -76,17 +76,18 @@ Moreover, the function also checks the entropy complex health test and alert con
 The OpenTitan cryptography library provides several compile-time configuration settings via Bazel.
 These flags allow you to optimize code size or enable deep debugging.
 
-You can activate these settings during the build process by passing `--define=<setting>=true` to Bazel.
+Each setting is defined as a Bazel `bool_flag` (`//sw/device/lib/crypto/configs:<setting>_flag`) with a `.bazelrc` alias (`--<setting>`).
+You can activate these settings during the build process by passing `--<setting>=true` (or `--//sw/device/lib/crypto/configs:<setting>_flag=true` when building from an external workspace or transition) to Bazel.
 
 Additionally, building with the Bazel `--stamp` option is required to include the actual Git commit hash in the build info.
 Building with `--stamp` also automatically marks the build as a release build (setting `released` to `true`).
 
-| Configuration Setting | Internal Define | Description |
-|---|---|---|
-| `crypto_status_debug` | `OTCRYPTO_STATUS_DEBUG` | Embeds the module ID and line number directly into `otcrypto_status_t` error codes. This significantly aids debugging but increases the footprint and alters standard error structures. |
-| `disable_null_checks` | `OTCRYPTO_DISABLE_NULL_CHECKS` | Removes `NULL` pointer checks on API inputs throughout the library (e.g., AES-GCM operations). This saves code size, but strictly requires the caller to guarantee no `NULL` pointers are passed. |
-| `disable_buf_integrity_checks` | `OTCRYPTO_DISABLE_BUF_INTEGRITY_CHECKS` | Disables runtime integrity verification for data buffers. This bypasses `verify_buf_integrity`, removing the check that compares `ptr_checksum` against the data's calculated checksum. |
-| `disable_hardening` | `OT_DISABLE_HARDENING` | Replaces the fault-hardened double-branch assembly sequences in `HARDENED_TRY` and `HARDENED_CHECK_*` with a single non-redundant check in the cryptolib to reduce code size. When enabled, `otcrypto_security_config_check` only permits `kOtcryptoKeySecurityLevelLow`. |
+| Flag Alias | Build Setting | Internal Define | Description |
+|---|---|---|---|
+| `--crypto_status_debug` | `//sw/device/lib/crypto/configs:crypto_status_debug_flag` | `OTCRYPTO_STATUS_DEBUG` | Embeds the module ID and line number directly into `otcrypto_status_t` error codes. This significantly aids debugging but increases the footprint and alters standard error structures. |
+| `--disable_null_checks` | `//sw/device/lib/crypto/configs:disable_null_checks_flag` | `OTCRYPTO_DISABLE_NULL_CHECKS` | Removes `NULL` pointer checks on API inputs throughout the library (e.g., AES-GCM operations). This saves code size, but strictly requires the caller to guarantee no `NULL` pointers are passed. |
+| `--disable_buf_integrity_checks` | `//sw/device/lib/crypto/configs:disable_buf_integrity_checks_flag` | `OTCRYPTO_DISABLE_BUF_INTEGRITY_CHECKS` | Disables runtime integrity verification for data buffers. This bypasses `verify_buf_integrity`, removing the check that compares `ptr_checksum` against the data's calculated checksum. |
+| `--disable_hardening` | `//sw/device/lib/crypto/configs:disable_hardening_flag` | `OT_DISABLE_HARDENING` | Replaces the fault-hardened double-branch assembly sequences in `HARDENED_TRY` and `HARDENED_CHECK_*` with a single non-redundant check in the cryptolib to reduce code size. When enabled, `otcrypto_security_config_check` only permits `kOtcryptoKeySecurityLevelLow`. |
 
 ## Build Information and Versioning
 
@@ -613,6 +614,9 @@ Streaming is supported for **SHA-1** (in plain software; not FI/SCA protected) a
 {{#header-snippet sw/device/lib/crypto/include/sha2.h otcrypto_sha2_init }}
 {{#header-snippet sw/device/lib/crypto/include/sha2.h otcrypto_sha2_update }}
 {{#header-snippet sw/device/lib/crypto/include/sha2.h otcrypto_sha2_final }}
+{{#header-snippet sw/device/lib/crypto/include/sha2.h otcrypto_hash_init }}
+{{#header-snippet sw/device/lib/crypto/include/sha2.h otcrypto_hash_update }}
+{{#header-snippet sw/device/lib/crypto/include/sha2.h otcrypto_hash_final }}
 
 ### Masked SHA-2 on OTBN
 
@@ -705,8 +709,8 @@ Always ensure that you fully understand the security implications of the padding
 {{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_private_key_from_exponents }}
 {{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_sign }}
 {{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_verify }}
-{{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_hash_sign_verify }}
-{{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_hash_verify }}
+{{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_hash_sign_verify_final }}
+{{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_hash_verify_final }}
 {{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_encrypt }}
 {{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_decrypt }}
 {{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_keypair_from_cofactor }}
@@ -781,16 +785,16 @@ For ECDSA, the cryptography library supports keypair generation, signing, and si
 {{#header-snippet sw/device/lib/crypto/include/ecc_p256.h otcrypto_ecdsa_p256_sign }}
 {{#header-snippet sw/device/lib/crypto/include/ecc_p256.h otcrypto_ecdsa_p256_sign_verify }}
 {{#header-snippet sw/device/lib/crypto/include/ecc_p256.h otcrypto_ecdsa_p256_verify }}
-{{#header-snippet sw/device/lib/crypto/include/ecc_p256.h otcrypto_ecdsa_p256_hash_sign_verify }}
-{{#header-snippet sw/device/lib/crypto/include/ecc_p256.h otcrypto_ecdsa_p256_hash_verify }}
+{{#header-snippet sw/device/lib/crypto/include/ecc_p256.h otcrypto_ecdsa_p256_hash_sign_verify_final }}
+{{#header-snippet sw/device/lib/crypto/include/ecc_p256.h otcrypto_ecdsa_p256_hash_verify_final }}
 
 {{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_keygen }}
 {{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_sign_config_k }}
 {{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_sign }}
 {{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_sign_verify }}
 {{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_verify }}
-{{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_hash_sign_verify }}
-{{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_hash_verify }}
+{{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_hash_sign_verify_final }}
+{{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_hash_verify_final }}
 
 #### ECDH
 
@@ -1075,11 +1079,11 @@ To use hardware-backed keys, the caller first sets up an `otcrypto_blinded_key_t
 
 ### Generate hardware-backed keys for software
 
-To generate a hardware-backed key whose shares are retrieved into Ibex software memory, use `ot_crypto_hw_backed_keygen`.
+To generate a hardware-backed key whose shares are retrieved into Ibex software memory, use `otcrypto_hw_backed_keygen`.
 The key struct must first be initialized with `otcrypto_hw_backed_key` or `otcrypto_hw_backed_attestation_key`.
-When `ot_crypto_hw_backed_keygen` runs, it calls Key Manager to derive the software shares, writes the shares into the keyblob, and morphs the key configuration `hw_backed` flag to `kHardenedBoolFalse`.
+When `otcrypto_hw_backed_keygen` runs, it calls Key Manager to derive the software shares, writes the shares into the keyblob, and morphs the key configuration `hw_backed` flag to `kHardenedBoolFalse`.
 
-{{#header-snippet sw/device/lib/crypto/include/key_transport.h ot_crypto_hw_backed_keygen }}
+{{#header-snippet sw/device/lib/crypto/include/key_transport.h otcrypto_hw_backed_keygen }}
 
 ### Wrap and unwrap keys
 

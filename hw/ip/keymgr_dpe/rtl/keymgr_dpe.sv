@@ -48,10 +48,10 @@ module keymgr_dpe
   output tlul_pkg::tl_d2h_t tl_o,
 
   // key interface to crypto modules
-  output hw_key_req_t aes_key_o,
-  output hw_key_req_t kmac_key_o,
-  output wide_hw_key_req_t hmac_key_o,
-  output wide_hw_key_req_t otbn_key_o,
+  output hw_key_req_t        aes_key_o,
+  output hw_key_req_t        kmac_key_o,
+  output wide_hw_key_req_t   hmac_key_o,
+  output wide_hw_key_req_t   otbn_key_o,
 
   // Application interface when KMAC is used as hashing engine
   output kmac_pkg::app_req_t kmac_app_o,
@@ -100,9 +100,9 @@ module keymgr_dpe
   //   - LC keymgr diversification value
   //   - ROM digests
   //   - Creator seed (only if NumBootStages == 2)
-  localparam int DpeAdvDataWidth = SwBindingWidth + KeyWidth + DeviceIdWidth +
-      lc_ctrl_pkg::LcKeymgrDivWidth + KeyWidth * NumRomDigestInputs +
-      KeyWidth * (NumBootStages == 2);
+  localparam int DpeAdvDataWidth = SwBindingWidth + SeedWidth + DeviceIdWidth +
+      lc_ctrl_pkg::LcKeymgrDivWidth + SeedWidth * NumRomDigestInputs +
+      SeedWidth * (NumBootStages == 2);
 
   // Determine the width of the data consumed by the KMAC IF during the inital
   // derivation of the CreatorRootKey.
@@ -121,7 +121,7 @@ module keymgr_dpe
   /////////////////////////////////////
   // Anchor incoming seeds and constants
   /////////////////////////////////////
-  localparam int TotalSeedWidth = KeyWidth * 9;
+  localparam int TotalSeedWidth = SeedWidth * 9;
   seed_t revision_seed;
   seed_t soft_output_seed;
   seed_t hard_output_seed;
@@ -167,7 +167,7 @@ module keymgr_dpe
   // SEC_CM: BUS.INTEGRITY
   // SEC_CM: CONFIG.SHADOW
   // SEC_CM: OP.CONFIG.REGWEN, RESEED.CONFIG.REGWEN, SW_BINDING.CONFIG.REGWEN
-  // SEC_CM: KDF_ENGINE.CONFIG.REGWEN, MAX_KEY_VER.CONFIG.REGWEN
+  // SEC_CM: KDF_ENGINE.CONFIG.REGWEN, MAX_KEY_VER.CONFIG.REGWEN, SLOT_POLICY.CONFIG.REGWEN
   keymgr_dpe_reg_top u_reg (
     .clk_i,
     .rst_ni,
@@ -274,7 +274,7 @@ module keymgr_dpe
   mubi4_t hw_key_sel;
   logic adv_en, id_en, gen_en;
   logic wipe_key;
-  hw_key_req_t kmac_key;
+  internal_key_t kmac_key;
   logic op_done;
   logic init;
   logic data_valid;
@@ -287,7 +287,7 @@ module keymgr_dpe
   logic kmac_op_err;
   logic kmac_done_err;
   logic [Shares-1:0][kmac_pkg::AppDigestW-1:0] kmac_data;
-  logic [Shares-1:0][KeyWidth-1:0] kmac_data_truncated;
+  logic [Shares-1:0][InternalKeyWidth-1:0] kmac_data_truncated;
   logic [ErrLastPos-1:0] err_code;
   logic [FaultLastPos-1:0] fault_code;
   logic unlock_after_advance;
@@ -300,15 +300,21 @@ module keymgr_dpe
   logic kdf_engine_mubi_err;
 
   keymgr_dpe_metadata_slot_t [NumInstHwSlot-1:0] metadata;
+
+  // SEC_CM: METADATA.CONFIG.REGREN
   for (genvar i = 0; i < NumMaxHwSlot; i++) begin : gen_metadata_read_data
     if (i < NumInstHwSlot) begin : gen_inst_slot
-      assign hw2reg.metadata_high[i].valid.d                = metadata[i].valid;
-      assign hw2reg.metadata_high[i].exportable_policy.d    = metadata[i].key_policy.exportable;
-      assign hw2reg.metadata_high[i].retain_parent_policy.d = metadata[i].key_policy.retain_parent;
-      assign hw2reg.metadata_high[i].allow_child_policy.d   = metadata[i].key_policy.allow_child;
-      assign hw2reg.metadata_high[i].allow_keygen_policy.d  = metadata[i].key_policy.allow_keygen;
-      assign hw2reg.metadata_high[i].boot_stage.d           = metadata[i].boot_stage;
-      assign hw2reg.metadata_low[i].d                       = metadata[i].max_key_version;
+      keymgr_dpe_metadata_slot_t metadata_rd;
+      assign metadata_rd =
+          mubi4_test_false_strict(mubi4_t'(reg2hw.metadata_read_lock.q)) ? metadata[i] : '0;
+
+      assign hw2reg.metadata_high[i].valid.d                = metadata_rd.valid;
+      assign hw2reg.metadata_high[i].exportable_policy.d    = metadata_rd.key_policy.exportable;
+      assign hw2reg.metadata_high[i].retain_parent_policy.d = metadata_rd.key_policy.retain_parent;
+      assign hw2reg.metadata_high[i].allow_child_policy.d   = metadata_rd.key_policy.allow_child;
+      assign hw2reg.metadata_high[i].allow_keygen_policy.d  = metadata_rd.key_policy.allow_keygen;
+      assign hw2reg.metadata_high[i].boot_stage.d           = metadata_rd.boot_stage;
+      assign hw2reg.metadata_low[i].d                       = metadata_rd.max_key_version;
     end else begin : gen_tieoff_slot
       assign hw2reg.metadata_high[i].valid.d                = '0;
       assign hw2reg.metadata_high[i].exportable_policy.d    = '0;
@@ -321,17 +327,17 @@ module keymgr_dpe
   end
 
   for (genvar i = 0; i < Shares; i++) begin : gen_truncate_data
-    assign kmac_data_truncated[i] = kmac_data[i][KeyWidth-1:0];
+    assign kmac_data_truncated[i] = kmac_data[i][InternalKeyWidth-1:0];
   end
 
-  hw_key_req_t root_key;
+  internal_key_t root_key;
   assign root_key.key = '{creator_root_key_i.share1,
                           creator_root_key_i.share0};
 
   keymgr_dpe_field_entropy_t field_entropy;
   assign field_entropy.secret = field_entropy_i.secret;
 
-  hw_key_req_t secondary_root_key;
+  internal_key_t secondary_root_key;
   assign secondary_root_key.key = '{secondary_root_key_i.share1,
                                     secondary_root_key_i.share0};
 
@@ -385,6 +391,7 @@ module keymgr_dpe
   assign slot_dst_sel_trunc =
       keymgr_dpe_slot_idx_e'(reg2hw.control_shadowed.slot_dst_sel.q);
 
+  // SEC_CM: INTERNAL.KEY.SW_NOACCESS
   keymgr_dpe_ctrl # (
     .NumInstHwSlot(NumInstHwSlot),
     .NumInstHwSlotWidth(NumInstHwSlotWidth),
@@ -406,8 +413,8 @@ module keymgr_dpe
     .prng_en_o(ctrl_lfsr_en),
     .entropy_i(ctrl_rand),
     .op_i(keymgr_dpe_ops_e'(reg2hw.control_shadowed.operation.q)),
-    .load_root_key_lock_i(reg2hw.load_root_key_lock.q),
-    .load_secondary_root_key_lock_i(reg2hw.load_secondary_root_key_lock.q),
+    .load_root_key_lock_i(mubi4_t'(reg2hw.load_root_key_lock.q)),
+    .load_secondary_root_key_lock_i(mubi4_t'(reg2hw.load_secondary_root_key_lock.q)),
     .slot_src_sel_i(slot_src_sel_trunc),
     .slot_dst_sel_i(slot_dst_sel_trunc),
     .slot_policy_i(keymgr_dpe_policy_t'(reg2hw.slot_policy)),
@@ -557,29 +564,29 @@ module keymgr_dpe
   assign sw_binding = reg2hw.sw_binding;
 
   // ROM_CTRL digests.
-  logic [KeyWidth*NumRomDigestInputs-1:0] rom_digests;
+  logic [SeedWidth*NumRomDigestInputs-1:0] rom_digests;
   always_comb begin
     rom_digests = '0;
     for (int k = 0; k < NumRomDigestInputs; k++) begin
-      rom_digests[KeyWidth*k +: KeyWidth] = rom_digest_i[k].data;
+      rom_digests[SeedWidth*k +: SeedWidth] = rom_digest_i[k].data;
     end
   end
 
   // Consumed during the CreatorIntKey derivation
   // If the field entropy is provisioned then the secret is selected automatically.
   // Otherwise use the netlist constant `field_entropy_seed`.
-  logic [KeyWidth-1:0] field_entropy_binding;
+  logic [SeedWidth-1:0] field_entropy_binding;
   assign field_entropy_binding = (field_entropy.secret_valid) ?
       field_entropy.secret : field_entropy_seed;
 
   // Consumed during the OwnerIntKey derivation
   // The values coming from the seed provider (otp_ctrl / rram_ctrl) / lc_ctrl are treated as
   // quasi-static for CDC purposes
-  logic [KeyWidth-1:0] creator_seed;
+  logic [SeedWidth-1:0] creator_seed;
   assign creator_seed = creator_seed_i.seed;
 
   // Consumed during the OwnerKey derivation
-  logic [KeyWidth-1:0] owner_seed;
+  logic [SeedWidth-1:0] owner_seed;
   assign owner_seed = owner_seed_i.seed;
 
   // A seed is only valid if its provider marks it as valid and it passes the input checks.
@@ -672,14 +679,14 @@ module keymgr_dpe
   // | 7 | Invalid        | True             | Invalid (= enforce value)  | 1                     |
   // | 8 | Invalid        | False            | False                      | 0                     |
 
-  // SEC_CM: ENFORCE_SW_BINDING.CTRL.CONSISTENCY, ENFORCE_SW_BINDING.CTRL.MUBI
+  // SEC_CM: ENFORCE_SW_BINDING.CTRL.LOCK_MUBI
   assign enforce_sw_binding_err = mubi4_and_hi(
       mubi4_t'(reg2hw.enforce_sw_binding.q), adv_consumes_hw_binding);
 
   // Generate output operation input construction
-  logic [KeyWidth-1:0] output_key;
+  logic [SeedWidth-1:0] output_key;
   keymgr_dpe_key_dest_e dest_sel;
-  logic [KeyWidth-1:0] dest_seed;
+  logic [SeedWidth-1:0] dest_seed;
 
   assign dest_sel = keymgr_dpe_key_dest_e'(reg2hw.control_shadowed.dest_sel.q);
 
@@ -707,7 +714,7 @@ module keymgr_dpe
                                            Otbn,
                                            Hmac});
 
-  hw_key_req_t curr_active_key;
+  internal_key_t curr_active_key;
   assign curr_active_key = '{
     valid: active_key_slot.valid,
     key: active_key_slot.key

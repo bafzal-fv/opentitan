@@ -2892,6 +2892,21 @@
           index: -1
         }
         {
+          name: keymgr_field_entropy
+          desc: Field entropy output to the key manager holding FIELD_ENTROPY.
+          struct: keymgr_dpe_field_entropy
+          package: keymgr_dpe_pkg
+          type: uni
+          act: req
+          width: 1
+          default: "'0"
+          inst_name: otp_ctrl
+          end_idx: -1
+          top_type: broadcast
+          top_signame: otp_ctrl_keymgr_field_entropy
+          index: -1
+        }
+        {
           name: nvm_otp_key
           desc: Key derivation interface for NVM scrambling.
           struct: nvm_otp_key
@@ -9922,6 +9937,9 @@
           act: rcv
           width: 1
           inst_name: keymgr_dpe
+          default: ""
+          domain: Main
+          top_signame: otp_ctrl_keymgr_field_entropy
           index: -1
         }
         {
@@ -12989,6 +13007,10 @@
       otp_ctrl.keymgr_creator_root_key:
       [
         keymgr_dpe.creator_root_key
+      ]
+      otp_ctrl.keymgr_field_entropy:
+      [
+        keymgr_dpe.field_entropy
       ]
       rram_ctrl.keymgr_creator_seed:
       [
@@ -16348,6 +16370,11 @@
         bank: VCC
         connection: muxed
         desc: Muxed IO pad
+        attrs:
+        {
+          pull_en: 1
+          pull_select: 0
+        }
         idx: 30
         port_type: inout
       }
@@ -22121,7 +22148,7 @@
         end_idx: -1
         act: rcv
         suffix: ""
-        default: "'{default: prim_esc_pkg::ESC_RX_DEFAULT}"
+        default: "{4{prim_esc_pkg::ESC_RX_DEFAULT}}"
       }
       {
         package: prim_esc_pkg
@@ -22133,7 +22160,7 @@
         end_idx: -1
         act: req
         suffix: ""
-        default: "'{default: prim_esc_pkg::ESC_TX_DEFAULT}"
+        default: "{4{prim_esc_pkg::ESC_TX_DEFAULT}}"
       }
       {
         package: ""
@@ -22361,7 +22388,7 @@
         end_idx: -1
         act: rcv
         suffix: ""
-        default: "'{default: prim_mubi_pkg::MUBI4_DEFAULT}"
+        default: "{4{prim_mubi_pkg::MUBI4_DEFAULT}}"
       }
       {
         package: jtag_pkg
@@ -26556,6 +26583,21 @@
         width: 1
         default: "'0"
         inst_name: otp_ctrl
+        index: -1
+      }
+      {
+        name: keymgr_field_entropy
+        desc: Field entropy output to the key manager holding FIELD_ENTROPY.
+        struct: keymgr_dpe_field_entropy
+        package: keymgr_dpe_pkg
+        type: uni
+        act: req
+        width: 1
+        default: "'0"
+        inst_name: otp_ctrl
+        end_idx: -1
+        top_type: broadcast
+        top_signame: otp_ctrl_keymgr_field_entropy
         index: -1
       }
       {
@@ -31501,6 +31543,9 @@
         act: rcv
         width: 1
         inst_name: keymgr_dpe
+        default: ""
+        domain: Main
+        top_signame: otp_ctrl_keymgr_field_entropy
         index: -1
       }
       {
@@ -40900,7 +40945,7 @@
         end_idx: -1
         act: rcv
         suffix: ""
-        default: "'{default: prim_esc_pkg::ESC_RX_DEFAULT}"
+        default: "{4{prim_esc_pkg::ESC_RX_DEFAULT}}"
       }
       {
         package: prim_esc_pkg
@@ -40912,7 +40957,7 @@
         end_idx: -1
         act: req
         suffix: ""
-        default: "'{default: prim_esc_pkg::ESC_TX_DEFAULT}"
+        default: "{4{prim_esc_pkg::ESC_TX_DEFAULT}}"
       }
       {
         package: csrng_pkg
@@ -40924,7 +40969,7 @@
         end_idx: -1
         act: rsp
         suffix: req
-        default: "'{default: csrng_pkg::CSRNG_REQ_DEFAULT}"
+        default: "{2{csrng_pkg::CSRNG_REQ_DEFAULT}}"
       }
       {
         package: csrng_pkg
@@ -41271,6 +41316,18 @@
         struct: keymgr_dpe_creator_root_key
         domain: Main
         signame: otp_ctrl_keymgr_creator_root_key
+        width: 1
+        type: uni
+        end_idx: -1
+        act: req
+        suffix: ""
+        default: "'0"
+      }
+      {
+        package: keymgr_dpe_pkg
+        struct: keymgr_dpe_field_entropy
+        domain: Main
+        signame: otp_ctrl_keymgr_field_entropy
         width: 1
         type: uni
         end_idx: -1

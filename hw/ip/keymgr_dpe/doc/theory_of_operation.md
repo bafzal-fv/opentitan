@@ -34,7 +34,19 @@ In order to address the relationships among keymgr_dpe slots and their stored DP
 
 +Keymgr_dpe consists of `NumInstHwSlot` slots, which is a top-level parameter (instantiated up to `NumMaxHwSlot`).
 Each of these key manager slots can store a DPE context, i.e. all DICE-related information for a particular boot stage. That includes a secret key along with additional context information described below.
-The secret key size is fixed to 256-bit.
+The secret key size is fixed to 384-bit.
+However, the KDF engine does not necessarily consume all 384 bits:
+
+* If KMAC is the KDF engine, only the lower 256 bits of the secret key are used as the KMAC key.
+  The remaining upper 128 bits are stored but do not influence the derived keys.
+* If OTBN is the KDF engine, the full 384 bits of the secret key are consumed.
+
+If the `KdfEngineSel` parameter is set to `KdfEngineBoth`, software selects the KDF engine through [`KDF_ENGINE_SHADOWED`](registers.md#kdf_engine_shadowed).
+In that configuration the same secret key can be consumed by both engines (the lower 256 bits by KMAC, all 384 bits by OTBN), i.e. the same secret is used as key for two different kdf.
+The kdf_engine must be selected before the first derivation.
+If desired, the selection can be locked with [`KDF_ENGINE_REGWEN`](registers.md#kdf_engine_regwen).
+
+The sideload keys are derived from the KDF digest and have a different size than the secret key: the keys for AES and KMAC use the lower 256 bits of the digest, the keys for OTBN and HMAC use the full 512-bit digest.
 
 Each slot data consists of the following fields:
 * `valid` bit that tells whether the slot is occupied.
@@ -70,7 +82,8 @@ Instead, both are fixed by HW to their defaults: `key_policy` is set to `DEFAULT
 Since `allow_keygen = 0`, no key can be generated directly from such a slot, and SW must advance it at least once before it can generate keys.
 Hence, the value of `max_key_version` is irrelevant for these slots.
 
-With the exception of the secret key itself, software can read back a slot's `valid`, `boot_stage`, `max_key_version` and `key_policy` subfields at any time through the `METADATA_LOW` and `METADATA_HIGH` registers.
+With the exception of the secret key itself, software can read back a slot's `valid`, `boot_stage`, `max_key_version` and `key_policy` subfields through the `METADATA_LOW` and `METADATA_HIGH` registers until `METADATA_READ_LOCK` is set.
+Once `METADATA_READ_LOCK` is set, both registers read as zero for all slots until the next reset.
 Both registers are replicated `NumMaxHwSlot` times but only indices below `NumInstHwSlot` correspond to an actual hardware slot, the remaining slots are bound to `0`.
 `METADATA_LOW.MAX_KEY_VERSION` reports `max_key_version`, while `METADATA_HIGH` reports `valid`, `boot_stage` and `key_policy` subfields respectively.
 
@@ -94,6 +107,7 @@ Until the initial advance is invoked and keymgr_DPE reaches to `Available` state
 During `Available`, keymgr_DPE accepts further advance and key generation requests.
 When transitioning from `Reset` to `Available`, as a SCA counter-measure, random values obtained from the entropy source are used to populate the key slot first in a manner that both shares have the same random mask.
 Then the root key is XORed on top of this randomness, in order to have fresh randomness for UDS at every power cycle.
+In the same cycle in which the root key is latched, all sideload key slots (AES, KMAC, OTBN and HMAC) are cleared: they are invalidated and their contents are overwritten with entropy.
 During these transitions, keymgr_DPE's working state will be reported as `Reset`, until the latching is done and keymgr_DPE is ready to accept further commands.
 
 ### Disabled
@@ -287,10 +301,14 @@ Disable operation simply moves the keymgr_DPE's FSM into `Disabled` state. This 
 
 ### Root Keys
 
-keymgr_dpe receives two 256-bit root secrets, each provided in two shares with a valid bit per share:
+keymgr_dpe receives two 384-bit root secrets, each provided in two shares with a valid bit per share:
 * `creator_root_key` is the creator root key received from OTP.
 * `secondary_root_key` is the (optional) secondary root key.
   Its source depends on the integration, for example OTP on Earl Grey.
+
+Each root key share is 384 bits wide, matching the size of the slot secret key.
+When KMAC is the KDF engine, only the lower 256 bits of the root key are effectively used as the KMAC key in the first derivation, even though the OTP provides 384 bits per share.
+Only OTBN as KDF engine consumes all 384 bits.
 
 The valid bits of both root keys are synchronized into the keymgr_dpe clock domain before use.
 
@@ -327,7 +345,7 @@ The key of the KDF is the internal key of the source slot.
 It is forwarded to the selected engine only:
 * If KMAC is selected, the internal key drives `kmac_key_o` while it is valid.
 * If OTBN is selected, the internal key drives `otbn_key_o` while it is valid.
-  OTBN expects a 512-bit key on its sideload interface while the internal key is 256 bits wide, so the key is zero-extended to the OTBN key width.
+  OTBN expects a 512-bit key on its sideload interface while the internal key is 384 bits wide, so the key is zero-extended to the OTBN key width.
 While the internal key is valid (meaning either a derivation or generation is ongoing), it takes precedence over the applied sideload key, i.e. a previously generated sideload key is not visible during the operation.
 
 #### Sensitive key indicator

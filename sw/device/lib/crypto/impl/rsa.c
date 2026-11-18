@@ -8,10 +8,12 @@
 
 #include "sw/device/lib/base/crc32.h"
 #include "sw/device/lib/base/hardened_memory.h"
+#include "sw/device/lib/base/macros.h"
 #include "sw/device/lib/base/math.h"
 #include "sw/device/lib/crypto/drivers/otbn.h"
 #include "sw/device/lib/crypto/impl/cmvp.h"
 #include "sw/device/lib/crypto/impl/hash.h"
+#include "sw/device/lib/crypto/impl/keyblob.h"
 #include "sw/device/lib/crypto/impl/rsa/rsa_encryption.h"
 #include "sw/device/lib/crypto/impl/rsa/rsa_signature.h"
 #include "sw/device/lib/crypto/impl/rsa/run_rsa.h"
@@ -46,6 +48,14 @@ static_assert(kOtcryptoRsa3072PrivateKeyblobBytes ==
 static_assert(kOtcryptoRsa4096PrivateKeyblobBytes ==
                   sizeof(rsa_4096_private_key_t),
               "RSA-4096 keyblob size mismatch.");
+static_assert(kOtcryptoWrappedKeyMaxWords ==
+                  sizeof(otcrypto_key_config_t) / sizeof(uint32_t) + 2 +
+                      kOtcryptoRsa4096PrivateKeyblobBytes / sizeof(uint32_t) +
+                      ((sizeof(otcrypto_key_config_t) / sizeof(uint32_t) + 1) %
+                       2) +
+                      2,
+              "kOtcryptoWrappedKeyMaxWords does not match wrapped RSA-4096 "
+              "private key size.");
 static_assert(offsetof(rsa_2048_private_key_t, d0) == 0 &&
                   offsetof(rsa_2048_private_key_t, d1) ==
                       kRsa2048NumWords * sizeof(uint32_t) &&
@@ -270,7 +280,8 @@ static status_t private_key_structural_check(
   size_t num_words = 0;
   HARDENED_TRY(rsa_size_to_params(size, NULL, &num_words));
   size_t key_length = num_words * sizeof(uint32_t);
-  size_t keyblob_length = (3 * num_words + 1) * sizeof(uint32_t);
+  size_t keyblob_length =
+      keyblob_num_words(private_key->config) * sizeof(uint32_t);
   HARDENED_CHECK_NE(key_length, 0);
   HARDENED_CHECK_NE(keyblob_length, 0);
 
@@ -279,6 +290,40 @@ static status_t private_key_structural_check(
     return OTCRYPTO_BAD_ARGS;
   }
 
+  return OTCRYPTO_OK;
+}
+
+/**
+ * Overwrite an RSA private exponent share buffer with random data; used as a
+ * cleanup guard.
+ *
+ * @param share Share buffer to shred.
+ */
+OT_USED static void rsa_share_shred(uint32_t (*share)[kRsa4096NumWords]) {
+  hardened_memshred(*share, kRsa4096NumWords);
+}
+
+/**
+ * Pack RSA private key shares, modulus, and checksums into `private_key`.
+ *
+ * @param d0 First share of private exponent.
+ * @param d1 Second share of private exponent.
+ * @param modulus RSA modulus `n`.
+ * @param num_words Word length of `d0`, `d1`, and `modulus`.
+ * @param[out] private_key Destination blinded private key.
+ * @return OK on success, or an error code otherwise.
+ */
+static status_t rsa_private_key_pack(const uint32_t *d0, const uint32_t *d1,
+                                     const uint32_t *modulus, size_t num_words,
+                                     otcrypto_blinded_key_t *private_key) {
+  size_t keyblob_words = keyblob_num_words(private_key->config);
+  HARDENED_TRY(
+      keyblob_from_shares(d0, d1, private_key->config, private_key->keyblob));
+  uint32_t *n = &private_key->keyblob[keyblob_words - num_words - 1];
+  uint32_t *checksum = &private_key->keyblob[keyblob_words - 1];
+  HARDENED_TRY(hardened_memcpy(n, modulus, num_words));
+  *checksum = crc32(d0, num_words * sizeof(uint32_t));
+  private_key->checksum = otcrypto_integrity_blinded_checksum(private_key);
   return OTCRYPTO_OK;
 }
 
@@ -657,34 +702,21 @@ otcrypto_status_t otcrypto_rsa_private_key_from_exponents(
     return OTCRYPTO_BAD_ARGS;
   }
 
-  // Randomize the keyblob.
-  hardened_memshred(private_key->keyblob,
-                    ceil_div(private_key->keyblob_length, sizeof(uint32_t)));
-
   size_t num_words = 0;
   HARDENED_TRY(rsa_size_to_params(size, NULL, &num_words));
-  if (private_key->keyblob_length != (3 * num_words + 1) * sizeof(uint32_t) ||
-      modulus->len != num_words) {
+  if (modulus->len != num_words) {
     // COVERAGE (MISSING) We do not cover bad key lengths.
     return OTCRYPTO_BAD_ARGS;
   }
   HARDENED_CHECK_EQ(modulus->len, num_words);
   HARDENED_CHECK_EQ(d_share0->len, num_words);
   HARDENED_CHECK_EQ(d_share1->len, num_words);
-  uint32_t *d0 = private_key->keyblob;
-  uint32_t *d1 = &private_key->keyblob[num_words];
-  uint32_t *n = &private_key->keyblob[2 * num_words];
-  uint32_t *checksum = &private_key->keyblob[3 * num_words];
-  HARDENED_TRY(hardened_memcpy(n, modulus->data, num_words));
-  HARDENED_TRY(hardened_memcpy(d0, d_share0->data, num_words));
-  HARDENED_TRY(hardened_memcpy(d1, d_share1->data, num_words));
-  *checksum = crc32(d_share0->data, num_words * sizeof(uint32_t));
+  HARDENED_TRY(rsa_private_key_pack(d_share0->data, d_share1->data,
+                                    modulus->data, num_words, private_key));
 
   // Verify the input buffers
   HARDENED_CHECK_EQ(kHardenedBoolTrue, OTCRYPTO_CHECK_BUF(modulus));
   HARDENED_CHECK_EQ(kHardenedBoolTrue, OTCRYPTO_CHECK_BUF(d_share0));
-
-  private_key->checksum = otcrypto_integrity_blinded_checksum(private_key);
   return otcrypto_eval_exit(OTCRYPTO_OK);
 }
 
@@ -794,30 +826,29 @@ otcrypto_status_t otcrypto_rsa_verify(
                                             verification_result);
 }
 
-otcrypto_status_t otcrypto_rsa_hash_sign_verify(
+otcrypto_status_t otcrypto_rsa_hash_sign_verify_final(
     const otcrypto_blinded_key_t *private_key,
-    const otcrypto_unblinded_key_t *public_key, otcrypto_hash_mode_t hash_mode,
-    const otcrypto_const_byte_buf_t *message,
+    const otcrypto_unblinded_key_t *public_key, otcrypto_hash_context_t *ctx,
     otcrypto_rsa_padding_t padding_mode, otcrypto_word32_buf_t *signature) {
-  OTCRYPTO_SET_CMVP_INDICATOR(OTCRYPTO_FUNCTION_RSA_HASH_SIGN_VERIFY);
+  OTCRYPTO_SET_CMVP_INDICATOR(OTCRYPTO_FUNCTION_RSA_HASH_SIGN_VERIFY_FINAL);
   OTCRYPTO_HEALTH_CHECK(kTestRsa4096SignBit);
   if ((private_key != NULL &&
        private_key->config.key_length == kOtcryptoRsa2048PrivateKeyBytes) ||
-      hash_mode == kOtcryptoHashModeSha1 ||
       padding_mode == kOtcryptoRsaPaddingNull) {
     OTCRYPTO_CMVP_OVERRIDE_NOT_APPROVED();
   }
   uint32_t digest_data[16];
-  hardened_memshred(digest_data, ARRAYSIZE(digest_data));
   otcrypto_hash_digest_t digest;
-  HARDENED_TRY(hash_message(hash_mode, message, digest_data, &digest));
+  HARDENED_TRY(hash_context_final(ctx, digest_data, &digest));
+  if (digest.mode == kOtcryptoHashModeSha1) {
+    OTCRYPTO_CMVP_OVERRIDE_NOT_APPROVED();
+  }
   HARDENED_TRY(otcrypto_rsa_sign(private_key, digest, padding_mode, signature));
   otcrypto_const_word32_buf_t signature_check = OTCRYPTO_MAKE_BUF(
       otcrypto_const_word32_buf_t, signature->data, signature->len);
   hardened_bool_t verification_result = kHardenedBoolFalse;
   HARDENED_TRY(otcrypto_rsa_verify(public_key, digest, padding_mode,
                                    &signature_check, &verification_result));
-  hardened_memshred(digest_data, ARRAYSIZE(digest_data));
   if (verification_result != kHardenedBoolTrue) {
     // COVERAGE (FI CM) This check only fails if the signature generation was
     // faulted.
@@ -832,16 +863,14 @@ otcrypto_status_t otcrypto_rsa_hash_sign_verify(
   return otcrypto_eval_exit(OTCRYPTO_OK);
 }
 
-otcrypto_status_t otcrypto_rsa_hash_verify(
-    const otcrypto_unblinded_key_t *public_key, otcrypto_hash_mode_t hash_mode,
-    const otcrypto_const_byte_buf_t *message,
+otcrypto_status_t otcrypto_rsa_hash_verify_final(
+    const otcrypto_unblinded_key_t *public_key, otcrypto_hash_context_t *ctx,
     otcrypto_rsa_padding_t padding_mode,
     const otcrypto_const_word32_buf_t *signature,
     hardened_bool_t *verification_result) {
-  OTCRYPTO_SET_CMVP_INDICATOR(OTCRYPTO_FUNCTION_RSA_HASH_VERIFY);
+  OTCRYPTO_SET_CMVP_INDICATOR(OTCRYPTO_FUNCTION_RSA_HASH_VERIFY_FINAL);
   OTCRYPTO_LOCKED_STATE_CHECK();
-  if (hash_mode == kOtcryptoHashModeSha1 ||
-      padding_mode == kOtcryptoRsaPaddingNull) {
+  if (padding_mode == kOtcryptoRsaPaddingNull) {
     OTCRYPTO_CMVP_OVERRIDE_NOT_APPROVED();
   }
 #ifndef OTCRYPTO_DISABLE_NULL_CHECKS
@@ -857,9 +886,14 @@ otcrypto_status_t otcrypto_rsa_hash_verify(
   uint32_t digest_data[16];
   hardened_memshred(digest_data, ARRAYSIZE(digest_data));
   otcrypto_hash_digest_t digest;
-  HARDENED_TRY(hash_message(hash_mode, message, digest_data, &digest));
-  return otcrypto_eval_exit(otcrypto_rsa_verify(
-      public_key, digest, padding_mode, signature, verification_result));
+  HARDENED_TRY(hash_context_final(ctx, digest_data, &digest));
+  if (digest.mode == kOtcryptoHashModeSha1) {
+    OTCRYPTO_CMVP_OVERRIDE_NOT_APPROVED();
+  }
+  status_t status = otcrypto_rsa_verify(public_key, digest, padding_mode,
+                                        signature, verification_result);
+  hardened_memshred(digest_data, ARRAYSIZE(digest_data));
+  return otcrypto_eval_exit(status);
 }
 
 otcrypto_status_t otcrypto_rsa_encrypt(
@@ -912,9 +946,11 @@ static otcrypto_status_t rsa_pct_verify(
       otcrypto_integrity_blinded_checksum(&pct_private_key);
 
   otcrypto_word32_buf_t sig = otcrypto_make_word32_buf(sig_data, sig_words);
-  return otcrypto_rsa_hash_sign_verify(&pct_private_key, &pct_public_key,
-                                       kOtcryptoHashModeSha512, &msg,
-                                       kOtcryptoRsaPaddingPkcs, &sig);
+  otcrypto_hash_context_t ctx;
+  HARDENED_TRY(otcrypto_hash_init(&ctx, kOtcryptoHashModeSha512));
+  HARDENED_TRY(otcrypto_hash_update(&ctx, &msg));
+  return otcrypto_rsa_hash_sign_verify_final(
+      &pct_private_key, &pct_public_key, &ctx, kOtcryptoRsaPaddingPkcs, &sig);
 }
 #endif
 
@@ -943,26 +979,23 @@ otcrypto_status_t otcrypto_rsa_keygen_async_finalize(
   // Check the caller-provided private key buffer.
   HARDENED_TRY(private_key_structural_check(size, private_key));
 
-  // Randomize the keyblob memory.
-  hardened_memshred(private_key->keyblob,
-                    ceil_div(private_key->keyblob_length, sizeof(uint32_t)));
-
   // Call the required finalize() operation.
   rsa_size_t rsa_size = (rsa_size_t)0;
   size_t num_words = 0;
   HARDENED_TRY(rsa_size_to_params(size, &rsa_size, &num_words));
-  uint32_t *d0 = private_key->keyblob;
-  uint32_t *d1 = &private_key->keyblob[num_words];
-  uint32_t *n = &private_key->keyblob[2 * num_words];
-  uint32_t *checksum = &private_key->keyblob[3 * num_words];
-  HARDENED_TRY_WIPE_DMEM(
-      rsa_keygen_finalize_size(rsa_size, n, d0, d1, NULL, NULL));
-  HARDENED_TRY(hardened_memcpy(public_key->key, n, num_words));
-  *checksum = crc32(d0, num_words * sizeof(uint32_t));
+  {
+    uint32_t d0[kRsa4096NumWords] __attribute__((cleanup(rsa_share_shred)));
+    uint32_t d1[kRsa4096NumWords] __attribute__((cleanup(rsa_share_shred)));
+    hardened_memshred(d0, num_words);
+    hardened_memshred(d1, num_words);
+    HARDENED_TRY_WIPE_DMEM(rsa_keygen_finalize_size(rsa_size, public_key->key,
+                                                    d0, d1, NULL, NULL));
+    HARDENED_TRY(
+        rsa_private_key_pack(d0, d1, public_key->key, num_words, private_key));
+  }
 
-  // Construct checksums for the new keys.
+  // Construct checksum for the public key.
   public_key->checksum = otcrypto_integrity_unblinded_checksum(public_key);
-  private_key->checksum = otcrypto_integrity_blinded_checksum(private_key);
 
 #ifdef FIPS_MODE
   // Perform FIPS Pairwise Consistency Test (PCT).
@@ -1042,25 +1075,23 @@ otcrypto_status_t otcrypto_rsa_keypair_from_cofactor_async_finalize(
   // Check the caller-provided private key buffer.
   HARDENED_TRY(private_key_structural_check(size, private_key));
 
-  // Randomize the keyblob memory.
-  hardened_memshred(private_key->keyblob,
-                    ceil_div(private_key->keyblob_length, sizeof(uint32_t)));
-
   // Call the required finalize() operation.
   rsa_size_t rsa_size = (rsa_size_t)0;
   size_t num_words = 0;
   HARDENED_TRY(rsa_size_to_params(size, &rsa_size, &num_words));
-  uint32_t *d0 = private_key->keyblob;
-  uint32_t *d1 = &private_key->keyblob[num_words];
-  uint32_t *n = &private_key->keyblob[2 * num_words];
-  uint32_t *checksum = &private_key->keyblob[3 * num_words];
-  HARDENED_TRY_WIPE_DMEM(
-      rsa_keygen_from_cofactor_finalize(rsa_size, public_key->key, n, d0, d1));
-  *checksum = crc32(d0, num_words * sizeof(uint32_t));
+  {
+    uint32_t d0[kRsa4096NumWords] __attribute__((cleanup(rsa_share_shred)));
+    uint32_t d1[kRsa4096NumWords] __attribute__((cleanup(rsa_share_shred)));
+    hardened_memshred(d0, num_words);
+    hardened_memshred(d1, num_words);
+    HARDENED_TRY_WIPE_DMEM(
+        rsa_keygen_from_cofactor_finalize(rsa_size, public_key->key, d0, d1));
+    HARDENED_TRY(
+        rsa_private_key_pack(d0, d1, public_key->key, num_words, private_key));
+  }
 
-  // Construct checksums for the new keys.
+  // Construct checksum for the public key.
   public_key->checksum = otcrypto_integrity_unblinded_checksum(public_key);
-  private_key->checksum = otcrypto_integrity_blinded_checksum(private_key);
   return otcrypto_eval_exit(OTCRYPTO_OK);
 }
 
@@ -1098,10 +1129,12 @@ static otcrypto_status_t rsa_sign_exp_async_start(
   rsa_size_t rsa_size = (rsa_size_t)0;
   size_t num_words = 0;
   HARDENED_TRY(rsa_size_to_params(size, &rsa_size, &num_words));
-  const uint32_t *d0 = private_key->keyblob;
-  const uint32_t *d1 = &private_key->keyblob[num_words];
-  const uint32_t *n = &private_key->keyblob[2 * num_words];
-  uint32_t checksum = private_key->keyblob[3 * num_words];
+  size_t keyblob_words = keyblob_num_words(private_key->config);
+  uint32_t *d0;
+  uint32_t *d1;
+  HARDENED_TRY(keyblob_to_shares(private_key, &d0, &d1));
+  const uint32_t *n = &private_key->keyblob[keyblob_words - num_words - 1];
+  uint32_t checksum = private_key->keyblob[keyblob_words - 1];
   if (launder32(padding_mode) == kOtcryptoRsaPaddingNull) {
     HARDENED_CHECK_EQ(padding_mode, kOtcryptoRsaPaddingNull);
     if (message_digest.len != num_words * sizeof(uint32_t) ||
@@ -1350,16 +1383,18 @@ static otcrypto_status_t rsa_decrypt_exp_async_start(
   rsa_size_t rsa_size = (rsa_size_t)0;
   size_t num_words = 0;
   HARDENED_TRY(rsa_size_to_params(size, &rsa_size, &num_words));
+  size_t keyblob_words = keyblob_num_words(private_key->config);
   HARDENED_CHECK_EQ(private_key->keyblob_length,
-                    (3 * num_words + 1) * sizeof(uint32_t));
+                    keyblob_words * sizeof(uint32_t));
   if (ciphertext->len != num_words) {
     return OTCRYPTO_BAD_ARGS;
   }
   HARDENED_CHECK_EQ(ciphertext->len, num_words);
-  const uint32_t *d0 = private_key->keyblob;
-  const uint32_t *d1 = &private_key->keyblob[num_words];
-  const uint32_t *n = &private_key->keyblob[2 * num_words];
-  uint32_t checksum = private_key->keyblob[3 * num_words];
+  uint32_t *d0;
+  uint32_t *d1;
+  HARDENED_TRY(keyblob_to_shares(private_key, &d0, &d1));
+  const uint32_t *n = &private_key->keyblob[keyblob_words - num_words - 1];
+  uint32_t checksum = private_key->keyblob[keyblob_words - 1];
 
   // Check that ciphertext is < n.
   if (bignum_lt(ciphertext->data, n, num_words) == kHardenedBoolFalse) {
