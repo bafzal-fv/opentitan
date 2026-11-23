@@ -32,6 +32,12 @@ case $CHECKER in
     # Lint only: checker 1's FPV top and binds are the one environment's (CHECKER=memsys).
     RUNS=()
     ;;
+  meta_access)
+    P=machk
+    TP=${1:-$FPV/meta_access}
+    OWN_FILES="machk_pkg.sv machk_checker.sv"
+    RUNS=()
+    ;;
   reg_file)
     P=rfchk
     TP=${1:-$FPV/reg_file}
@@ -47,12 +53,13 @@ case $CHECKER in
     FPV_INC=$TP
     INC="-I$OT/ip/prim/rtl -I$OT/ip/prim_generic/rtl -I$FPV_INC"
     OWN_FILES="tag_path/tpchk_pkg.sv tag_path/tpchk_tf_model.sv tag_path/tpchk_rmw_model.sv
-               tag_path/tpchk_checker.sv reg_file/rfchk_checker.sv cheriot_mem_sys_fpv_checker.sv"
+               tag_path/tpchk_checker.sv meta_access/machk_pkg.sv meta_access/machk_checker.sv
+               reg_file/rfchk_checker.sv cheriot_mem_sys_fpv_checker.sv"
     # One build holds every check of every checker: each Jasper task copies its own, no define.
     RUNS=("")
     ;;
   *)
-    echo "unknown CHECKER: $CHECKER (tag_path, reg_file or memsys)"
+    echo "unknown CHECKER: $CHECKER (tag_path, meta_access, reg_file or memsys)"
     exit 2
     ;;
 esac

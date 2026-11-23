@@ -2,8 +2,8 @@
 
 Formal property verification (FPV) of the CHERIoT memory subsystem, `hw/ip/cheriot_mem_sys`. The
 testbench is one FPV top and one checker bound into the design; the checker holds one sub-checker
-per region of the design. Checker 1, the tag path, is built and documented here; checkers 2 (meta
-access) and 3 (revocation engine) have their requirements, testplan and TB architecture here.
+per region of the design. Checkers 1 (tag path) and 2 (meta access) are built and documented
+here; checker 3 (revocation engine) has its requirements, testplan and TB architecture here.
 
 ## How the testbench is laid out
 
@@ -13,7 +13,7 @@ access) and 3 (revocation engine) have their requirements, testplan and TB archi
 |---|---|---|
 | FPV top | `cheriot_mem_sys_fpv_env.sv` | Instantiates `cheriot_mem_sys` whole, with every input free: the formal tool picks each input in every cycle. |
 | Bound checker | `cheriot_mem_sys_fpv_checker.sv`, `cheriot_mem_sys_fpv_checker_bind.sv` | Bound into `cheriot_mem_sys` as `u_fpv_checker`. Its ports are every port of `cheriot_mem_sys` and the internal nets the checkers observe. It only wires: one instance per checker. The bind is the only file with RTL net names. |
-| Checker | `tag_path/tpchk_*.sv` | The checks (asserts), the covers, the models and tracker, and the rules on what the neighbours send. |
+| Checker | `tag_path/tpchk_*.sv`, `meta_access/machk_*.sv` | The checks (asserts), the covers, the models and tracker, and the rules on what the neighbours send. |
 | Rules | `cheriot_mem_sys_fpv_rule.svh` | `ENV_RULE`: an assumption when `FPV_ON` is defined, an assertion otherwise, so the same bind checks the rules in a simulation. |
 | TL-UL protocol | `hw/dv/sv/tlul_abvip/` | The TL-UL ABVIP (assertion-based VIP): one instance per TL-UL port. It assumes the rules of the end the testbench plays and asserts the end the design drives. |
 | Formal tasks | kept outside this repository | One build of the whole design. Each checker gets its own tasks (`task_TagPath_Main` and others): each copies only its checker's properties and cuts the blocks outside the checker's boundary. |
@@ -62,7 +62,7 @@ interface, and the other assumes it. The TB architecture lists them, in its Cont
 | `cheriot_mem_sys_tag_path_main_fpv` | `task_TagPath_Main`: every check of checker 1 but the liveness ones |
 
    The task script also makes checker 1's two liveness tasks (`task_TagPath_TagsRspTaken`,
-   `task_TagPath_EveryReqAnswered`) and the register-file unit's tasks in the same
+   `task_TagPath_EveryReqAnswered`), checker 2's and the register-file unit's tasks in the same
    session; prove them there, or add a dvsim entry to run one as a regression.
 
 ## Add a checker
@@ -71,7 +71,7 @@ interface, and the other assumes it. The TB architecture lists them, in its Cont
    environment and the contracts it proves or assumes.
 2. Write its uarch in `doc/tb_arch/`, in the layout of the checker 1 uarch, and get it agreed
    before writing SV.
-3. Make its folder (`meta_access/` or `revocation/`), with a short prefix for its files: the
+3. Make its folder (`revocation/`), with a short prefix for its files: the
    package and the checker (checks, covers, rules with `ENV_RULE`, an ABVIP on each TL-UL port).
 4. Wire it in: its instance in `cheriot_mem_sys_fpv_checker.sv`, which has every port of
    `cheriot_mem_sys` already, and a port there for each internal net it observes; those nets in

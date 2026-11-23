@@ -4,10 +4,10 @@
 //
 // The one checker bound into cheriot_mem_sys. It only wires: every port of the design and the
 // internal nets the checkers observe come in here, and each checker gets the ones it needs.
-// Checker 1 watches the tag path and the register-file unit the registers. Each checker holds its
-// own rules on what its neighbours send, so this module works unchanged in a formal build (rules
-// assumed) and in a simulation build (rules asserted). Checker 2 (meta access) and checker 3 (the
-// revocation engine) join here once their SV is written and agreed.
+// Checker 1 watches the tag path, checker 2 the path to the meta SRAM, and the register-file unit
+// the registers. Each checker holds its own rules on what its neighbours send, so this module
+// works unchanged in a formal build (rules assumed) and in a simulation build (rules asserted).
+// Checker 3, the revocation engine, joins here once its SV is written.
 //
 // A port is named after the design net or interface it carries, with the channel (h2d, d2h) for
 // a TL-UL one; the checkers' own ports keep the names the spec uses.
@@ -57,10 +57,7 @@ module cheriot_mem_sys_fpv_checker
   input  logic                  rmw_intg_fault_i,
   input  logic                  alert_req_i,
 
-  // Checker 2's ports, wired for it already: the bitmap ports (the core's TRVK filter,
-  // xbar_main's window, the engine), the 4:1 arbiter's inputs and meta_sram_tl. Unused until it
-  // joins.
-  /* verilator lint_off UNUSEDSIGNAL */
+  // The bitmap ports: the core's TRVK filter, xbar_main's window, the engine
   input  tlul_pkg::tl_h2d_t     corerevbm_tl_h2d_i,
   input  tlul_pkg::tl_d2h_t     corerevbm_tl_d2h_i,
   input  tlul_pkg::tl_h2d_t     revbm_tl_d_h2d_i,
@@ -73,7 +70,6 @@ module cheriot_mem_sys_fpv_checker
   input  tlul_pkg::tl_d2h_t     meta_mux_in_tl_d2h_i [4],
   input  tlul_pkg::tl_h2d_t     meta_sram_tl_h2d_i,
   input  tlul_pkg::tl_d2h_t     meta_sram_tl_d2h_i,
-  /* verilator lint_on UNUSEDSIGNAL */
   // regs_tl_d and the register file's two sides: to the hardware, from the hardware
   input  tlul_pkg::tl_h2d_t                             regs_tl_d_h2d_i,
   input  tlul_pkg::tl_d2h_t                             regs_tl_d_d2h_i,
@@ -155,6 +151,26 @@ module cheriot_mem_sys_fpv_checker
     .rmw_dev_fault_i,
     .rmw_intg_fault_i,
     .alert_req_i
+  );
+
+  // Checker 2, meta access. Its ports by 4:1 arbiter input: 0 the core's TRVK filter, 1 the tag
+  // port, 2 xbar_main's window, 3 the engine.
+  machk_checker u_machk_checker (
+    .clk_i,
+    .rst_ni,
+    .cheriot_ena_i,
+    .trvk_h2d_i   (corerevbm_tl_h2d_i),
+    .trvk_d2h_i   (corerevbm_tl_d2h_i),
+    .rmw_h2d_i    (tags_tl_h2d_i),
+    .rmw_d2h_i    (tags_tl_d2h_i),
+    .xbar_h2d_i   (revbm_tl_d_h2d_i),
+    .xbar_d2h_i   (revbm_tl_d_d2h_i),
+    .tbre_h2d_i   (tbre_revbm_tl_h2d_i),
+    .tbre_d2h_i   (tbre_revbm_tl_d2h_i),
+    .stream_h2d_i (meta_mux_in_tl_h2d_i),
+    .stream_d2h_i (meta_mux_in_tl_d2h_i),
+    .meta_h2d_i   (meta_sram_tl_h2d_i),
+    .meta_d2h_i   (meta_sram_tl_d2h_i)
   );
 
   // The register-file unit: contract C20 and the register rows the generic CSR tests cannot reach.
