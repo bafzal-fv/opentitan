@@ -96,6 +96,13 @@ def main():
     parser.add_argument('-f',
                         action='store_true',
                         help='Output as FPV CSR rw assertion module')
+    parser.add_argument('--fpv-depend',
+                        action='append',
+                        default=[],
+                        metavar='VLNV',
+                        help='With -f: a core the generated CSR checker core '
+                        'depends on (normally the IP register package core); '
+                        'may be repeated')
     parser.add_argument('--outdir',
                         '-t',
                         help='Target directory for generated RTL; '
@@ -282,7 +289,7 @@ def main():
         if fmt == 'dv':
             return gen_dv.gen_dv(obj, args.dv_base_names, outdir)
         if fmt == 'fpv':
-            return gen_fpv.gen_fpv(obj, outdir)
+            return gen_fpv.gen_fpv(obj, outdir, args.fpv_depend)
         src_lic = None
         src_copy = ''
         found_spdx = None

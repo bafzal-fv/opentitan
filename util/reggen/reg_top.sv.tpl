@@ -77,8 +77,9 @@
   # A big map from field to "finst names". These names are a pair (fld_pfx,
   # name), where fld_pfx is the name used to index into hw2reg / reg2hw
   # structures (something like "my_reg.my_field") and name is the name that
-  # gets prefixed onto local signals (something like "my_reg_my_field").
-  finst_names = {}
+  # gets prefixed onto local signals (something like "my_reg_my_field"). The
+  # rule lives in RegBlock.field_inst_names, shared with the FPV CSR templates.
+  finst_names = rb.field_inst_names()
 
   for r in rb.all_regs:
     if isinstance(r, MultiRegister):
@@ -89,40 +90,6 @@
       srs = [r]
 
     r0_srs[r] = (r0, srs)
-
-    reg_name = r0.name.lower()
-    fld_count = 0
-    for sr_idx, sr in enumerate(srs):
-      sr_name = sr.name.lower()
-      for fidx, field in enumerate(sr.fields):
-        if isinstance(r, MultiRegister):
-          sig_idx = fld_count if r.is_homogeneous() else sr_idx
-          fsig_pfx = '{}[{}]'.format(reg_name, sig_idx)
-        else:
-          fsig_pfx = reg_name
-
-        fld_count += 1
-
-        fld_name = field.name.lower()
-        if len(sr.fields) == 1:
-          finst_name = sr_name
-          fsig_name = fsig_pfx
-        else:
-          finst_name = sr_name + '_' + fld_name
-          if isinstance(r, MultiRegister):
-            if r.is_homogeneous():
-              fsig_name = fsig_pfx
-            else:
-              fsig_name = '{}.{}'.format(fsig_pfx, get_basename(fld_name))
-          else:
-            fsig_name = '{}.{}'.format(fsig_pfx, fld_name)
-
-        # The inregwen field is internal
-        if (not isinstance(r, MultiRegister) and sr.inregwen is not None
-                and sr.is_homogeneous(inregwen=True)):
-          fsig_name = fsig_pfx
-
-        finst_names[(sr, field)] = (fsig_name, finst_name)
 
 %>
 `include "prim_assert.sv"
@@ -638,7 +605,7 @@ ${reg_hdr}
   # We usually use the REG_we signal, but use REG_re for RC fields
   # (which get updated on a read, not a write)
   clk_base_name = f"{sr.async_clk[1].clock_base_name}_" if sr.async_clk else ""
-  we_suffix = 're' if field.swaccess.swrd() == SwRdAccess.RC else 'we'
+  we_suffix = 're' if sr.fields[0].swaccess.swrd() == SwRdAccess.RC else 'we'
   we_signal = f'{clk_base_name}{sr_name}_{we_suffix}'
 
   if sr.async_clk and sr.regwen:

@@ -48,8 +48,16 @@ def main():
         print("Error: spec path appears to be invalid: {}".format(spec))
         sys.exit(1)
 
+    # Optional: cores the generated CSR checker core depends on (normally the
+    # IP's register package core), so that FuseSoC compiles them first.
+    depend = gapi['parameters'].get('depend', [])
+    if isinstance(depend, str):
+        depend = [depend]
+
     cmd = os.path.join(util_path, "regtool.py")
     args = [cmd, "-f", "-t", ".", spec]
+    for core in depend:
+        args += ["--fpv-depend", core]
 
     try:
         subprocess.run(args, check=True)
