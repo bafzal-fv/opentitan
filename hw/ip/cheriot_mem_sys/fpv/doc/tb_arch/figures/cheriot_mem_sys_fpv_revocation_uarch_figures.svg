@@ -1,0 +1,381 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1140" height="3213" viewBox="0 0 1140 3213">
+<view id="fig1" viewBox="0 0 830 849"/>
+<view id="fig2" viewBox="0 869 1140 842"/>
+<view id="fig3" viewBox="0 1731 880 496"/>
+<view id="fig4" viewBox="0 2247 910 966"/>
+<svg x="0" y="0" width="830" height="849" viewBox="-10 -59 830 849" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="-10" y="-59" width="830" height="849" fill="#ffffff"/>
+<rect x="150" y="0" width="450" height="610" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="170" y="140" width="425" height="230" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="0" y="640" width="292.42" height="140" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="0" y="40" width="110" height="70" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="55" y="64.28" font-size="14" font-weight="bold" text-anchor="middle">register</text>
+<text x="55" y="81.78" font-size="14" font-weight="bold" text-anchor="middle">file</text>
+<text x="55" y="96.35" font-size="11" fill="#5c5c5c" text-anchor="middle">blackbox, model</text>
+<rect x="0" y="405" width="110" height="70" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="55" y="429.27" font-size="14" font-weight="bold" text-anchor="middle">core's tag</text>
+<text x="55" y="446.77" font-size="14" font-weight="bold" text-anchor="middle">filter</text>
+<text x="55" y="461.35" font-size="11" fill="#5c5c5c" text-anchor="middle">cut, its contracts</text>
+<rect x="0" y="510" width="110" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="55" y="538.02" font-size="14" font-weight="bold" text-anchor="middle">core</text>
+<text x="55" y="552.6" font-size="11" fill="#5c5c5c" text-anchor="middle">u_abvip_core</text>
+<rect x="170" y="45" width="170" height="60" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="255" y="73.03" font-size="14" font-weight="bold" text-anchor="middle">sweep control</text>
+<text x="255" y="87.6" font-size="11" fill="#5c5c5c" text-anchor="middle">status, epoch, interrupt</text>
+<rect x="440" y="45" width="150" height="60" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="515" y="73.03" font-size="14" font-weight="bold" text-anchor="middle">alert logic</text>
+<text x="515" y="87.6" font-size="11" fill="#5c5c5c" text-anchor="middle">request observed</text>
+<rect x="185" y="190" width="110" height="50" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="240" y="219.9" font-size="14" text-anchor="middle">sweep logic</text>
+<rect x="370" y="190" width="110" height="50" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="425" y="219.9" font-size="14" text-anchor="middle">TRVK filter</text>
+<rect x="375" y="300" width="100" height="50" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="425" y="329.9" font-size="14" text-anchor="middle">socket</text>
+<rect x="500" y="300" width="90" height="50" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="545" y="329.9" font-size="14" text-anchor="middle">tag filter</text>
+<rect x="500" y="410" width="90" height="60" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="545" y="436.15" font-size="14" font-weight="bold" text-anchor="middle">2:1 tag</text>
+<text x="545" y="453.65" font-size="14" font-weight="bold" text-anchor="middle">arbiter</text>
+<rect x="290" y="510" width="300" height="60" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="440" y="538.02" font-size="14" font-weight="bold" text-anchor="middle">tag clear squash</text>
+<text x="440" y="552.6" font-size="11" fill="#5c5c5c" text-anchor="middle">and core write watch</text>
+<rect x="680" y="180" width="110" height="70" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="735" y="204.28" font-size="14" font-weight="bold" text-anchor="middle">access</text>
+<text x="735" y="221.78" font-size="14" font-weight="bold" text-anchor="middle">checker</text>
+<text x="735" y="236.35" font-size="11" fill="#5c5c5c" text-anchor="middle">u_abvip_bitmap</text>
+<rect x="680" y="295" width="110" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="735" y="323.02" font-size="14" font-weight="bold" text-anchor="middle">xbar_main</text>
+<text x="735" y="337.6" font-size="11" fill="#5c5c5c" text-anchor="middle">u_abvip_xbar</text>
+<rect x="680" y="510" width="110" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="735" y="538.02" font-size="14" font-weight="bold" text-anchor="middle">RMW filter</text>
+<text x="735" y="552.6" font-size="11" fill="#5c5c5c" text-anchor="middle">u_abvip_rmw</text>
+<polygon points="110,75 124,86 124,80 156,80 156,86 170,75 156,64 156,70 124,70 124,64" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="240,190 236.5,181 243.5,181" fill="#2b2b2b"/>
+<polyline points="240,105 240,182" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="310,-30 313.5,-21 306.5,-21" fill="#2b2b2b"/>
+<polyline points="310,45 310,-22" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="370,215 361,218.5 361,211.5" fill="#2b2b2b"/>
+<polyline points="295,215 362,215" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="425,300 421.5,291 428.5,291" fill="#2b2b2b"/>
+<polyline points="425,240 425,292" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="375,325 366,328.5 366,321.5" fill="#2b2b2b"/>
+<polyline points="240,240 240,325 367,325" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="500,325 491,328.5 491,321.5" fill="#2b2b2b"/>
+<polyline points="475,325 492,325" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="680,215 671,218.5 671,211.5" fill="#2b2b2b"/>
+<polyline points="480,215 672,215" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="590,325 604,336 604,330 666,330 666,336 680,325 666,314 666,320 604,320 604,314" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="545,410 541.5,401 548.5,401" fill="#2b2b2b"/>
+<polyline points="545,350 545,402" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="500,440 491,443.5 491,436.5" fill="#2b2b2b"/>
+<polyline points="110,440 492,440" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="55,510 66,496 60,496 60,489 66,489 55,475 44,489 50,489 50,496 44,496" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="545,510 541.5,501 548.5,501" fill="#2b2b2b"/>
+<polyline points="545,470 545,502" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="590,540 604,551 604,545 666,545 666,551 680,540 666,529 666,535 604,535 604,529" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="290,540 281,543.5 281,536.5" fill="#7a7a7a"/>
+<polyline points="110,540 282,540" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
+<polygon points="290,522 281,525.5 281,518.5" fill="#7a7a7a"/>
+<polygon points="205,240 208.5,249 201.5,249" fill="#7a7a7a"/>
+<polyline points="282,522 205,522 205,248" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
+<polygon points="455,105 458.5,114 451.5,114" fill="#b0262b"/>
+<polyline points="425,190 425,147.5 455,147.5 455,113" fill="none" stroke="#b0262b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="515,45 511.5,36 518.5,36" fill="#b0262b"/>
+<polyline points="790,540 810,540 810,15 515,15 515,37" fill="none" stroke="#b0262b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="10" y="654" width="28" height="16" rx="2" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
+<rect x="10" y="678" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="10" y="702" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="10" y1="734" x2="38" y2="734" fill="none" stroke="#b0262b" stroke-width="1.4"/>
+<line x1="10" y1="758" x2="38" y2="758" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3"/>
+<text x="592" y="598.42" font-size="13" font-weight="bold" fill="#444444" text-anchor="end">Checker 3: real RTL</text>
+<text x="178" y="160.68" font-size="13" font-weight="bold" fill="#444444">engine</text>
+<text x="244" y="151.7" font-size="12" font-family="monospace" fill="#2b2b2b">start</text>
+<text x="310" y="-37.3" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">intr_tbre_done_o</text>
+<text x="332.5" y="207.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">read port</text>
+<text x="429" y="274.2" font-size="12" font-family="monospace" fill="#2b2b2b">TRVK downstream</text>
+<text x="307.5" y="317.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">clear port</text>
+<text x="540" y="207.2" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">bitmap port</text>
+<text x="635" y="306.15" font-size="14" fill="#2b2b2b" text-anchor="middle">tbre_tl_h</text>
+<text x="541" y="384.2" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="end">input 1</text>
+<text x="305" y="432.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">input 0</text>
+<text x="635" y="521.15" font-size="14" fill="#2b2b2b" text-anchor="middle">upstream</text>
+<text x="200" y="555.7" font-size="12" font-family="monospace" fill="#7a7a7a" text-anchor="middle">cored_tl_d</text>
+<text x="209" y="385.2" font-size="12" font-family="monospace" fill="#7a7a7a">watch</text>
+<text x="459" y="130.45" font-size="12" font-family="monospace" fill="#b0262b">faults</text>
+<text x="662.5" y="7.7" font-size="12" font-family="monospace" fill="#b0262b" text-anchor="middle">faults</text>
+<text x="48" y="666.55" font-size="13">Design (RTL)</text>
+<text x="48" y="690.55" font-size="13">Testbench</text>
+<text x="48" y="714.55" font-size="13">Blackbox or cut: its outputs are free</text>
+<text x="48" y="738.55" font-size="13">Alert path</text>
+<text x="48" y="762.55" font-size="13">Watch</text>
+</svg>
+<svg x="0" y="869" width="1140" height="842" viewBox="-10 -10 1140 842" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="-10" y="-10" width="1140" height="842" fill="#ffffff"/>
+<rect x="0" y="0" width="1120" height="700" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="165" y="40" width="940" height="645" rx="6" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
+<rect x="400" y="70" width="690" height="130" rx="6" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="400" y="230" width="690" height="435" rx="6" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="0" y="730" width="292.42" height="92" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="15" y="270" width="125" height="70" rx="4" fill="#f4f6f8" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="77.5" y="303.02" font-size="14" font-weight="bold" text-anchor="middle">Formal tool</text>
+<text x="77.5" y="317.6" font-size="11" fill="#5c5c5c" text-anchor="middle">free inputs</text>
+<rect x="185" y="110" width="145" height="320" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="257.5" y="259.27" font-size="14" font-weight="bold" text-anchor="middle">Revocation</text>
+<text x="257.5" y="276.77" font-size="14" font-weight="bold" text-anchor="middle">engine</text>
+<text x="257.5" y="291.35" font-size="11" fill="#5c5c5c" text-anchor="middle">real RTL</text>
+<rect x="185" y="470" width="145" height="125" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="257.5" y="509.9" font-size="14" font-weight="bold" text-anchor="middle">Blackboxes</text>
+<text x="257.5" y="524.48" font-size="11" fill="#5c5c5c" text-anchor="middle">register file, RMW</text>
+<text x="257.5" y="538.23" font-size="11" fill="#5c5c5c" text-anchor="middle">filter, access</text>
+<text x="257.5" y="551.98" font-size="11" fill="#5c5c5c" text-anchor="middle">checkers, 4:1 arbiter,</text>
+<text x="257.5" y="565.73" font-size="11" fill="#5c5c5c" text-anchor="middle">core's tag filter</text>
+<rect x="415" y="115" width="320" height="70" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="575" y="141.15" font-size="14" font-weight="bold" text-anchor="middle">TL-UL ABVIPs</text>
+<text x="575" y="155.72" font-size="11" fill="#5c5c5c" text-anchor="middle">core, core_tf, m0, xbar,</text>
+<text x="575" y="169.47" font-size="11" fill="#5c5c5c" text-anchor="middle">bitmap, rmw</text>
+<rect x="755" y="115" width="320" height="70" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="915" y="141.15" font-size="14" font-weight="bold" text-anchor="middle">Own rules</text>
+<text x="915" y="155.72" font-size="11" fill="#5c5c5c" text-anchor="middle">register file model, mode, answer</text>
+<text x="915" y="169.47" font-size="11" fill="#5c5c5c" text-anchor="middle">order; liveness: neighbours answer</text>
+<rect x="415" y="300" width="115" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="472.5" y="328.02" font-size="14" font-weight="bold" text-anchor="middle">Adapter</text>
+<text x="472.5" y="342.6" font-size="11" fill="#5c5c5c" text-anchor="middle">port events</text>
+<rect x="645" y="275" width="200" height="50" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="745" y="298.02" font-size="14" font-weight="bold" text-anchor="middle">Engine model</text>
+<text x="745" y="312.6" font-size="11" fill="#5c5c5c" text-anchor="middle">sweep, watch, causes</text>
+<rect x="645" y="345" width="200" height="50" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="745" y="368.02" font-size="14" font-weight="bold" text-anchor="middle">Tracker</text>
+<text x="745" y="382.6" font-size="11" fill="#5c5c5c" text-anchor="middle">one capability a sweep</text>
+<rect x="645" y="415" width="200" height="50" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="745" y="438.02" font-size="14" font-weight="bold" text-anchor="middle">Tag filter model</text>
+<text x="745" y="452.6" font-size="11" fill="#5c5c5c" text-anchor="middle">shared with checker 1</text>
+<rect x="945" y="275" width="130" height="260" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="1010" y="403.02" font-size="14" font-weight="bold" text-anchor="middle">Properties</text>
+<text x="1010" y="417.6" font-size="11" fill="#5c5c5c" text-anchor="middle">asserts, covers</text>
+<rect x="415" y="580" width="420" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="625" y="608.02" font-size="14" font-weight="bold" text-anchor="middle">TL-UL ABVIP, CheckBoth</text>
+<text x="625" y="622.6" font-size="11" fill="#5c5c5c" text-anchor="middle">m1, rd, trvk, clr, tf: the links between real blocks</text>
+<polygon points="185,305 176,308.5 176,301.5" fill="#2b2b2b"/>
+<polyline points="140,305 177,305" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="330,150 339,146.5 339,153.5" fill="#2b2b2b"/>
+<polyline points="415,150 338,150" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="415,330 406,333.5 406,326.5" fill="#2b2b2b"/>
+<polyline points="330,330 407,330" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="645,370 636,373.5 636,366.5" fill="#2b2b2b"/>
+<polyline points="530,330 587.5,330 587.5,370 637,370" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="645,300 636,303.5 636,296.5" fill="#2b2b2b"/>
+<polyline points="530,330 587.5,330 587.5,300 637,300" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="645,440 636,443.5 636,436.5" fill="#2b2b2b"/>
+<polyline points="530,330 587.5,330 587.5,440 637,440" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="945,300 936,303.5 936,296.5" fill="#2b2b2b"/>
+<polyline points="845,300 937,300" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="945,370 936,373.5 936,366.5" fill="#2b2b2b"/>
+<polyline points="845,370 937,370" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="945,440 936,443.5 936,436.5" fill="#2b2b2b"/>
+<polyline points="845,440 937,440" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="945,515 936,518.5 936,511.5" fill="#2b2b2b"/>
+<polyline points="472.5,360 472.5,515 937,515" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="10" y="744" width="28" height="16" rx="2" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
+<rect x="10" y="768" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="10" y="792" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="8" y="20.68" font-size="13" font-family="monospace" font-weight="bold" fill="#444444">revchk_env: the FPV top</text>
+<text x="173" y="60.67" font-size="13" font-family="monospace" font-weight="bold" fill="#3d5f8f">cheriot_mem_sys (u_dut)</text>
+<text x="408" y="90.67" font-size="13" font-family="monospace" font-weight="bold" fill="#5b8f43">revchk_env_rules: every assumption</text>
+<text x="408" y="250.68" font-size="13" font-family="monospace" font-weight="bold" fill="#5b8f43">revchk_checker: no assumption</text>
+<text x="372.5" y="142.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">assume</text>
+<text x="372.5" y="322.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">observe</text>
+<text x="558.75" y="322.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">events</text>
+<text x="895" y="362.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">predictions</text>
+<text x="708.75" y="507.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">events</text>
+<text x="48" y="756.55" font-size="13">Design (RTL)</text>
+<text x="48" y="780.55" font-size="13">Testbench</text>
+<text x="48" y="804.55" font-size="13">Blackbox or cut: its outputs are free</text>
+</svg>
+<svg x="0" y="1731" width="880" height="496" viewBox="-10 30 880 496" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="-10" y="30" width="880" height="496" fill="#ffffff"/>
+<rect x="0" y="400" width="250.36" height="116" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="0" y="40" width="200" height="330" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="100" y="61.65" font-size="14" font-weight="bold" text-anchor="middle">register file</text>
+<text x="100" y="76.22" font-size="11" fill="#5c5c5c" text-anchor="middle">blackbox: its outputs</text>
+<text x="100" y="89.97" font-size="11" fill="#5c5c5c" text-anchor="middle">are free</text>
+<rect x="20" y="120" width="160" height="230" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="100" y="198.65" font-size="14" font-weight="bold" text-anchor="middle">model rules</text>
+<text x="100" y="213.22" font-size="11" fill="#5c5c5c" text-anchor="middle">base, NUM held while</text>
+<text x="100" y="226.97" font-size="11" fill="#5c5c5c" text-anchor="middle">TBRE_REGWEN 0 (R1)</text>
+<text x="100" y="240.72" font-size="11" fill="#5c5c5c" text-anchor="middle">start strobe only while</text>
+<text x="100" y="254.47" font-size="11" fill="#5c5c5c" text-anchor="middle">TBRE_REGWEN 1 (R2)</text>
+<text x="100" y="268.23" font-size="11" fill="#5c5c5c" text-anchor="middle">INTR_STATE rises only</text>
+<text x="100" y="281.98" font-size="11" fill="#5c5c5c" text-anchor="middle">after a set request (R3)</text>
+<rect x="480" y="60" width="200" height="140" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="580" y="121.15" font-size="14" font-weight="bold" text-anchor="middle">sweep control</text>
+<text x="580" y="135.72" font-size="11" fill="#5c5c5c" text-anchor="middle">to the engine: start,</text>
+<text x="580" y="149.47" font-size="11" fill="#5c5c5c" text-anchor="middle">BASE, NUM</text>
+<rect x="480" y="250" width="200" height="100" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="580" y="298.02" font-size="14" font-weight="bold" text-anchor="middle">interrupt logic</text>
+<text x="580" y="312.6" font-size="11" fill="#5c5c5c" text-anchor="middle">intr_tbre_done_o</text>
+<rect x="740" y="150" width="120" height="80" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="800" y="181.15" font-size="14" font-weight="bold" text-anchor="middle">checker</text>
+<text x="800" y="195.72" font-size="11" fill="#5c5c5c" text-anchor="middle">observes every</text>
+<text x="800" y="209.47" font-size="11" fill="#5c5c5c" text-anchor="middle">wire here</text>
+<polygon points="480,85 471,88.5 471,81.5" fill="#2b2b2b"/>
+<polyline points="200,85 472,85" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="480,115 471,118.5 471,111.5" fill="#2b2b2b"/>
+<polyline points="200,115 472,115" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="200,150 209,146.5 209,153.5" fill="#2b2b2b"/>
+<polyline points="480,150 208,150" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="200,180 209,176.5 209,183.5" fill="#2b2b2b"/>
+<polyline points="480,180 208,180" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="480,275 471,278.5 471,271.5" fill="#2b2b2b"/>
+<polyline points="200,275 472,275" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="200,320 209,316.5 209,323.5" fill="#2b2b2b"/>
+<polyline points="480,320 208,320" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="740,170 731,173.5 731,166.5" fill="#7a7a7a"/>
+<polyline points="680,130 710,130 710,170 732,170" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
+<polygon points="800,230 803.5,239 796.5,239" fill="#7a7a7a"/>
+<polyline points="680,300 800,300 800,238" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
+<rect x="10" y="414" width="28" height="16" rx="2" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
+<rect x="10" y="438" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="10" y="462" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="10" y1="494" x2="38" y2="494" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3"/>
+<text x="340" y="77.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">TBRE_BASE_ADDR, TBRE_NUM_CAPS</text>
+<text x="340" y="107.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">TBRE_START strobe</text>
+<text x="340" y="142.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">TBRE_REGWEN</text>
+<text x="340" y="172.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">TBRE_STATUS, TBRE_EPOCH</text>
+<text x="340" y="267.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">INTR_STATE, INTR_ENABLE, INTR_TEST</text>
+<text x="340" y="312.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">INTR_STATE set request</text>
+<text x="48" y="426.55" font-size="13">Design (RTL)</text>
+<text x="48" y="450.55" font-size="13">Testbench</text>
+<text x="48" y="474.55" font-size="13">Blackbox: its outputs are free</text>
+<text x="48" y="498.55" font-size="13">Observed</text>
+</svg>
+<svg x="0" y="2247" width="910" height="966" viewBox="-10 -10 910 966" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="-10" y="-10" width="910" height="966" fill="#ffffff"/>
+<rect x="0" y="0" width="565" height="520" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="590" y="0" width="300" height="520" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="0" y="570" width="560" height="230" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="0" y="830" width="161.7" height="116" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="10" y="40" width="180" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="100" y="75.53" font-size="14" font-weight="bold" text-anchor="middle">(1) From software</text>
+<text x="100" y="90.1" font-size="11" fill="#5c5c5c" text-anchor="middle">register file model</text>
+<rect x="10" y="140" width="180" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="100" y="175.53" font-size="14" font-weight="bold" text-anchor="middle">(2) From the core</text>
+<text x="100" y="190.1" font-size="11" fill="#5c5c5c" text-anchor="middle">u_abvip_core</text>
+<rect x="10" y="240" width="180" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="100" y="275.52" font-size="14" font-weight="bold" text-anchor="middle">(3) From xbar_main</text>
+<text x="100" y="290.1" font-size="11" fill="#5c5c5c" text-anchor="middle">u_abvip_xbar</text>
+<rect x="10" y="340" width="190" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="105" y="366.77" font-size="14" font-weight="bold" text-anchor="middle">(4) From the bitmap,</text>
+<text x="105" y="384.27" font-size="14" font-weight="bold" text-anchor="middle">the RMW filter</text>
+<text x="105" y="398.85" font-size="11" fill="#5c5c5c" text-anchor="middle">u_abvip_bitmap, _rmw</text>
+<rect x="230" y="40" width="100" height="455" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="280" y="265.52" font-size="14" font-weight="bold" text-anchor="middle">Engine</text>
+<text x="280" y="280.1" font-size="11" fill="#5c5c5c" text-anchor="middle">RTL</text>
+<rect x="370" y="40" width="170" height="75" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="455" y="75.53" font-size="14" font-weight="bold" text-anchor="middle">(5) Reads</text>
+<text x="455" y="90.1" font-size="11" fill="#5c5c5c" text-anchor="middle">read port, tbre_tl_h</text>
+<rect x="370" y="135" width="170" height="75" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="455" y="170.53" font-size="14" font-weight="bold" text-anchor="middle">(6) Lookups</text>
+<text x="455" y="185.1" font-size="11" fill="#5c5c5c" text-anchor="middle">bitmap port</text>
+<rect x="370" y="230" width="170" height="75" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="455" y="258.65" font-size="14" font-weight="bold" text-anchor="middle">(7) Clears</text>
+<text x="455" y="273.23" font-size="11" fill="#5c5c5c" text-anchor="middle">clear port, input 1,</text>
+<text x="455" y="286.98" font-size="11" fill="#5c5c5c" text-anchor="middle">RMW filter</text>
+<rect x="370" y="325" width="170" height="75" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="455" y="360.52" font-size="14" font-weight="bold" text-anchor="middle">(8) Status</text>
+<text x="455" y="375.1" font-size="11" fill="#5c5c5c" text-anchor="middle">hw2reg, interrupt</text>
+<rect x="370" y="420" width="170" height="75" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="455" y="455.52" font-size="14" font-weight="bold" text-anchor="middle">(9) Alert</text>
+<text x="455" y="470.1" font-size="11" fill="#5c5c5c" text-anchor="middle">fault inputs, request</text>
+<polygon points="230,77.5 221,81 221,74" fill="#2b2b2b"/>
+<polyline points="190,77.5 222,77.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="230,177.5 221,181 221,174" fill="#2b2b2b"/>
+<polyline points="190,177.5 222,177.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="230,277.5 221,281 221,274" fill="#2b2b2b"/>
+<polyline points="190,277.5 222,277.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="230,377.5 221,381 221,374" fill="#2b2b2b"/>
+<polyline points="200,377.5 222,377.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="370,77.5 361,81 361,74" fill="#2b2b2b"/>
+<polyline points="330,77.5 362,77.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="370,172.5 361,176 361,169" fill="#2b2b2b"/>
+<polyline points="330,172.5 362,172.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="370,267.5 361,271 361,264" fill="#2b2b2b"/>
+<polyline points="330,267.5 362,267.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="370,362.5 361,366 361,359" fill="#2b2b2b"/>
+<polyline points="330,362.5 362,362.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="370,457.5 361,461 361,454" fill="#2b2b2b"/>
+<polyline points="330,457.5 362,457.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="600" y="40" width="280" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="740" y="75.53" font-size="14" font-weight="bold" text-anchor="middle">Right reads?</text>
+<text x="740" y="90.1" font-size="11" fill="#5c5c5c" text-anchor="middle">tbre_sweep</text>
+<rect x="600" y="135" width="280" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="740" y="170.53" font-size="14" font-weight="bold" text-anchor="middle">Right lookup?</text>
+<text x="740" y="185.1" font-size="11" fill="#5c5c5c" text-anchor="middle">tbre_decision</text>
+<rect x="600" y="230" width="280" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="740" y="258.65" font-size="14" font-weight="bold" text-anchor="middle">Right clear?</text>
+<text x="740" y="273.23" font-size="11" fill="#5c5c5c" text-anchor="middle">tbre_decision, tbre_clear,</text>
+<text x="740" y="286.98" font-size="11" fill="#5c5c5c" text-anchor="middle">tbre_watch</text>
+<rect x="600" y="325" width="280" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="740" y="353.65" font-size="14" font-weight="bold" text-anchor="middle">Right status?</text>
+<text x="740" y="368.23" font-size="11" fill="#5c5c5c" text-anchor="middle">tbre_start, tbre_status, tbre_epoch,</text>
+<text x="740" y="381.98" font-size="11" fill="#5c5c5c" text-anchor="middle">tbre_intr, tbre_errors</text>
+<rect x="600" y="420" width="280" height="75" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="740" y="448.65" font-size="14" font-weight="bold" text-anchor="middle">Right alert?</text>
+<text x="740" y="463.23" font-size="11" fill="#5c5c5c" text-anchor="middle">tbre_errors, contracts,</text>
+<text x="740" y="476.98" font-size="11" fill="#5c5c5c" text-anchor="middle">alert_causes</text>
+<polygon points="600,77.5 591,81 591,74" fill="#2b2b2b"/>
+<polyline points="540,77.5 592,77.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="600,172.5 591,176 591,169" fill="#2b2b2b"/>
+<polyline points="540,172.5 592,172.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="600,267.5 591,271 591,264" fill="#2b2b2b"/>
+<polyline points="540,267.5 592,267.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="600,362.5 591,366 591,359" fill="#2b2b2b"/>
+<polyline points="540,362.5 592,362.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="600,457.5 591,461 591,454" fill="#2b2b2b"/>
+<polyline points="540,457.5 592,457.5" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="20" y="590" width="180" height="40" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="110" y="608.02" font-size="14" font-weight="bold" text-anchor="middle">Sweep</text>
+<text x="110" y="622.6" font-size="11" fill="#5c5c5c" text-anchor="middle">start, BASE, N</text>
+<rect x="20" y="640" width="180" height="40" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="110" y="658.02" font-size="14" font-weight="bold" text-anchor="middle">Tracked capability</text>
+<text x="110" y="672.6" font-size="11" fill="#5c5c5c" text-anchor="middle">reads, decision, clear</text>
+<rect x="20" y="690" width="180" height="40" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="110" y="708.02" font-size="14" font-weight="bold" text-anchor="middle">Core write watch</text>
+<text x="110" y="722.6" font-size="11" fill="#5c5c5c" text-anchor="middle">writes outstanding</text>
+<rect x="20" y="740" width="180" height="40" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="110" y="758.02" font-size="14" font-weight="bold" text-anchor="middle">Error causes</text>
+<text x="110" y="772.6" font-size="11" fill="#5c5c5c" text-anchor="middle">this sweep, since reset</text>
+<rect x="240" y="655" width="150" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="315" y="683.02" font-size="14" font-weight="bold" text-anchor="middle">Spec rules</text>
+<text x="315" y="697.6" font-size="11" fill="#5c5c5c" text-anchor="middle">[ToO], [TP]</text>
+<rect x="420" y="655" width="125" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="482.5" y="683.02" font-size="14" font-weight="bold" text-anchor="middle">Predictions</text>
+<text x="482.5" y="697.6" font-size="11" fill="#5c5c5c" text-anchor="middle">for (5) to (9)</text>
+<polygon points="240,667 231,670.5 231,663.5" fill="#2b2b2b"/>
+<polyline points="200,610 220,610 220,667 232,667" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="240,679 231,682.5 231,675.5" fill="#2b2b2b"/>
+<polyline points="200,660 220,660 220,679 232,679" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="240,691 231,694.5 231,687.5" fill="#2b2b2b"/>
+<polyline points="200,710 220,710 220,691 232,691" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="240,703 231,706.5 231,699.5" fill="#2b2b2b"/>
+<polyline points="200,760 220,760 220,703 232,703" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="420,685 411,688.5 411,681.5" fill="#2b2b2b"/>
+<polyline points="390,685 412,685" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="95,570 91.5,561 98.5,561" fill="#2b2b2b"/>
+<polyline points="95,520 95,562" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="745,520 748.5,529 741.5,529" fill="#b0127a"/>
+<polyline points="545,685 745,685 745,528" fill="none" stroke="#b0127a" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="10" y="844" width="28" height="16" rx="2" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
+<rect x="10" y="868" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<line x1="10" y1="900" x2="38" y2="900" fill="none" stroke="#2b2b2b" stroke-width="1.4"/>
+<line x1="10" y1="924" x2="38" y2="924" fill="none" stroke="#b0127a" stroke-width="1.4"/>
+<text x="8" y="20.68" font-size="13" font-weight="bold" fill="#444444">Observed: the engine's ports</text>
+<text x="598" y="20.68" font-size="13" font-weight="bold" fill="#444444">Checked: properties</text>
+<text x="552" y="788.42" font-size="13" font-weight="bold" fill="#444444" text-anchor="end">Modeled: engine model</text>
+<text x="99" y="549.2" font-size="12" font-family="monospace" fill="#2b2b2b">observes (1) to (9)</text>
+<text x="741" y="606.7" font-size="12" font-family="monospace" fill="#b0127a" text-anchor="end">predicts (5) to (9)</text>
+<text x="48" y="856.55" font-size="13">Design (RTL)</text>
+<text x="48" y="880.55" font-size="13">Testbench</text>
+<text x="48" y="904.55" font-size="13">Observed event</text>
+<text x="48" y="928.55" font-size="13">Prediction</text>
+</svg>
+</svg>

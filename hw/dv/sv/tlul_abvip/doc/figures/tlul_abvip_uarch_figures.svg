@@ -1,10 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="840" height="3910" viewBox="0 0 840 3910">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="840" height="1834" viewBox="0 0 840 1834">
 <view id="fig1" viewBox="0 0 840 586"/>
-<view id="fig2" viewBox="0 606 760 680"/>
-<view id="fig3" viewBox="0 1306 760 680"/>
-<view id="fig4" viewBox="0 2006 760 656"/>
-<view id="fig5" viewBox="0 2682 811 442"/>
-<view id="fig6" viewBox="0 3144 750 766"/>
+<view id="fig2" viewBox="0 606 811 442"/>
+<view id="fig3" viewBox="0 1068 750 766"/>
 <svg x="0" y="0" width="840" height="586" viewBox="-10 -10 840 586" font-family="sans-serif" font-size="14" fill="#1f1f1f">
 <rect x="-10" y="-10" width="840" height="586" fill="#ffffff"/>
 <rect x="0" y="0" width="200" height="300" rx="6" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
@@ -71,142 +68,7 @@
 <text x="48" y="524.55" font-size="13">The project's own assumptions on top</text>
 <text x="48" y="548.55" font-size="13">Spec events out; a link watched</text>
 </svg>
-<svg x="0" y="606" width="760" height="680" viewBox="-10 10 760 680" font-family="sans-serif" font-size="14" fill="#1f1f1f">
-<rect x="-10" y="10" width="760" height="680" fill="#ffffff"/>
-<rect x="190" y="30" width="360" height="330" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="150" y="540" width="317.96" height="140" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
-<rect x="0" y="20" width="160" height="320" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
-<text x="80" y="171.15" font-size="14" font-weight="bold" text-anchor="middle">formal tool</text>
-<text x="80" y="185.72" font-size="11" fill="#5c5c5c" text-anchor="middle">free inputs:</text>
-<text x="80" y="199.47" font-size="11" fill="#5c5c5c" text-anchor="middle">plays the host</text>
-<rect x="580" y="20" width="160" height="320" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
-<text x="660" y="178.03" font-size="14" font-weight="bold" text-anchor="middle">DUT</text>
-<text x="660" y="192.6" font-size="11" fill="#5c5c5c" text-anchor="middle">the device</text>
-<polygon points="580,70 571,73.5 571,66.5" fill="#2b2b2b"/>
-<polyline points="160,70 572,70" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
-<polygon points="160,150 169,146.5 169,153.5" fill="#2f5f9e"/>
-<polyline points="580,150 168,150" fill="none" stroke="#2f5f9e" stroke-width="1.4" stroke-linejoin="round"/>
-<polygon points="160,230 169,226.5 169,233.5" fill="#2f5f9e"/>
-<polyline points="580,230 168,230" fill="none" stroke="#2f5f9e" stroke-width="1.4" stroke-linejoin="round"/>
-<polygon points="580,300 571,303.5 571,296.5" fill="#2b2b2b"/>
-<polyline points="160,300 572,300" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
-<rect x="270" y="420" width="200" height="80" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
-<text x="370" y="451.15" font-size="14" font-weight="bold" text-anchor="middle">tlul_abvip</text>
-<text x="370" y="465.73" font-size="11" fill="#5c5c5c" text-anchor="middle">Role = PlayHost</text>
-<text x="370" y="479.48" font-size="11" fill="#5c5c5c" text-anchor="middle">watches the port</text>
-<polygon points="370,420 366.5,411 373.5,411" fill="#7a7a7a"/>
-<polyline points="370,360 370,412" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
-<rect x="160" y="554" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1"/>
-<rect x="160" y="578" width="28" height="16" rx="2" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
-<rect x="160" y="602" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
-<line x1="160" y1="634" x2="188" y2="634" fill="none" stroke="#2b2b2b" stroke-width="1.4"/>
-<line x1="160" y1="658" x2="188" y2="658" fill="none" stroke="#2f5f9e" stroke-width="1.4"/>
-<text x="542" y="348.43" font-size="13" font-weight="bold" fill="#444444" text-anchor="end">the port</text>
-<text x="370" y="62.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">a_valid and every a_* field</text>
-<text x="370" y="90.2" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">assume_ the host rules</text>
-<text x="370" y="142.7" font-size="12" font-family="monospace" fill="#2f5f9e" text-anchor="middle">a_ready</text>
-<text x="370" y="170.2" font-size="12" font-family="monospace" fill="#2f5f9e" text-anchor="middle">assert_ TL14, TL27</text>
-<text x="370" y="222.7" font-size="12" font-family="monospace" fill="#2f5f9e" text-anchor="middle">d_valid and every d_* field</text>
-<text x="370" y="250.2" font-size="12" font-family="monospace" fill="#2f5f9e" text-anchor="middle">assert_ the device rules</text>
-<text x="370" y="292.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">d_ready</text>
-<text x="370" y="320.2" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">free; Liveness: assume_ TL17</text>
-<text x="374" y="394.2" font-size="12" font-family="monospace" fill="#7a7a7a">watch</text>
-<text x="198" y="566.55" font-size="13">Free inputs: the formal tool drives them</text>
-<text x="198" y="590.55" font-size="13">Design under test</text>
-<text x="198" y="614.55" font-size="13">ABVIP: watches every wire, drives none</text>
-<text x="198" y="638.55" font-size="13">Driven by the tool: assumed</text>
-<text x="198" y="662.55" font-size="13">DUT output: asserted</text>
-</svg>
-<svg x="0" y="1306" width="760" height="680" viewBox="-10 10 760 680" font-family="sans-serif" font-size="14" fill="#1f1f1f">
-<rect x="-10" y="10" width="760" height="680" fill="#ffffff"/>
-<rect x="190" y="30" width="360" height="330" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="150" y="540" width="317.96" height="140" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
-<rect x="0" y="20" width="160" height="320" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
-<text x="80" y="178.03" font-size="14" font-weight="bold" text-anchor="middle">DUT</text>
-<text x="80" y="192.6" font-size="11" fill="#5c5c5c" text-anchor="middle">the host</text>
-<rect x="580" y="20" width="160" height="320" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
-<text x="660" y="171.15" font-size="14" font-weight="bold" text-anchor="middle">formal tool</text>
-<text x="660" y="185.72" font-size="11" fill="#5c5c5c" text-anchor="middle">free inputs:</text>
-<text x="660" y="199.47" font-size="11" fill="#5c5c5c" text-anchor="middle">plays the device</text>
-<polygon points="580,70 571,73.5 571,66.5" fill="#2f5f9e"/>
-<polyline points="160,70 572,70" fill="none" stroke="#2f5f9e" stroke-width="1.4" stroke-linejoin="round"/>
-<polygon points="160,150 169,146.5 169,153.5" fill="#2b2b2b"/>
-<polyline points="580,150 168,150" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
-<polygon points="160,230 169,226.5 169,233.5" fill="#2b2b2b"/>
-<polyline points="580,230 168,230" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
-<polygon points="580,300 571,303.5 571,296.5" fill="#2f5f9e"/>
-<polyline points="160,300 572,300" fill="none" stroke="#2f5f9e" stroke-width="1.4" stroke-linejoin="round"/>
-<rect x="270" y="420" width="200" height="80" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
-<text x="370" y="451.15" font-size="14" font-weight="bold" text-anchor="middle">tlul_abvip</text>
-<text x="370" y="465.73" font-size="11" fill="#5c5c5c" text-anchor="middle">Role = PlayDevice</text>
-<text x="370" y="479.48" font-size="11" fill="#5c5c5c" text-anchor="middle">watches the port</text>
-<polygon points="370,420 366.5,411 373.5,411" fill="#7a7a7a"/>
-<polyline points="370,360 370,412" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
-<rect x="160" y="554" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1"/>
-<rect x="160" y="578" width="28" height="16" rx="2" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
-<rect x="160" y="602" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
-<line x1="160" y1="634" x2="188" y2="634" fill="none" stroke="#2b2b2b" stroke-width="1.4"/>
-<line x1="160" y1="658" x2="188" y2="658" fill="none" stroke="#2f5f9e" stroke-width="1.4"/>
-<text x="542" y="348.43" font-size="13" font-weight="bold" fill="#444444" text-anchor="end">the port</text>
-<text x="370" y="62.7" font-size="12" font-family="monospace" fill="#2f5f9e" text-anchor="middle">a_valid and every a_* field</text>
-<text x="370" y="90.2" font-size="12" font-family="monospace" fill="#2f5f9e" text-anchor="middle">assert_ the host rules</text>
-<text x="370" y="142.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">a_ready</text>
-<text x="370" y="170.2" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">free; Liveness: assume_ TL18</text>
-<text x="370" y="222.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">d_valid and every d_* field</text>
-<text x="370" y="250.2" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">assume_ the device rules</text>
-<text x="370" y="292.7" font-size="12" font-family="monospace" fill="#2f5f9e" text-anchor="middle">d_ready</text>
-<text x="370" y="320.2" font-size="12" font-family="monospace" fill="#2f5f9e" text-anchor="middle">assert_ TL23</text>
-<text x="374" y="394.2" font-size="12" font-family="monospace" fill="#7a7a7a">watch</text>
-<text x="198" y="566.55" font-size="13">Free inputs: the formal tool drives them</text>
-<text x="198" y="590.55" font-size="13">Design under test</text>
-<text x="198" y="614.55" font-size="13">ABVIP: watches every wire, drives none</text>
-<text x="198" y="638.55" font-size="13">Driven by the tool: assumed</text>
-<text x="198" y="662.55" font-size="13">DUT output: asserted</text>
-</svg>
-<svg x="0" y="2006" width="760" height="656" viewBox="-10 10 760 656" font-family="sans-serif" font-size="14" fill="#1f1f1f">
-<rect x="-10" y="10" width="760" height="656" fill="#ffffff"/>
-<rect x="190" y="30" width="360" height="330" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="150" y="540" width="315.84" height="116" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
-<rect x="0" y="20" width="160" height="320" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
-<text x="80" y="178.03" font-size="14" font-weight="bold" text-anchor="middle">host block</text>
-<text x="80" y="192.6" font-size="11" fill="#5c5c5c" text-anchor="middle">inside the DUT</text>
-<rect x="580" y="20" width="160" height="320" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
-<text x="660" y="178.03" font-size="14" font-weight="bold" text-anchor="middle">device block</text>
-<text x="660" y="192.6" font-size="11" fill="#5c5c5c" text-anchor="middle">inside the DUT</text>
-<polygon points="580,70 571,73.5 571,66.5" fill="#2f5f9e"/>
-<polyline points="160,70 572,70" fill="none" stroke="#2f5f9e" stroke-width="1.4" stroke-linejoin="round"/>
-<polygon points="160,150 169,146.5 169,153.5" fill="#2f5f9e"/>
-<polyline points="580,150 168,150" fill="none" stroke="#2f5f9e" stroke-width="1.4" stroke-linejoin="round"/>
-<polygon points="160,230 169,226.5 169,233.5" fill="#2f5f9e"/>
-<polyline points="580,230 168,230" fill="none" stroke="#2f5f9e" stroke-width="1.4" stroke-linejoin="round"/>
-<polygon points="580,300 571,303.5 571,296.5" fill="#2f5f9e"/>
-<polyline points="160,300 572,300" fill="none" stroke="#2f5f9e" stroke-width="1.4" stroke-linejoin="round"/>
-<rect x="270" y="420" width="200" height="80" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
-<text x="370" y="451.15" font-size="14" font-weight="bold" text-anchor="middle">tlul_abvip</text>
-<text x="370" y="465.73" font-size="11" fill="#5c5c5c" text-anchor="middle">Role = CheckBoth</text>
-<text x="370" y="479.48" font-size="11" fill="#5c5c5c" text-anchor="middle">checks both ends</text>
-<polygon points="370,420 366.5,411 373.5,411" fill="#7a7a7a"/>
-<polyline points="370,360 370,412" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
-<rect x="160" y="554" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
-<rect x="160" y="578" width="28" height="16" rx="2" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
-<line x1="160" y1="610" x2="188" y2="610" fill="none" stroke="#2f5f9e" stroke-width="1.4"/>
-<line x1="160" y1="634" x2="188" y2="634" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3"/>
-<text x="542" y="348.43" font-size="13" font-weight="bold" fill="#444444" text-anchor="end">the link</text>
-<text x="370" y="62.7" font-size="12" font-family="monospace" fill="#2f5f9e" text-anchor="middle">a_valid and every a_* field</text>
-<text x="370" y="90.2" font-size="12" font-family="monospace" fill="#2f5f9e" text-anchor="middle">assert_ the host rules</text>
-<text x="370" y="142.7" font-size="12" font-family="monospace" fill="#2f5f9e" text-anchor="middle">a_ready</text>
-<text x="370" y="170.2" font-size="12" font-family="monospace" fill="#2f5f9e" text-anchor="middle">assert_ TL14, TL27</text>
-<text x="370" y="222.7" font-size="12" font-family="monospace" fill="#2f5f9e" text-anchor="middle">d_valid and every d_* field</text>
-<text x="370" y="250.2" font-size="12" font-family="monospace" fill="#2f5f9e" text-anchor="middle">assert_ the device rules</text>
-<text x="370" y="292.7" font-size="12" font-family="monospace" fill="#2f5f9e" text-anchor="middle">d_ready</text>
-<text x="370" y="320.2" font-size="12" font-family="monospace" fill="#2f5f9e" text-anchor="middle">assert_ TL23</text>
-<text x="374" y="394.2" font-size="12" font-family="monospace" fill="#7a7a7a">watch</text>
-<text x="198" y="566.55" font-size="13">ABVIP: watches every wire, drives none</text>
-<text x="198" y="590.55" font-size="13">Design under test: both ends</text>
-<text x="198" y="614.55" font-size="13">DUT output: asserted</text>
-<text x="198" y="638.55" font-size="13">Watched, never driven</text>
-</svg>
-<svg x="0" y="2682" width="811" height="442" viewBox="-51 -10 811 442" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<svg x="0" y="606" width="811" height="442" viewBox="-51 -10 811 442" font-family="sans-serif" font-size="14" fill="#1f1f1f">
 <rect x="-51" y="-10" width="811" height="442" fill="#ffffff"/>
 <rect x="560" y="0" width="190" height="250" rx="6" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
 <rect x="0" y="330" width="391.75" height="92" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
@@ -260,7 +122,7 @@
 <text x="48" y="380.55" font-size="13">Rules: assume_ or assert_, as Role decides</text>
 <text x="48" y="404.55" font-size="13">a_fire_o, d_fire_o, num_outstanding_o, oldest_src_o</text>
 </svg>
-<svg x="0" y="3144" width="750" height="766" viewBox="-10 -10 750 766" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<svg x="0" y="1068" width="750" height="766" viewBox="-10 -10 750 766" font-family="sans-serif" font-size="14" fill="#1f1f1f">
 <rect x="-10" y="-10" width="750" height="766" fill="#ffffff"/>
 <rect x="0" y="0" width="340" height="400" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
 <rect x="400" y="0" width="330" height="400" rx="6" fill="#f8f9fa" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 3"/>
