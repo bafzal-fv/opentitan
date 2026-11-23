@@ -1,0 +1,60 @@
+CAPI=2:
+# Copyright lowRISC contributors (OpenTitan project).
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+name: ${instance_vlnv("lowrisc:fpv:pinmux_env_fpv:0.1")}
+description: "pinmux FPV environment (bound into pinmux)"
+filesets:
+  files_formal:
+    depend:
+      # This top's constants. Without these, FuseSoC resolves the virtual top_pkg and
+      # top_racl_pkg (needed by tlul) to an arbitrary top.
+      - ${instance_vlnv("lowrisc:constants:top_pkg")}
+      - ${instance_vlnv("lowrisc:constants:top_racl_pkg")}
+      # scan_role_pkg: used by the top's real TargetCfg, which a proof run may pass to pinmux.
+      - ${instance_vlnv("lowrisc:systems:scan_role_pkg")}
+      - lowrisc:prim:all
+      - lowrisc:ip:tlul
+      # The TL-UL assertion-based VIP on the bus port, and the generated CSR checker's rules
+      # package.
+      - lowrisc:dv:tlul_abvip
+      - lowrisc:dv:csr_chk
+      # Generates the register block's CSR checker from pinmux.hjson (regtool -f).
+      - lowrisc:fpv:csr_assert_gen
+      - ${instance_vlnv("lowrisc:ip:pinmux:0.1")}
+    files:
+      - pinmux_fpv_regmap_pkg.sv
+      - regwen_chk.sv
+      - pad_listen_chk.sv
+      - pinmux_listen_harness.sv
+      - pinmux_output_harness.sv
+      - wkup_detector_chk.sv
+      - pinmux_wakeup_harness.sv
+% if enable_strap_sampling:
+      - jtag_tap_chk.sv
+      - pinmux_jtag_harness.sv
+% endif
+      - pinmux_fpv_env.sv
+      - pinmux_fpv_env_bind.sv
+    file_type: systemVerilogSource
+
+generate:
+  csr_assert_gen:
+    generator: csr_assert_gen
+    parameters:
+      spec: ../../data/pinmux.hjson
+
+targets:
+  default: &default_target
+    default_tool: icarus
+    filesets:
+      - files_formal
+    toplevel: pinmux
+
+  formal:
+    <<: *default_target
+    generate:
+      - csr_assert_gen
+
+  lint:
+    <<: *default_target
