@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="930" height="806" viewBox="-10 -10 930 806" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="-10" y="-10" width="930" height="806" fill="#ffffff"/>
+<rect x="300" y="0" width="340" height="640" rx="6" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
+<rect x="0" y="670" width="352.66" height="116" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="350" y="40" width="240" height="60" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="470" y="68.03" font-size="14" font-weight="bold" text-anchor="middle">Core's tag filter</text>
+<text x="470" y="82.6" font-size="11" fill="#5c5c5c" text-anchor="middle">with the WTRC</text>
+<rect x="350" y="120" width="240" height="40" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="470" y="144.9" font-size="14" text-anchor="middle">2:1 tag arbiter</text>
+<rect x="350" y="180" width="240" height="40" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="470" y="204.9" font-size="14" text-anchor="middle">RMW filter</text>
+<rect x="350" y="250" width="240" height="70" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="470" y="283.02" font-size="14" font-weight="bold" text-anchor="middle">Four access checkers</text>
+<text x="470" y="297.6" font-size="11" fill="#5c5c5c" text-anchor="middle">and the 4:1 arbiter</text>
+<rect x="350" y="350" width="240" height="100" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="470" y="391.15" font-size="14" font-weight="bold" text-anchor="middle">Revocation engine</text>
+<text x="470" y="405.73" font-size="11" fill="#5c5c5c" text-anchor="middle">TRVK filter, tag filter,</text>
+<text x="470" y="419.48" font-size="11" fill="#5c5c5c" text-anchor="middle">sweep control</text>
+<rect x="350" y="480" width="240" height="50" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="470" y="509.9" font-size="14" text-anchor="middle">Register file</text>
+<rect x="350" y="560" width="240" height="50" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="470" y="583.02" font-size="14" font-weight="bold" text-anchor="middle">Alert logic</text>
+<text x="470" y="597.6" font-size="11" fill="#5c5c5c" text-anchor="middle">alert sender</text>
+<polygon points="470,120 466.5,111 473.5,111" fill="#2b2b2b"/>
+<polyline points="470,100 470,112" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="470,180 466.5,171 473.5,171" fill="#2b2b2b"/>
+<polyline points="470,160 470,172" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="470,250 466.5,241 473.5,241" fill="#2b2b2b"/>
+<polyline points="470,220 470,242" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="470,320 473.5,329 466.5,329" fill="#2b2b2b"/>
+<polyline points="470,350 470,328" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="0" y="30" width="130" height="240" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="65" y="154.9" font-size="14" text-anchor="middle">Ibex core</text>
+<rect x="0" y="280" width="130" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="65" y="301.15" font-size="14" text-anchor="middle">Meta SRAM</text>
+<text x="65" y="318.65" font-size="14" text-anchor="middle">controller</text>
+<rect x="0" y="380" width="130" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="65" y="401.15" font-size="14" text-anchor="middle">Interrupt</text>
+<text x="65" y="418.65" font-size="14" text-anchor="middle">controller</text>
+<rect x="0" y="450" width="130" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="65" y="471.15" font-size="14" text-anchor="middle">Mode switch in</text>
+<text x="65" y="488.65" font-size="14" text-anchor="middle">rv_core_ibex</text>
+<rect x="0" y="560" width="130" height="50" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="65" y="581.15" font-size="14" text-anchor="middle">Alert</text>
+<text x="65" y="598.65" font-size="14" text-anchor="middle">handler</text>
+<rect x="780" y="30" width="130" height="500" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="845" y="284.9" font-size="14" font-family="monospace" text-anchor="middle">xbar_main</text>
+<polygon points="130,50 144,61 144,55 336,55 336,61 350,50 336,39 336,45 144,45 144,39" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="130,85 139,81.5 139,88.5" fill="#2b2b2b"/>
+<polygon points="350,85 341,88.5 341,81.5" fill="#2b2b2b"/>
+<polyline points="138,85 342,85" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="130,260 144,271 144,265 336,265 336,271 350,260 336,249 336,255 144,255 144,249" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="350,300 336,289 336,295 144,295 144,289 130,300 144,311 144,305 336,305 336,311" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="130,400 139,396.5 139,403.5" fill="#2b2b2b"/>
+<polyline points="350,400 138,400" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="324,470 315,473.5 315,466.5" fill="#2b2b2b"/>
+<polyline points="130,470 316,470" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="324,45 324,570" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
+<circle cx="324" cy="470" r="3" fill="#2b2b2b"/>
+<polygon points="130,575 139,571.5 139,578.5" fill="#2b2b2b"/>
+<polyline points="350,575 138,575" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="350,598 341,601.5 341,594.5" fill="#2b2b2b"/>
+<polyline points="130,598 342,598" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="590,60 604,71 604,65 766,65 766,71 780,60 766,49 766,55 604,55 604,49" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="780,270 766,259 766,265 604,265 604,259 590,270 604,281 604,275 766,275 766,281" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="590,380 604,391 604,385 766,385 766,391 780,380 766,369 766,375 604,375 604,369" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="780,505 766,494 766,500 604,500 604,494 590,505 604,516 604,510 766,510 766,516" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<rect x="10" y="684" width="28" height="16" rx="2" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
+<rect x="10" y="708" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1"/>
+<polygon points="24,734 30,740 24,746 18,740" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<line x1="10" y1="764" x2="38" y2="764" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3"/>
+<text x="308" y="20.68" font-size="13" font-family="monospace" font-weight="bold" fill="#3d5f8f">cheriot_mem_sys</text>
+<text x="240" y="31.15" font-size="14" fill="#2b2b2b" text-anchor="middle">cored_tl_d</text>
+<text x="240" y="62.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">cored_tag_h2d,</text>
+<text x="240" y="77.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">cored_tag_d2h</text>
+<text x="240" y="241.15" font-size="14" fill="#2b2b2b" text-anchor="middle">corerevbm_tl</text>
+<text x="240" y="281.15" font-size="14" fill="#2b2b2b" text-anchor="middle">meta_sram_tl</text>
+<text x="240" y="392.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">intr_tbre_done_o</text>
+<text x="227" y="462.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">cheriot_ena_i</text>
+<text x="240" y="567.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">alert_tx_o</text>
+<text x="240" y="590.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">alert_rx_i</text>
+<text x="685" y="41.15" font-size="14" fill="#2b2b2b" text-anchor="middle">cored_tl_h</text>
+<text x="685" y="251.15" font-size="14" fill="#2b2b2b" text-anchor="middle">revbm_tl_d</text>
+<text x="685" y="361.15" font-size="14" fill="#2b2b2b" text-anchor="middle">tbre_tl_h</text>
+<text x="685" y="486.15" font-size="14" fill="#2b2b2b" text-anchor="middle">regs_tl_d</text>
+<polygon points="300,44 306,50 300,56 294,50" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<polygon points="300,79 306,85 300,91 294,85" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<polygon points="300,254 306,260 300,266 294,260" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<polygon points="300,294 306,300 300,306 294,300" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<polygon points="300,394 306,400 300,406 294,400" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<polygon points="300,464 306,470 300,476 294,470" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<polygon points="300,569 306,575 300,581 294,575" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<polygon points="300,592 306,598 300,604 294,598" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<polygon points="640,54 646,60 640,66 634,60" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<polygon points="640,264 646,270 640,276 634,270" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<polygon points="640,374 646,380 640,386 634,380" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<polygon points="640,499 646,505 640,511 634,505" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="48" y="696.55" font-size="13">The subsystem, the design under verification</text>
+<text x="48" y="720.55" font-size="13">A neighbour in Earl Grey, outside the proof</text>
+<text x="48" y="744.55" font-size="13">A subsystem port: the FPV boundary</text>
+<text x="48" y="768.55" font-size="13">The mode enable, read by every block</text>
+</svg>
