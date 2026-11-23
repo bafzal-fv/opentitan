@@ -53,5 +53,9 @@
                exp_fail_hjson: "{proj_root}/hw/top_earlgrey/ip_autogen/rv_plic/fpv/rv_plic_expected_failure.hjson"
                after_load: ["{proj_root}/hw/top_earlgrey/ip_autogen/rv_plic/fpv/tb/coverage.tcl"]
              }
+
+             // cheriot_mem_sys: one entry per Jasper task of its check script, listed in the
+             // IP's own batch cfg.
+             "{proj_root}/hw/ip/cheriot_mem_sys/fpv/cheriot_mem_sys_fpv_cfgs.hjson",
             ]
 }

@@ -1,0 +1,40 @@
+CAPI=2:
+# Copyright lowRISC contributors (OpenTitan project).
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+name: "lowrisc:fpv:cheriot_mem_sys_fpv:0.1"
+description: "cheriot_mem_sys FPV: one FPV top and one bound checker for every checker"
+
+filesets:
+  files_formal:
+    depend:
+      - lowrisc:ip:cheriot_mem_sys
+      - lowrisc:ip:tlul
+      - lowrisc:prim:all
+      # The TL-UL ABVIP (workarea project tlul_abvip), in hw/dv/sv/tlul_abvip.
+      - lowrisc:dv:tlul_abvip
+    files:
+      # ENV_RULE: a rule on a neighbour, assumed in FPV and asserted in simulation.
+      - cheriot_mem_sys_fpv_rule.svh: {is_include_file: true}
+      # Checker 1 (tag path), with its rules.
+      - tag_path/tpchk_pkg.sv
+      - tag_path/tpchk_tf_model.sv
+      - tag_path/tpchk_rmw_model.sv
+      - tag_path/tpchk_checker.sv
+      # The register-file unit (contract C20), with its rules.
+      - reg_file/rfchk_checker.sv
+      # Every checker, the FPV top, the checker's bind.
+      - cheriot_mem_sys_fpv_checker.sv
+      - cheriot_mem_sys_fpv_env.sv
+      - cheriot_mem_sys_fpv_checker_bind.sv
+    file_type: systemVerilogSource
+
+targets:
+  formal: &default_target
+    # This target only makes the file list for Jasper (cheriot_mem_sys_fpv_check.tcl).
+    default_tool: icarus
+    filesets:
+      - files_formal
+    toplevel: cheriot_mem_sys_fpv_env
+
+  default: *default_target

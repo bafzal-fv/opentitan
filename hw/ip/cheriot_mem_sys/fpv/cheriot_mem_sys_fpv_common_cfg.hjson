@@ -1,0 +1,36 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+//
+// What every cheriot_mem_sys FPV run under dvsim shares (cheriot_mem_sys_fpv_cfgs.hjson). Each
+// run is one task of the check script, with only its own assumptions and stopats: each entry
+// exports TASKS and PROVE, its task.
+{
+  dut:          cheriot_mem_sys_fpv_env
+  fusesoc_core: lowrisc:fpv:cheriot_mem_sys_fpv
+  import_cfgs:  ["{proj_root}/hw/formal/tools/dvsim/common_fpv_cfg.hjson"]
+  rel_path:     "hw/ip/cheriot_mem_sys/{sub_flow}/{tool}/{name}"
+  cov:          false
+
+  // LOCAL ONLY, not for an upstream pull request: Jasper runs the check script's dvsim wrapper
+  // instead of fpv.tcl. dvsim takes MEMSYS_JG_SCRIPT (the wrapper's path) and MEMSYS_JG_DIR (its
+  // folder, exported as FPV_DIR) from the environment, and stops with an unknown-wildcard error
+  // when either is unset.
+  overrides: [
+    {
+      name:  build_opts
+      value: ["{batch_mode_prefix} {MEMSYS_JG_SCRIPT}",
+              "-proj jgproject",
+              "-allow_unsupported_OS"]
+    }
+  ]
+
+  exports: [
+    // LOCAL ONLY: the check script's folder.
+    { FPV_DIR: "{MEMSYS_JG_DIR}" },
+    // The file list fusesoc writes where Jasper runs.
+    { FILES:   "lowrisc_fpv_cheriot_mem_sys_fpv_0.1.scr" },
+    // ProofMaster and the prove cache off: a regression result is one to report.
+    { FRESH:   "1" },
+  ]
+}

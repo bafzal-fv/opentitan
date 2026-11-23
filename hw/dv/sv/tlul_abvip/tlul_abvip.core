@@ -1,0 +1,21 @@
+CAPI=2:
+# Copyright lowRISC contributors (OpenTitan project).
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+name: "lowrisc:dv:tlul_abvip"
+description: "TL-UL assertion-based VIP (ABVIP): the TL-UL rules as assumptions and assertions"
+
+filesets:
+  files_dv:
+    depend:
+      - lowrisc:virtual_constants:top_pkg
+      - lowrisc:tlul:headers:0.1
+    files:
+      - tlul_abvip_pkg.sv
+      - tlul_abvip.sv
+    file_type: systemVerilogSource
+
+targets:
+  default:
+    filesets:
+      - files_dv
