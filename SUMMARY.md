@@ -604,6 +604,7 @@
   - [String Utils](./hw/dv/sv/str_utils/README.md)
   - [Test Vectors](./hw/dv/sv/test_vectors/README.md)
   - [Tile Link Agent](./hw/dv/sv/tl_agent/README.md)
+  - [TL-UL ABVIP](./hw/dv/sv/tlul_abvip/README.md)
   - [UART Agent](./hw/dv/sv/uart_agent/README.md)
   - [USB20 Agent](./hw/dv/sv/usb20_agent/README.md)
 

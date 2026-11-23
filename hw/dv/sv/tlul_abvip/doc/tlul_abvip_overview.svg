@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="586" viewBox="-10 -10 840 586" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="-10" y="-10" width="840" height="586" fill="#ffffff"/>
+<rect x="0" y="0" width="200" height="300" rx="6" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="260" y="0" width="300" height="300" rx="6" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
+<rect x="620" y="0" width="200" height="300" rx="6" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="0" y="450" width="417.81" height="116" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="15" y="50" width="170" height="80" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="100" y="81.15" font-size="14" font-weight="bold" text-anchor="middle">tlul_abvip</text>
+<text x="100" y="95.72" font-size="11" fill="#5c5c5c" text-anchor="middle">Role = PlayHost</text>
+<text x="100" y="109.47" font-size="11" fill="#5c5c5c" text-anchor="middle">the DUT is the device</text>
+<rect x="15" y="190" width="170" height="80" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="100" y="221.15" font-size="14" font-weight="bold" text-anchor="middle">project's rules</text>
+<text x="100" y="235.72" font-size="11" fill="#5c5c5c" text-anchor="middle">on top: address range,</text>
+<text x="100" y="249.47" font-size="11" fill="#5c5c5c" text-anchor="middle">opcodes</text>
+<rect x="275" y="50" width="110" height="80" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="330" y="88.03" font-size="14" font-weight="bold" text-anchor="middle">block A</text>
+<text x="330" y="102.6" font-size="11" fill="#5c5c5c" text-anchor="middle">a host</text>
+<rect x="435" y="50" width="110" height="80" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
+<text x="490" y="88.03" font-size="14" font-weight="bold" text-anchor="middle">block B</text>
+<text x="490" y="102.6" font-size="11" fill="#5c5c5c" text-anchor="middle">a device</text>
+<rect x="300" y="190" width="220" height="80" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="410" y="221.15" font-size="14" font-weight="bold" text-anchor="middle">tlul_abvip</text>
+<text x="410" y="235.72" font-size="11" fill="#5c5c5c" text-anchor="middle">Role = CheckBoth</text>
+<text x="410" y="249.47" font-size="11" fill="#5c5c5c" text-anchor="middle">both ends are the DUT</text>
+<rect x="635" y="50" width="170" height="80" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="720" y="81.15" font-size="14" font-weight="bold" text-anchor="middle">tlul_abvip</text>
+<text x="720" y="95.72" font-size="11" fill="#5c5c5c" text-anchor="middle">Role = PlayDevice</text>
+<text x="720" y="109.47" font-size="11" fill="#5c5c5c" text-anchor="middle">the DUT is the host</text>
+<rect x="635" y="190" width="170" height="80" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="720" y="221.15" font-size="14" font-weight="bold" text-anchor="middle">project's rules</text>
+<text x="720" y="235.72" font-size="11" fill="#5c5c5c" text-anchor="middle">on top: what the</text>
+<text x="720" y="249.47" font-size="11" fill="#5c5c5c" text-anchor="middle">neighbour sends</text>
+<polygon points="185,90 199,101 199,95 261,95 261,101 275,90 261,79 261,85 199,85 199,79" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="385,90 399,101 399,95 421,95 421,101 435,90 421,79 421,85 399,85 399,79" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="410,190 406.5,181 413.5,181" fill="#7a7a7a"/>
+<polyline points="410,90 410,182" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
+<polygon points="545,90 559,101 559,95 621,95 621,101 635,90 621,79 621,85 559,85 559,79" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="66,190 62.5,181 69.5,181" fill="#7a7a7a"/>
+<polyline points="66,130 66,182" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
+<polygon points="686,190 682.5,181 689.5,181" fill="#7a7a7a"/>
+<polyline points="686,130 686,182" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
+<rect x="330" y="350" width="160" height="70" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="410" y="383.02" font-size="14" font-weight="bold" text-anchor="middle">Block's checkers</text>
+<text x="410" y="397.6" font-size="11" fill="#5c5c5c" text-anchor="middle">read the spec events</text>
+<polygon points="330,385 321,388.5 321,381.5" fill="#7a7a7a"/>
+<polyline points="185,118 230,118 230,385 322,385" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
+<polygon points="490,385 499,381.5 499,388.5" fill="#7a7a7a"/>
+<polyline points="635,118 590,118 590,385 498,385" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
+<rect x="10" y="464" width="28" height="16" rx="2" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
+<rect x="10" y="488" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="10" y="512" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="10" y1="544" x2="38" y2="544" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3"/>
+<text x="8" y="20.68" font-size="13" font-weight="bold" fill="#5b8f43">Environment</text>
+<text x="268" y="20.68" font-size="13" font-weight="bold" fill="#3d5f8f">DUT</text>
+<text x="628" y="20.68" font-size="13" font-weight="bold" fill="#5b8f43">Environment</text>
+<text x="230" y="71.15" font-size="14" fill="#2b2b2b" text-anchor="middle">TL-UL</text>
+<text x="410" y="71.15" font-size="14" fill="#2b2b2b" text-anchor="middle">TL-UL</text>
+<text x="414" y="144.2" font-size="12" font-family="monospace" fill="#7a7a7a">watch</text>
+<text x="590" y="71.15" font-size="14" fill="#2b2b2b" text-anchor="middle">TL-UL</text>
+<text x="70" y="164.2" font-size="12" font-family="monospace" fill="#7a7a7a">spec events</text>
+<text x="690" y="164.2" font-size="12" font-family="monospace" fill="#7a7a7a">spec events</text>
+<text x="48" y="476.55" font-size="13">Design under test</text>
+<text x="48" y="500.55" font-size="13">tlul_abvip instances and their environment: legal TL-UL</text>
+<text x="48" y="524.55" font-size="13">The project's own assumptions on top</text>
+<text x="48" y="548.55" font-size="13">Spec events out; a link watched</text>
+</svg>

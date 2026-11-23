@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="811" height="442" viewBox="-51 -10 811 442" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="-51" y="-10" width="811" height="442" fill="#ffffff"/>
+<rect x="560" y="0" width="190" height="250" rx="6" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<rect x="0" y="330" width="383.09" height="92" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="40" y="40" width="150" height="70" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="115" y="73.03" font-size="14" font-weight="bold" text-anchor="middle">Request decode</text>
+<text x="115" y="87.6" font-size="11" fill="#5c5c5c" text-anchor="middle">lanes, opcode, size</text>
+<rect x="40" y="150" width="150" height="70" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="115" y="183.03" font-size="14" font-weight="bold" text-anchor="middle">Handshakes</text>
+<text x="115" y="197.6" font-size="11" fill="#5c5c5c" text-anchor="middle">fire, waits</text>
+<rect x="300" y="150" width="150" height="70" rx="4" fill="#ffffff" stroke="#2b2b2b" stroke-width="1.2"/>
+<text x="375" y="176.15" font-size="14" font-weight="bold" text-anchor="middle">Outstanding list</text>
+<text x="375" y="190.72" font-size="11" fill="#5c5c5c" text-anchor="middle">outstanding_q,</text>
+<text x="375" y="204.47" font-size="11" fill="#5c5c5c" text-anchor="middle">answer match</text>
+<rect x="570" y="40" width="170" height="70" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="655" y="66.15" font-size="14" font-weight="bold" text-anchor="middle">Host rules</text>
+<text x="655" y="80.72" font-size="11" fill="#5c5c5c" text-anchor="middle">A channel and d_ready:</text>
+<text x="655" y="94.47" font-size="11" fill="#5c5c5c" text-anchor="middle">assumed or asserted</text>
+<rect x="570" y="150" width="170" height="70" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
+<text x="655" y="176.15" font-size="14" font-weight="bold" text-anchor="middle">Device rules</text>
+<text x="655" y="190.72" font-size="11" fill="#5c5c5c" text-anchor="middle">D channel and a_ready:</text>
+<text x="655" y="204.47" font-size="11" fill="#5c5c5c" text-anchor="middle">assumed or asserted</text>
+<polygon points="40,60 31,63.5 31,56.5" fill="#2b2b2b"/>
+<polyline points="0,60 32,60" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<circle cx="20" cy="60" r="3" fill="#2b2b2b"/>
+<polygon points="40,170 31,173.5 31,166.5" fill="#2b2b2b"/>
+<polyline points="20,60 20,170 32,170" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="40,200 31,203.5 31,196.5" fill="#2b2b2b"/>
+<polyline points="0,200 32,200" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="570,75 561,78.5 561,71.5" fill="#2b2b2b"/>
+<polyline points="190,75 562,75" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="300,185 291,188.5 291,181.5" fill="#2b2b2b"/>
+<polyline points="190,185 292,185" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="570,95 561,98.5 561,91.5" fill="#2b2b2b"/>
+<polyline points="420,150 420,95 562,95" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="570,171 561,174.5 561,167.5" fill="#2b2b2b"/>
+<polyline points="450,171 562,171" fill="none" stroke="#2b2b2b" stroke-width="1.4" stroke-linejoin="round"/>
+<polygon points="710,290 701,293.5 701,286.5" fill="#7a7a7a"/>
+<polyline points="375,220 375,290 702,290" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
+<rect x="10" y="344" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1"/>
+<rect x="10" y="368" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
+<line x1="10" y1="400" x2="38" y2="400" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3"/>
+<text x="568" y="20.68" font-size="13" font-weight="bold" fill="#5b8f43">Rules</text>
+<text x="-4" y="64.2" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="end">h2d_i</text>
+<text x="-4" y="204.2" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="end">d2h_i</text>
+<text x="380" y="67.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">lanes, legal flags</text>
+<text x="245" y="177.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">a_fire, d_fire</text>
+<text x="495" y="87.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">a_src_outstanding</text>
+<text x="510" y="163.7" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">answer match</text>
+<text x="542.5" y="282.7" font-size="12" font-family="monospace" fill="#7a7a7a" text-anchor="middle">spec events out</text>
+<text x="48" y="356.55" font-size="13">Bookkeeping: the same for every role</text>
+<text x="48" y="380.55" font-size="13">Rules: assume_ or assert_, as Role decides</text>
+<text x="48" y="404.55" font-size="13">a_fire_o, d_fire_o, outstanding_cnt_o, oldest_src_o</text>
+</svg>
