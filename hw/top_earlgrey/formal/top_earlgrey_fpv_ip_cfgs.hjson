@@ -43,6 +43,20 @@
                exp_fail_hjson: "{proj_root}/hw/top_earlgrey/ip_autogen/pinmux/fpv/pinmux_chip_expected_failure.hjson"
              }
 
+             // Pinmux FPV environment bound into pinmux (fpv/env): the always-on clock at a fifth
+             // of the main clock and one reset at the start.
+             {
+               name: pinmux_env_fpv
+               dut: pinmux
+               fusesoc_core: lowrisc:earlgrey_fpv:pinmux_env_fpv
+               import_cfgs: ["{proj_root}/hw/formal/tools/dvsim/common_fpv_cfg.hjson"]
+               rel_path: "hw/top_earlgrey/ip_autogen/pinmux/{sub_flow}/{tool}/env"
+               defines: "FPV_ALERT_NO_SIGINT_ERR"
+               cov: true
+               // "-batch", or empty under dvsim --gui, so a run can tell batch from GUI.
+               exports: [{JG_BATCH_MODE: "{batch_mode_prefix}"}]
+             }
+
              {
                name: rv_plic_fpv
                dut: rv_plic_tb
