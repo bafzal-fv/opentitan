@@ -40,6 +40,13 @@ bind cheriot_mem_sys cheriot_mem_sys_fpv_checker u_fpv_checker (
   .tags_tl_h2d_i        (tags_tl_h2d),
   .tags_tl_d2h_i        (tags_tl_d2h),
 
+  // The engine's clear report to the tag clear squash, and the clear at the RMW filter's upstream
+  // port
+  .tbre_clear_valid_i   (tbre_clear_valid),
+  .tbre_clear_done_i    (tbre_clear_done),
+  .tbre_clear_addr_i    (tbre_clear_addr),
+  .tbre_clear_at_rmw_i  (tbre_clear_at_rmw),
+
   // Fault inputs of the alert logic, and the alert sender's request
   .wtrc_fault_i         (cheriot_fatal_error.wtrc_error),
   .rmw_dev_fault_i      (cheriot_fatal_error.rmw_error),

@@ -45,7 +45,11 @@ module rfchk_checker
   // Port events //
   /////////////////
 
-  logic req_fire, rsp_fire, wr_req, rd_req;
+  // A request accepted and an answer taken on regs_tl_d; the request accepted is a write or a read
+  logic req_fire;
+  logic rsp_fire;
+  logic wr_req;
+  logic rd_req;
   assign req_fire = regs_h2d_i.a_valid && regs_d2h_i.a_ready;
   assign rsp_fire = regs_d2h_i.d_valid && regs_h2d_i.d_ready;
   assign wr_req   = req_fire && (regs_h2d_i.a_opcode inside {PutFullData, PutPartialData});
@@ -56,14 +60,17 @@ module rfchk_checker
   ////////////
 
   // The register a request names: its offset in the register window ([REGS]).
-  logic [RegsAw-1:0] off;
-  assign off = regs_h2d_i.a_address[RegsAw-1:0];
+  logic [RegsAw-1:0] reg_offset;
+  assign reg_offset = regs_h2d_i.a_address[RegsAw-1:0];
 
   // A request the register file answers without error: a whole aligned word with valid command
   // integrity, and valid data integrity on a write ([TLUL] Usage of User Bits; [REGS]: a register
   // write must cover the field). Any other request may be answered with d_error, and the checks
   // below claim nothing for its data.
-  logic word_req, intg_ok, good_rd, good_wr;
+  logic word_req;
+  logic intg_ok;
+  logic good_rd;
+  logic good_wr;
   assign word_req = (regs_h2d_i.a_size == top_pkg::TL_SZW'(2)) &&
                     (regs_h2d_i.a_address[1:0] == 2'b00) && (&regs_h2d_i.a_mask);
   assign intg_ok  = (regs_h2d_i.a_user.cmd_intg == get_cmd_intg(regs_h2d_i)) &&
@@ -71,12 +78,17 @@ module rfchk_checker
   assign good_rd  = rd_req && word_req && intg_ok;
   assign good_wr  = wr_req && word_req && intg_ok;
 
-  logic wr_base, wr_num, wr_start, wr_intr_state, wr_status;
-  assign wr_base       = wr_req && (off == CHERIOT_MEM_SYS_TBRE_BASE_ADDR_OFFSET);
-  assign wr_num        = wr_req && (off == CHERIOT_MEM_SYS_TBRE_NUM_CAPS_OFFSET);
-  assign wr_start      = wr_req && (off == CHERIOT_MEM_SYS_TBRE_START_OFFSET);
-  assign wr_intr_state = wr_req && (off == CHERIOT_MEM_SYS_INTR_STATE_OFFSET);
-  assign wr_status     = wr_req && (off == CHERIOT_MEM_SYS_TBRE_STATUS_OFFSET);
+  // A write to TBRE_BASE_ADDR, TBRE_NUM_CAPS, TBRE_START, INTR_STATE or TBRE_STATUS
+  logic wr_base;
+  logic wr_num;
+  logic wr_start;
+  logic wr_intr_state;
+  logic wr_status;
+  assign wr_base       = wr_req && (reg_offset == CHERIOT_MEM_SYS_TBRE_BASE_ADDR_OFFSET);
+  assign wr_num        = wr_req && (reg_offset == CHERIOT_MEM_SYS_TBRE_NUM_CAPS_OFFSET);
+  assign wr_start      = wr_req && (reg_offset == CHERIOT_MEM_SYS_TBRE_START_OFFSET);
+  assign wr_intr_state = wr_req && (reg_offset == CHERIOT_MEM_SYS_INTR_STATE_OFFSET);
+  assign wr_status     = wr_req && (reg_offset == CHERIOT_MEM_SYS_TBRE_STATUS_OFFSET);
 
   // TBRE_REGWEN as software reads it: the value the hardware presents ([REGS] ro, "Low while the
   // revocation engine is active").
@@ -84,13 +96,15 @@ module rfchk_checker
   assign regwen = hw2reg_i.tbre_regwen.d;
 
   // The interrupt logic's set request, and software's write of 1 to INTR_STATE.tbre_done (rw1c).
-  logic intr_set, intr_w1c;
+  logic intr_set;
+  logic intr_w1c;
   assign intr_set = hw2reg_i.intr_state.de && hw2reg_i.intr_state.d;
   assign intr_w1c = wr_intr_state && regs_h2d_i.a_data[0];
 
   // The hardware's set of a sticky error in the cycle software writes 1 to clear it. The spec does
   // not say which wins; raised with the designers.
-  logic start_err_collision, sweep_err_collision;
+  logic start_err_collision;
+  logic sweep_err_collision;
   assign start_err_collision = hw2reg_i.tbre_status.start_err.de && hw2reg_i.tbre_status.start_err.d
                                && wr_status && regs_h2d_i.a_data[StartErrBit];
   assign sweep_err_collision = hw2reg_i.tbre_status.sweep_err.de && hw2reg_i.tbre_status.sweep_err.d
@@ -108,8 +122,9 @@ module rfchk_checker
   // The answer to a good read: expected data under a mask of the bits the model knows. At most one
   // request is outstanding on the port (REQ_REG_02), so the next answer taken is this read's.
   logic                      rd_pending_d, rd_pending_q;
-  logic [top_pkg::TL_DW-1:0] exp_data_d, exp_data_q, exp_mask_d, exp_mask_q;
-  always_comb begin
+  logic [top_pkg::TL_DW-1:0] exp_data_d, exp_data_q;
+  logic [top_pkg::TL_DW-1:0] exp_mask_d, exp_mask_q;
+  always_comb begin : proc_rd_model
     rd_pending_d = rd_pending_q;
     exp_data_d   = exp_data_q;
     exp_mask_d   = exp_mask_q;
@@ -117,24 +132,30 @@ module rfchk_checker
       rd_pending_d = 1'b1;
       exp_data_d   = '0;
       exp_mask_d   = '0;
-      case (off)
-        CHERIOT_MEM_SYS_TBRE_BASE_ADDR_OFFSET: begin  // bits 2:0 read as zero (REQ_TBRE_06)
+      case (reg_offset)
+        // Bits 2:0 read as zero (REQ_TBRE_06).
+        CHERIOT_MEM_SYS_TBRE_BASE_ADDR_OFFSET: begin
           exp_data_d = {reg2hw_i.tbre_base_addr.q, 3'b000};
           exp_mask_d = '1;
         end
+
         CHERIOT_MEM_SYS_TBRE_NUM_CAPS_OFFSET: begin
           exp_data_d = {1'b0, reg2hw_i.tbre_num_caps.q};
           exp_mask_d = '1;
         end
+
         CHERIOT_MEM_SYS_TBRE_REGWEN_OFFSET: begin
           exp_data_d = {31'b0, regwen};
           exp_mask_d = '1;
         end
-        CHERIOT_MEM_SYS_TBRE_STATUS_OFFSET: begin     // busy only: the sticky bits' set-or-clear
-                                                      // collision is open with the designers
+
+        // Busy only: the sticky bits' set-or-clear collision is open with the designers.
+        CHERIOT_MEM_SYS_TBRE_STATUS_OFFSET: begin
           exp_data_d[BusyBit] = busy_q;
           exp_mask_d[BusyBit] = 1'b1;
         end
+
+        // A register the model does not predict: its answer is not checked.
         default: rd_pending_d = 1'b0;
       endcase
     end else if (rsp_fire) begin
@@ -142,7 +163,7 @@ module rfchk_checker
     end
   end
 
-  always_ff @(posedge clk_i or negedge rst_ni) begin
+  always_ff @(posedge clk_i or negedge rst_ni) begin : proc_rd_model_regs
     if (!rst_ni) begin
       busy_q       <= 1'b0;
       rd_pending_q <= 1'b0;
@@ -169,17 +190,25 @@ module rfchk_checker
   assert_RegFile_LockedNumStable : assert property (
     !regwen |=> $stable(reg2hw_i.tbre_num_caps.q));
 
-  // A write to TBRE_START while locked gives no strobe, now or next cycle (the port takes a
-  // request at most every other cycle, so the next cycle holds no other write). The cycle after
-  // is counted in a flop: Verilator cannot lint ## inside an implication.
-  // REQ_TBRE_05; csr locked start no strobe
+  // A write to TBRE_START while locked, now and in the last cycle. A flop, not ##1: Verilator
+  // cannot lint ## inside an implication.
+  logic locked_start_wr;
   logic locked_start_wr_q;
-  always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (!rst_ni) locked_start_wr_q <= 1'b0;
-    else         locked_start_wr_q <= wr_start && !regwen;
+  assign locked_start_wr = wr_start && !regwen;
+
+  always_ff @(posedge clk_i or negedge rst_ni) begin : proc_locked_start_wr
+    if (!rst_ni) begin
+      locked_start_wr_q <= 1'b0;
+    end else begin
+      locked_start_wr_q <= locked_start_wr;
+    end
   end
+
+  // A write to TBRE_START while locked gives no strobe, now or next cycle (the port takes a
+  // request at most every other cycle, so the next cycle holds no other write).
+  // REQ_TBRE_05; csr locked start no strobe
   assert_RegFile_LockedStartNoStrobe : assert property (
-    (wr_start && !regwen) || locked_start_wr_q |-> !reg2hw_i.tbre_start.qe);
+    locked_start_wr || locked_start_wr_q |-> !reg2hw_i.tbre_start.qe);
 
   /////////////////////////////////
   // csr: the start strobe (C20) //

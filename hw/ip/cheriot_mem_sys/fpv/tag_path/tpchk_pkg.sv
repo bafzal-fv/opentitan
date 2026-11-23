@@ -197,26 +197,32 @@ package tpchk_pkg;
     logic       meta_answered;  // its meta answer arrived
     logic       meta_err;       // with d_error
     logic       meta_tag;       // and this tag
-  } ent_t;
+  } entry_t;
 
-  // One RMW filter operation: a request accepted upstream, until its answer is taken there.
+  // One RMW filter operation: a request accepted upstream, until its answer is taken there. The
+  // answers' fields hold once its step has passed them.
   typedef struct packed {
-    logic     vld;
-    logic     wr;         // a write: its tag is to be written
-    addr_t    addr;       // the meta word
-    bit_sel_t  bit_sel;
+    logic     wr;             // a write: its tag is to be written
+    addr_t    addr;           // the meta word
+    bit_sel_t bit_sel;
     logic     tag;
     src_t     src;
-    logic     get_taken;  // its Get was taken downstream
-    logic     get_in;     // the Get's answer arrived
-    logic     get_err;
-    logic     get_intg_bad; // ... with a bad response or data integrity
-    word_t    word;       // W: the word the Get read
-    logic     wb_taken;   // its write-back was taken downstream
-    logic     wb_in;      // the write-back's answer arrived
-    logic     wb_err;
-    tl_d_op_e wb_op;
+    logic     get_err;        // its Get's answer: d_error
+    logic     get_intg_bad;   // ... a bad response or data integrity
+    word_t    word;           // ... W, the word read
+    logic     writeback_err;  // its write-back's answer: d_error
+    tl_d_op_e writeback_op;   // ... and its d_opcode
   } op_t;
+
+  // How far the operation got ([ToO] RMW Filter).
+  typedef enum logic [2:0] {
+    StepIdle,           // no operation
+    StepGetOwed,        // accepted, its Get not yet taken downstream
+    StepWaitFill,       // its Get taken, the Get's answer not yet arrived
+    StepFilled,         // the Get's answer arrived: W known
+    StepWriteBackSent,  // its write-back taken downstream, its answer not yet arrived
+    StepWriteBackAcked  // the write-back's answer arrived
+  } step_e;
 
   function automatic kind_e req_kind(tl_h2d_t r, logic tag, logic ena);
     logic is_load_w1;

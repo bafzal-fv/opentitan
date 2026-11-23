@@ -44,6 +44,13 @@ module cheriot_mem_sys_fpv_checker
   input  tlul_pkg::tl_h2d_t     tags_tl_h2d_i,
   input  tlul_pkg::tl_d2h_t     tags_tl_d2h_i,
 
+  // The engine's clear report to the tag clear squash, and the cycle its clear is at the RMW
+  // filter's upstream port
+  input  logic                  tbre_clear_valid_i,
+  input  logic                  tbre_clear_done_i,
+  input  logic [top_pkg::TL_AW-1:0] tbre_clear_addr_i,
+  input  logic                  tbre_clear_at_rmw_i,
+
   // The fault inputs of the alert logic, and the alert sender's request
   input  logic                  wtrc_fault_i,
   input  logic                  rmw_dev_fault_i,
@@ -140,6 +147,10 @@ module cheriot_mem_sys_fpv_checker
     .rmw_tag_rsp_i    (rmw_tag_d2h_i),
     .tags_h2d_i       (tags_tl_h2d_i),
     .tags_d2h_i       (tags_tl_d2h_i),
+    .clear_valid_i    (tbre_clear_valid_i),
+    .clear_done_i     (tbre_clear_done_i),
+    .clear_addr_i     (tbre_clear_addr_i),
+    .clear_at_rmw_i   (tbre_clear_at_rmw_i),
     .wtrc_fault_i,
     .rmw_dev_fault_i,
     .rmw_intg_fault_i,

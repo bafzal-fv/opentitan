@@ -5,8 +5,14 @@
 // A model of the RMW filter, written from the spec, one operation at a time. A read of tag bit b
 // becomes a Get of the meta word W and answers Bit(W, b). A write of tag t becomes the same Get
 // and, only when the bit would change, a write-back of Upd(W, b, t); then the answer. The
-// properties compare the filter's two ports with these outputs. cur is the operation accepted
-// before this cycle; x_d is the next value of x_q.
+// properties compare the filter's two ports with these outputs.
+//
+// One state, step_q, says how far the operation op_q got: its Get owed, its Get's answer awaited,
+// W known, its write-back's answer awaited, that answer arrived. A downstream answer counts in the
+// cycle it arrives; none arrives in the cycle the operation is accepted (contract C10).
+//
+// Signal names: upstream_op is the request presented upstream; x_d is the next value of x_q;
+// *_stored a value an earlier cycle recorded, *_now a value arriving in this cycle.
 module tpchk_rmw_model
   import tlul_pkg::*;
   import tpchk_pkg::*;
@@ -24,177 +30,236 @@ module tpchk_rmw_model
   input  tl_d2h_t  tags_d2h_i,
   input  ev_t      tags_ev_i,
 
-  // Expected behaviour
-  output op_t      cur_o,          // the operation accepted before this cycle
-  output logic     can_take_o,     // REQ_RMW_10: a new request may be accepted now
-  output logic     get_slot_o,     // the downstream request may be a Get now
-  output op_t      get_op_o,       // ... of this operation
-  output logic     get_slot_new_o, // ... for the request presented upstream, not yet accepted
-  output logic     wb_slot_o,      // the downstream request may be the write-back now
-  output word_t    wb_word_o,      // Upd(W, b, t)
-  output op_t      ans_op_o,       // the operation an upstream answer now belongs to
-  output logic     ans_op_vld_o,
-  output logic     ans_get_in_o,   // its Get answer arrived, now or before
-  output logic     ans_get_err_o,
-  output logic     ans_faulty_o,   // a write whose Get answer is faulty: bad integrity, no d_error
-  output word_t    ans_word_o,
-  output logic     ans_bit_eq_o,   // Bit(W, b) == t
-  output logic     ans_wb_need_o,  // a write whose bit differs, Get answer without error
-  output logic     ans_wb_in_o,    // its write-back's answer arrived, now or before
-  output logic     ans_wb_err_o,
-  output tl_d_op_e ans_wb_op_o,
+  // The operation accepted before this cycle, and how far it got
+  output step_e    step_o,
+  output op_t      op_o,
 
-  // Fault causes since reset, now included ([ToO] Error Handling)
-  output logic     dev_err_seen_o, // a meta SRAM answer taken with d_error
-  output logic     intg_err_seen_o // ... with a bad response or data integrity
+  // What each port may do now: upstream, accept a new request (REQ_RMW_10); downstream, present
+  // the Get of get_op, which may be the request presented upstream and not yet accepted, or the
+  // write-back of Upd(W, b, t)
+  output logic     rmw_req_rdy_allowed_o,
+  output logic     tags_get_vld_allowed_o,
+  output op_t      get_op_o,
+  output logic     upstream_get_vld_allowed_o,
+  output logic     tags_writeback_vld_allowed_o,
+  output word_t    writeback_word_o,
+
+  // What the operation's answer depends on: its Get's answer (arrived now or before, its error,
+  // faulty when a write's has a bad integrity and no d_error, the word W, whether
+  // Bit(W, b) == t), whether a write-back is needed, and the write-back's answer
+  output logic     rsp_get_answered_o,
+  output logic     rsp_get_err_o,
+  output logic     rsp_get_faulty_o,
+  output word_t    rsp_word_o,
+  output logic     rsp_tag_unchanged_o,
+  output logic     rsp_writeback_needed_o,
+  output logic     rsp_writeback_answered_o,
+  output logic     rsp_writeback_err_o,
+  output tl_d_op_e rsp_writeback_op_o,
+
+  // Fault causes since reset, now included ([ToO] Error Handling): a meta SRAM answer taken with
+  // d_error, or with a bad response or data integrity
+  output logic     device_err_seen_o,
+  output logic     intg_err_seen_o
 );
 
-  op_t cur_q;
+  ///////////////////
+  // The operation //
+  ///////////////////
 
-  // The request presented upstream, as an operation.
-  op_t pres;
-  always_comb begin
-    pres         = '0;
-    pres.vld     = 1'b1;
-    pres.wr      = !is_get(rmw_h2d_i);
-    pres.addr    = rmw_h2d_i.a_address;
-    pres.bit_sel = rmw_bit_sel_i;
-    pres.tag     = rmw_tag_i;
-    pres.src     = rmw_h2d_i.a_source;
+  // The operation accepted before this cycle, and how far it got
+  step_e step_q, step_d;
+  op_t   op_q, op_d;
+
+  // The request presented upstream, as an operation
+  op_t upstream_op;
+  always_comb begin : proc_upstream_op
+    upstream_op         = '0;
+    upstream_op.wr      = !is_get(rmw_h2d_i);
+    upstream_op.addr    = rmw_h2d_i.a_address;
+    upstream_op.bit_sel = rmw_bit_sel_i;
+    upstream_op.tag     = rmw_tag_i;
+    upstream_op.src     = rmw_h2d_i.a_source;
   end
 
   // REQ_RMW_10: no operation unanswered, or the only one, a read, answered now.
-  logic can_take;
-  assign can_take = !cur_q.vld || (!cur_q.wr && rmw_ev_i.rsp_fire);
+  logic rmw_req_rdy_allowed;
+  assign rmw_req_rdy_allowed = (step_q == StepIdle) || (!op_q.wr && rmw_ev_i.rsp_fire);
 
-  // Downstream slots: the current operation's owed Get or write-back, or the Get of the request
-  // presented upstream, which then passes combinationally ([ToO] Timing).
-  logic get_slot_cur;
-  logic get_slot_new;
-  logic get_slot;
+  ////////////////////
+  // Downstream Get //
+  ////////////////////
+
+  // The operation's Get, still owed, or the Get of the request presented upstream, which then
+  // passes combinationally ([ToO] Timing).
+  logic pending_get_vld_allowed;
+  logic upstream_get_vld_allowed;
+  logic tags_get_vld_allowed;
   op_t  get_op;
-  assign get_slot_cur = cur_q.vld && !cur_q.get_taken;
-  assign get_slot_new = !get_slot_cur && rmw_ev_i.req_vld && can_take;
-  assign get_slot     = get_slot_cur || get_slot_new;
-  assign get_op       = get_slot_cur ? cur_q : pres;
+  assign pending_get_vld_allowed  = step_q == StepGetOwed;
+  assign upstream_get_vld_allowed = !pending_get_vld_allowed && rmw_ev_i.req_vld &&
+                                    rmw_req_rdy_allowed;
+  assign tags_get_vld_allowed     = pending_get_vld_allowed || upstream_get_vld_allowed;
+  assign get_op                   = pending_get_vld_allowed ? op_q : upstream_op;
 
-  // The operation this cycle's answers belong to: the current one, or one accepted now and
-  // answered in the same cycle.
-  logic new_now;
-  op_t  a;
-  logic a_vld;
-  assign new_now = !cur_q.vld && rmw_ev_i.req_fire;
-  assign a_vld   = cur_q.vld || new_now;
-  always_comb begin
-    a = cur_q.vld ? cur_q : pres;
-    if (new_now) a.get_taken = get_slot_new && tags_ev_i.req_fire;
-  end
+  logic pending_get_sent_now;
+  logic upstream_get_sent_now;
+  assign pending_get_sent_now  = pending_get_vld_allowed  && tags_ev_i.req_fire;
+  assign upstream_get_sent_now = upstream_get_vld_allowed && tags_ev_i.req_fire;
 
-  logic  get_ans_now;
-  logic  get_in;
+  // The Get's answer, recorded earlier or arriving now, and what it means for the bit
+  logic  get_stored;
+  logic  get_answer_now;
+  logic  get_answered;
   logic  get_err;
   word_t word;
-  logic  bit_eq;
-  logic  wb_need;
-  assign get_ans_now = a_vld && tags_ev_i.rsp_vld && a.get_taken && !a.get_in;
-  assign get_in      = a.get_in || get_ans_now;
-  assign get_err     = a.get_in ? a.get_err : tags_d2h_i.d_error;
-  assign word        = a.get_in ? a.word    : tags_d2h_i.d_data;
-  assign bit_eq      = bit_of(word, a.bit_sel) == a.tag;
-  assign wb_need     = a.wr && get_in && !get_err && !bit_eq;
+  logic  tag_unchanged;
+  logic  writeback_needed;
+  assign get_stored       = step_q inside {StepFilled, StepWriteBackSent, StepWriteBackAcked};
+  assign get_answer_now   = (step_q == StepWaitFill) && tags_ev_i.rsp_vld;
+  assign get_answered     = get_stored || get_answer_now;
+  assign get_err          = get_stored ? op_q.get_err : tags_d2h_i.d_error;
+  assign word             = get_stored ? op_q.word    : tags_d2h_i.d_data;
+  assign tag_unchanged    = bit_of(word, op_q.bit_sel) == op_q.tag;
+  assign writeback_needed = op_q.wr && get_answered && !get_err && !tag_unchanged;
 
   // A faulty Get answer: a write's, without d_error but with a bad response or data integrity.
   // The spec does not say what the filter does with a corrupted read, and the integrity fault
   // raises the alert anyway, so the checks leave that write free from here on.
   logic tags_intg_bad;
   logic get_intg_bad;
-  logic faulty;
+  logic get_faulty;
   assign tags_intg_bad = !is_rsp_intg_ok(tags_d2h_i) || !is_d_data_intg_ok(tags_d2h_i);
-  assign get_intg_bad  = a.get_in ? a.get_intg_bad : tags_intg_bad;
-  assign faulty        = a.wr && get_in && !get_err && get_intg_bad;
+  assign get_intg_bad  = get_stored ? op_q.get_intg_bad : tags_intg_bad;
+  assign get_faulty    = op_q.wr && get_answered && !get_err && get_intg_bad;
+
+  ///////////////////////////
+  // Downstream write-back //
+  ///////////////////////////
 
   // The write-back follows the Get's answer, in a later cycle: one request channel.
-  logic wb_slot;
-  assign wb_slot = cur_q.vld && cur_q.get_taken && wb_need && !cur_q.wb_taken;
+  logic tags_writeback_vld_allowed;
+  logic writeback_sent_now;
+  assign tags_writeback_vld_allowed = (step_q == StepFilled) && writeback_needed;
+  assign writeback_sent_now         = tags_writeback_vld_allowed && tags_ev_i.req_fire;
 
-  logic     wb_ans_now;
-  logic     wb_in;
-  logic     wb_err;
-  tl_d_op_e wb_op;
-  assign wb_ans_now = a_vld && tags_ev_i.rsp_vld && a.wb_taken && !a.wb_in;
-  assign wb_in      = a.wb_in || wb_ans_now;
-  assign wb_err     = a.wb_in ? a.wb_err : tags_d2h_i.d_error;
-  assign wb_op      = a.wb_in ? a.wb_op  : tags_d2h_i.d_opcode;
+  // The write-back's answer, recorded earlier or arriving now
+  logic     writeback_stored;
+  logic     writeback_answer_now;
+  logic     writeback_answered;
+  logic     writeback_err;
+  tl_d_op_e writeback_op;
+  assign writeback_stored     = step_q == StepWriteBackAcked;
+  assign writeback_answer_now = (step_q == StepWriteBackSent) && tags_ev_i.rsp_vld;
+  assign writeback_answered   = writeback_stored || writeback_answer_now;
+  assign writeback_err        = writeback_stored ? op_q.writeback_err : tags_d2h_i.d_error;
+  assign writeback_op         = writeback_stored ? op_q.writeback_op  : tags_d2h_i.d_opcode;
 
-  // Next operation.
-  op_t cur_d;
-  always_comb begin
-    cur_d = cur_q;
-    if (get_slot_cur && tags_ev_i.req_fire) cur_d.get_taken = 1'b1;
-    if (cur_q.vld && get_ans_now) begin
-      cur_d.get_in       = 1'b1;
-      cur_d.get_err      = tags_d2h_i.d_error;
-      cur_d.get_intg_bad = tags_intg_bad;
-      cur_d.word         = tags_d2h_i.d_data;
-    end
-    if (wb_slot && tags_ev_i.req_fire) cur_d.wb_taken = 1'b1;
-    if (cur_q.vld && wb_ans_now) begin
-      cur_d.wb_in  = 1'b1;
-      cur_d.wb_err = tags_d2h_i.d_error;
-      cur_d.wb_op  = tags_d2h_i.d_opcode;
-    end
-    if (cur_q.vld && rmw_ev_i.rsp_fire) cur_d = '0;
+  ////////////////
+  // Next state //
+  ////////////////
+
+  always_comb begin : proc_op_next
+    step_d = step_q;
+    op_d   = op_q;
     if (rmw_ev_i.req_fire) begin
-      cur_d           = pres;
-      cur_d.get_taken = get_slot_new && tags_ev_i.req_fire;
-      if (new_now && get_ans_now) begin
-        cur_d.get_in       = 1'b1;
-        cur_d.get_err      = tags_d2h_i.d_error;
-        cur_d.get_intg_bad = tags_intg_bad;
-        cur_d.word         = tags_d2h_i.d_data;
-      end
-      if (new_now && rmw_ev_i.rsp_fire) cur_d = '0;
-    end
-  end
-
-  logic dev_err_seen_q, dev_err_seen_d;
-  logic intg_err_seen_q, intg_err_seen_d;
-  assign dev_err_seen_d  = dev_err_seen_q || (tags_ev_i.rsp_fire && tags_d2h_i.d_error);
-  assign intg_err_seen_d = intg_err_seen_q ||
-                           (tags_ev_i.rsp_fire && (!is_rsp_intg_ok(tags_d2h_i) ||
-                                                   !is_d_data_intg_ok(tags_d2h_i)));
-
-  always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (!rst_ni) begin
-      cur_q           <= '0;
-      dev_err_seen_q  <= 1'b0;
-      intg_err_seen_q <= 1'b0;
+      // A new operation is accepted, after any pending one is answered now. Its Get may pass
+      // downstream at once; its Get's answer comes a cycle or more later (contract C10).
+      step_d = upstream_get_sent_now ? StepWaitFill : StepGetOwed;
+      op_d   = upstream_op;
+    end else if ((step_q != StepIdle) && rmw_ev_i.rsp_fire) begin
+      // The operation is answered and leaves.
+      step_d = StepIdle;
+      op_d   = '0;
     end else begin
-      cur_q           <= cur_d;
-      dev_err_seen_q  <= dev_err_seen_d;
-      intg_err_seen_q <= intg_err_seen_d;
+      // The operation moves on with this cycle's event.
+      unique case (step_q)
+        // Its Get is taken downstream.
+        StepGetOwed: begin
+          if (pending_get_sent_now) step_d = StepWaitFill;
+        end
+
+        // Its Get's answer arrives: keep W, its d_error and its integrity.
+        StepWaitFill: begin
+          if (get_answer_now) begin
+            step_d            = StepFilled;
+            op_d.get_err      = tags_d2h_i.d_error;
+            op_d.get_intg_bad = tags_intg_bad;
+            op_d.word         = tags_d2h_i.d_data;
+          end
+        end
+
+        // Its write-back is taken downstream.
+        StepFilled: begin
+          if (writeback_sent_now) step_d = StepWriteBackSent;
+        end
+
+        // The write-back's answer arrives: keep its d_error and d_opcode.
+        StepWriteBackSent: begin
+          if (writeback_answer_now) begin
+            step_d             = StepWriteBackAcked;
+            op_d.writeback_err = tags_d2h_i.d_error;
+            op_d.writeback_op  = tags_d2h_i.d_opcode;
+          end
+        end
+
+        // No operation, or one waiting only for its answer to be taken upstream.
+        default: ;
+      endcase
     end
   end
 
-  assign cur_o           = cur_q;
-  assign can_take_o      = can_take;
-  assign get_slot_o      = get_slot;
-  assign get_op_o        = get_op;
-  assign get_slot_new_o  = get_slot_new;
-  assign wb_slot_o       = wb_slot;
-  assign wb_word_o       = upd(word, cur_q.bit_sel, cur_q.tag);
-  assign ans_op_o        = a;
-  assign ans_op_vld_o    = a_vld;
-  assign ans_get_in_o    = get_in;
-  assign ans_get_err_o   = get_err;
-  assign ans_faulty_o    = faulty;
-  assign ans_word_o      = word;
-  assign ans_bit_eq_o    = bit_eq;
-  assign ans_wb_need_o   = wb_need;
-  assign ans_wb_in_o     = wb_in;
-  assign ans_wb_err_o    = wb_err;
-  assign ans_wb_op_o     = wb_op;
-  assign dev_err_seen_o  = dev_err_seen_d;
-  assign intg_err_seen_o = intg_err_seen_d;
+  always_ff @(posedge clk_i or negedge rst_ni) begin : proc_op_regs
+    if (!rst_ni) begin
+      step_q <= StepIdle;
+      op_q   <= '0;
+    end else begin
+      step_q <= step_d;
+      op_q   <= op_d;
+    end
+  end
+
+  //////////////////
+  // Fault causes //
+  //////////////////
+
+  logic device_err_seen_q, device_err_seen_d;
+  logic intg_err_seen_q, intg_err_seen_d;
+  assign device_err_seen_d = device_err_seen_q || (tags_ev_i.rsp_fire && tags_d2h_i.d_error);
+  assign intg_err_seen_d   = intg_err_seen_q   || (tags_ev_i.rsp_fire && tags_intg_bad);
+
+  always_ff @(posedge clk_i or negedge rst_ni) begin : proc_err_seen
+    if (!rst_ni) begin
+      device_err_seen_q <= 1'b0;
+      intg_err_seen_q   <= 1'b0;
+    end else begin
+      device_err_seen_q <= device_err_seen_d;
+      intg_err_seen_q   <= intg_err_seen_d;
+    end
+  end
+
+  /////////////
+  // Outputs //
+  /////////////
+
+  assign step_o                       = step_q;
+  assign op_o                         = op_q;
+  assign rmw_req_rdy_allowed_o        = rmw_req_rdy_allowed;
+  assign tags_get_vld_allowed_o       = tags_get_vld_allowed;
+  assign get_op_o                     = get_op;
+  assign upstream_get_vld_allowed_o   = upstream_get_vld_allowed;
+  assign tags_writeback_vld_allowed_o = tags_writeback_vld_allowed;
+  assign writeback_word_o             = upd(word, op_q.bit_sel, op_q.tag);
+  assign rsp_get_answered_o           = get_answered;
+  assign rsp_get_err_o                = get_err;
+  assign rsp_get_faulty_o             = get_faulty;
+  assign rsp_word_o                   = word;
+  assign rsp_tag_unchanged_o          = tag_unchanged;
+  assign rsp_writeback_needed_o       = writeback_needed;
+  assign rsp_writeback_answered_o     = writeback_answered;
+  assign rsp_writeback_err_o          = writeback_err;
+  assign rsp_writeback_op_o           = writeback_op;
+  assign device_err_seen_o            = device_err_seen_d;
+  assign intg_err_seen_o              = intg_err_seen_d;
 
 endmodule
