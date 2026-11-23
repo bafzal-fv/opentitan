@@ -356,11 +356,13 @@ TEST(KeyTransport, KeyWrapUnwrapNegative) {
   hardened_bool_t success;
 
   // Wrap negative tests
+#ifndef OTCRYPTO_DISABLE_NULL_CHECKS
   EXPECT_NOT_OK(otcrypto_key_wrap(nullptr, &kek_key, &wrapped_buf));
   EXPECT_NOT_OK(otcrypto_key_wrap(&target_key, nullptr, &wrapped_buf));
 
   otcrypto_word32_buf_t wrapped_buf_null = {.data = nullptr, .len = 64};
   EXPECT_NOT_OK(otcrypto_key_wrap(&target_key, &kek_key, &wrapped_buf_null));
+#endif
 
   // Bad KEK mode
   otcrypto_blinded_key_t bad_kek_mode = {
@@ -378,6 +380,7 @@ TEST(KeyTransport, KeyWrapUnwrapNegative) {
   EXPECT_NOT_OK(otcrypto_key_wrap(&bad_target_chk, &kek_key, &wrapped_buf));
 
   // Unwrap negative tests
+#ifndef OTCRYPTO_DISABLE_NULL_CHECKS
   EXPECT_NOT_OK(otcrypto_key_unwrap(nullptr, &kek_key, &success, &target_key));
   EXPECT_NOT_OK(
       otcrypto_key_unwrap(&const_wrapped_buf, nullptr, &success, &target_key));
@@ -385,6 +388,7 @@ TEST(KeyTransport, KeyWrapUnwrapNegative) {
       otcrypto_key_unwrap(&const_wrapped_buf, &kek_key, nullptr, &target_key));
   EXPECT_NOT_OK(
       otcrypto_key_unwrap(&const_wrapped_buf, &kek_key, &success, nullptr));
+#endif
 
   // Bad KEK mode
   EXPECT_NOT_OK(otcrypto_key_unwrap(&const_wrapped_buf, &bad_kek_mode, &success,
@@ -409,7 +413,9 @@ TEST(KeyTransport, KeyWrapUnwrapNegative) {
   EXPECT_NOT_OK(otcrypto_key_unwrap(&const_wrapped_buf, &bad_kek_hw, &success,
                                     &target_key));
 
+#ifndef OTCRYPTO_DISABLE_NULL_CHECKS
   EXPECT_NOT_OK(otcrypto_wrapped_key_len(target_key.config, nullptr));
+#endif
 
   // Mismatched key_to_wrap->keyblob_length when wrapped_buf.len == exp_len
   size_t exp_wrapped_words = 0;
@@ -454,6 +460,63 @@ TEST(KeyTransport, KeyWrapUnwrapNegative) {
     EXPECT_NOT_OK(otcrypto_key_unwrap(&short_wrapped_buf, &kek_key, &success,
                                       &target_key));
   }
+
+  // Wrap with zero-word software-backed keyblob must be rejected.
+  // Note: Unlike keyblob_to_shares(), otcrypto_key_wrap() does not call
+  // check_keyblob_length() on `key_to_wrap`; it only checks
+  // `keyblob_length == keyblob_num_words(config) * sizeof(uint32_t)`. Because
+  // `keyblob_num_words(zero_cfg)` is 0 when `key_length == 0`, setting
+  // `keyblob_length = 0` is required to pass that length check (a non-zero
+  // `keyblob_length` would fail for a length mismatch instead) so that this
+  // test specifically exercises `is_valid_keyblob_config()`.
+  otcrypto_key_config_t zero_cfg = kConfigNonExportableAesCtr128;
+  zero_cfg.key_length = 0;
+  otcrypto_blinded_key_t zero_key = {
+      .config = zero_cfg,
+      .keyblob_length = 0,
+      .keyblob = target_keyblob,
+      .checksum = 0,
+  };
+  zero_key.checksum = otcrypto_integrity_blinded_checksum(&zero_key);
+  size_t zero_wrapped_words = 0;
+  EXPECT_OK(otcrypto_wrapped_key_len(zero_cfg, &zero_wrapped_words));
+  otcrypto_word32_buf_t zero_wrapped_buf = {
+      .data = wrapped_data,
+      .len = zero_wrapped_words,
+  };
+  EXPECT_NOT_OK(otcrypto_key_wrap(&zero_key, &kek_key, &zero_wrapped_buf));
+
+  // Wrap with invalid hw_backed value on target key must be rejected.
+  // Reuses `zero_key` (`keyblob_num_words(bad_hw_target_cfg) == 0` matches
+  // `keyblob_length == 0`) so `is_valid_keyblob_config()` rejects the invalid
+  // `hw_backed` value directly rather than failing on a length mismatch.
+  otcrypto_key_config_t bad_hw_target_cfg = zero_cfg;
+  bad_hw_target_cfg.hw_backed = static_cast<hardened_bool_t>(0x12345678);
+  otcrypto_blinded_key_t bad_hw_target = zero_key;
+  bad_hw_target.config = bad_hw_target_cfg;
+  bad_hw_target.checksum = otcrypto_integrity_blinded_checksum(&bad_hw_target);
+  EXPECT_NOT_OK(otcrypto_key_wrap(&bad_hw_target, &kek_key, &zero_wrapped_buf));
+
+  // Wrap with oversized software-backed keyblob exceeding max words must fail.
+  otcrypto_key_config_t huge_cfg = kConfigNonExportableAesCtr128;
+  huge_cfg.key_length = kOtcryptoWrappedKeyMaxWords * sizeof(uint32_t);
+  std::vector<uint32_t> huge_keyblob(keyblob_num_words(huge_cfg), 0);
+  otcrypto_blinded_key_t huge_key = {
+      .config = huge_cfg,
+      .keyblob_length =
+          static_cast<uint32_t>(huge_keyblob.size() * sizeof(uint32_t)),
+      .keyblob = huge_keyblob.data(),
+      .checksum = 0,
+  };
+  huge_key.checksum = otcrypto_integrity_blinded_checksum(&huge_key);
+  size_t huge_exp_words = 0;
+  EXPECT_OK(otcrypto_wrapped_key_len(huge_cfg, &huge_exp_words));
+  std::vector<uint32_t> huge_out(huge_exp_words, 0);
+  otcrypto_word32_buf_t huge_out_buf = {
+      .data = huge_out.data(),
+      .len = huge_out.size(),
+  };
+  EXPECT_NOT_OK(otcrypto_key_wrap(&huge_key, &kek_key, &huge_out_buf));
 }
 
 TEST(KeyTransport, BlindedKeyMigrate) {
@@ -474,6 +537,15 @@ TEST(KeyTransport, BlindedKeyMigrate) {
   otcrypto_blinded_key_t new_key = old_key;
 
   EXPECT_OK(otcrypto_blinded_key_migrate(&old_key, &new_key));
+
+#ifndef OTCRYPTO_DISABLE_NULL_CHECKS
+  EXPECT_NOT_OK(otcrypto_blinded_key_migrate(nullptr, &new_key));
+  EXPECT_NOT_OK(otcrypto_blinded_key_migrate(&old_key, nullptr));
+  otcrypto_blinded_key_t null_blob_key = old_key;
+  null_blob_key.keyblob = nullptr;
+  EXPECT_NOT_OK(otcrypto_blinded_key_migrate(&null_blob_key, &new_key));
+  EXPECT_NOT_OK(otcrypto_blinded_key_migrate(&old_key, &null_blob_key));
+#endif
 
   // Modify version to something other than Version1.
   otcrypto_blinded_key_t bad_version_key = old_key;
@@ -635,6 +707,10 @@ TEST(KeyTransport, WrappedKeyLenRsa) {
       .exportable = kHardenedBoolFalse,
       .security_level = kOtcryptoKeySecurityLevelLow,
   };
+
+#ifndef OTCRYPTO_DISABLE_NULL_CHECKS
+  EXPECT_NOT_OK(otcrypto_wrapped_key_len(kConfigRsa2048, nullptr));
+#endif
 
   size_t wrapped_words_2048 = 0;
   EXPECT_OK(otcrypto_wrapped_key_len(kConfigRsa2048, &wrapped_words_2048));

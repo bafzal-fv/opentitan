@@ -640,6 +640,7 @@ module earlgrey_pd_main #(
   otp_ctrl_pkg::otbn_otp_key_rsp_t       otp_ctrl_otbn_otp_key_rsp;
   keymgr_dpe_pkg::keymgr_dpe_creator_root_key_t       otp_ctrl_keymgr_creator_root_key;
   keymgr_dpe_pkg::keymgr_dpe_field_entropy_t       otp_ctrl_keymgr_field_entropy;
+  keymgr_dpe_pkg::keymgr_dpe_creator_root_key_t       otp_ctrl_keymgr_secondary_root_key;
   keymgr_dpe_pkg::keymgr_dpe_creator_seed_t       rram_ctrl_keymgr_creator_seed;
   keymgr_dpe_pkg::keymgr_dpe_owner_seed_t       rram_ctrl_keymgr_owner_seed;
   keymgr_dpe_pkg::hw_key_req_t       keymgr_dpe_aes_key;
@@ -680,14 +681,14 @@ module earlgrey_pd_main #(
   tlul_pkg::tl_d2h_t       rv_core_ibex_cored_tl_h_rsp;
   tlul_pkg::tl_h2d_t       rv_core_ibex_corerevbm_tl_req;
   tlul_pkg::tl_d2h_t       rv_core_ibex_corerevbm_tl_rsp;
-  logic       rv_core_ibex_cored_tag_h2d;
+  prim_mubi_pkg::mubi4_t       rv_core_ibex_cored_tag_h2d;
   spi_device_pkg::passthrough_req_t       spi_device_passthrough_req;
   spi_device_pkg::passthrough_rsp_t       spi_device_passthrough_rsp;
   rram_ctrl_pkg::rram_macro_req_t       rram_ctrl_rram_macro_req;
   rram_ctrl_pkg::rram_macro_rsp_t       rram_ctrl_rram_macro_rsp;
   tlul_pkg::tl_h2d_t       cheriot_mem_sys_meta_sram_tl_req;
   tlul_pkg::tl_d2h_t       cheriot_mem_sys_meta_sram_tl_rsp;
-  logic       cheriot_mem_sys_cored_tag_d2h;
+  prim_mubi_pkg::mubi4_t       cheriot_mem_sys_cored_tag_d2h;
   prim_mubi_pkg::mubi4_t       rv_core_ibex_cheriot_ena;
   logic       i3c1_rstdet_enable;
   i3c_pkg::i3c_rstdet_req_t       i3c1_rstdet_req;
@@ -1734,6 +1735,7 @@ module earlgrey_pd_main #(
     .keymgr_creator_seed_o(),
     .keymgr_owner_seed_o(),
     .keymgr_field_entropy_o(otp_ctrl_keymgr_field_entropy),
+    .keymgr_secondary_root_key_o(otp_ctrl_keymgr_secondary_root_key),
     .nvm_otp_key_i(rram_ctrl_otp_key_req),
     .nvm_otp_key_o(rram_ctrl_otp_key_rsp),
     .sram_otp_key_i(otp_ctrl_sram_otp_key_req),
@@ -2441,7 +2443,7 @@ module earlgrey_pd_main #(
     .otbn_app_i(otbn_keymgr_app_rsp),
     .sensitive_key_o(otbn_keymgr_sensitive_key),
     .creator_root_key_i(otp_ctrl_keymgr_creator_root_key),
-    .secondary_root_key_i(keymgr_dpe_pkg::KEYMGR_DPE_SECONDARY_ROOT_KEY_DEFAULT),
+    .secondary_root_key_i(otp_ctrl_keymgr_secondary_root_key),
     .creator_seed_i(rram_ctrl_keymgr_creator_seed),
     .owner_seed_i(rram_ctrl_keymgr_owner_seed),
     .device_id_i(keymgr_dpe_device_id),

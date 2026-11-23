@@ -463,12 +463,11 @@ interface chip_if;
   endfunction
 
   // Functional (muxed) interface: AST2PAD.
-  pins_if #(.Width(9), .PullStrength("Weak")) ast2pad_if(
-    .pins({mios[top_earlgrey_pkg::MioPadIoa0], mios[top_earlgrey_pkg::MioPadIoa1],
-           mios[top_earlgrey_pkg::MioPadIob3], mios[top_earlgrey_pkg::MioPadIob4],
-           mios[top_earlgrey_pkg::MioPadIob5], mios[top_earlgrey_pkg::MioPadIoc0],
-           mios[top_earlgrey_pkg::MioPadIoc4], mios[top_earlgrey_pkg::MioPadIoc7],
-           mios[top_earlgrey_pkg::MioPadIoc9]})
+  pins_if #(.Width(8), .PullStrength("Weak")) ast2pad_if(
+    .pins({mios[top_earlgrey_pkg::MioPadIoa1], mios[top_earlgrey_pkg::MioPadIob3],
+           mios[top_earlgrey_pkg::MioPadIob4], mios[top_earlgrey_pkg::MioPadIob5],
+           mios[top_earlgrey_pkg::MioPadIoc0], mios[top_earlgrey_pkg::MioPadIoc4],
+           mios[top_earlgrey_pkg::MioPadIoc7], mios[top_earlgrey_pkg::MioPadIoc9]})
   );
 
   // Functional (muxed) interface: PAD2AST.
@@ -912,7 +911,7 @@ interface chip_if;
         force `CPU_HIER.u_dbus_trans.rst_ni = 1'b0;
         // The CHERIoT sidebands leave the core directly, so with its clock silenced they hold X
         // for the whole simulation.
-        force `CPU_HIER.cored_tag_h2d_o = 1'b0;
+        force `CPU_HIER.main_core_data_tag_h2d = 1'b0;
         force `CPU_HIER.main_core_revbm_req = 1'b0;
         force `CPU_HIER.main_core_revbm_addr = '0;
         force `CPU_TL_ADAPT_D_HIER.tl_out = cpu_d_tl_if.h2d;

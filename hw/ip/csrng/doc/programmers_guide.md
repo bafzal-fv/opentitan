@@ -67,7 +67,7 @@ Providing this sequence as additional data to CSRNG requires software to write t
 
 When reading the internal state of an instance from [`INT_STATE_VAL`](registers.md#int_state_val) (see [Internal-State Save and Restore](#internal-state-save-and-restore) below), CSRNG returns 26 words: the reseed counter, the bytes of V and Key, the additional data of a Generate command halted mid-sequence, and finally the status and Generate command state, in the following order:
 <table>
-<caption>Byte order when reading from [`INT_STATE_VAL`](data/csrng.hjson#int_state_val)</caption>
+<caption>Byte order when reading from or writing to [`INT_STATE_VAL`](registers.md#int_state_val)</caption>
 <thead>
   <tr>
     <th>Word Index</th>
@@ -134,7 +134,7 @@ CSRNG supports pausing a single instance via [`INT_STATE_HALT`](registers.md#int
 1. Set [`INT_STATE_HALT`](registers.md#int_state_halt) to `kMultiBitBool4True`.
    The halt applies to the instance selected by [`INT_STATE_NUM`](registers.md#int_state_num), so only one instance can be halted at a time.
    While [`INT_STATE_HALT`](registers.md#int_state_halt) is set, [`INT_STATE_NUM_REGWEN`](registers.md#int_state_num_regwen) is cleared and [`INT_STATE_NUM`](registers.md#int_state_num) cannot be written.
-1. Wait for the instance to quiesce, either by polling [`INT_STATE_STS`](registers.md#int_state_sts) or by waiting for the `cs_cmd_req_done` interrupt.
+1. Wait for the instance to quiesce, either by polling [`INT_STATE_STS.HALTED`](registers.md#int_state_sts) or by waiting for the `cs_cmd_req_done` interrupt.
 1. Read all 26 words of the internal state through [`INT_STATE_VAL`](registers.md#int_state_val) to save it, or write all 26 words to restore it.
    Reserved bits are ignored on writes and read as 0.
    The internal state includes the state of a Generate command halted mid-sequence, which continues once the instance is resumed.
@@ -249,10 +249,24 @@ In particular, the most significant byte B<sub>1</sub> of the string is read in 
 ## Aborting Generate Commands
 
 A Generate command in progress can be aborted via [`GEN_ABORT`](registers.md#gen_abort).
-A halted Generate command can also be aborted.
-The abort takes effect once the instance is resumed.
-To abort a Generate command of a hardware instance, halt the instance first via [`INT_STATE_HALT`](registers.md#int_state_halt) and check that a Generate command is in progress (bit 14 of the last internal state word).
-Otherwise, the command may complete before the abort, which then raises [`RECOV_ALERT_STS.GEN_ABORT_INVALID_ALERT`](registers.md#recov_alert_sts).
+
+To abort a Generate command:
+1. Make sure that a Generate command is actually in progress and cannot complete before the abort:
+   - For a hardware instance, halt it via [`INT_STATE_HALT`](registers.md#int_state_halt) (see [Internal-State Save and Restore](#internal-state-save-and-restore)), wait for [`INT_STATE_STS.HALTED`](registers.md#int_state_sts), and make sure [`INT_STATE_STS.GEN_IN_PROGRESS`](registers.md#int_state_sts) is set.
+   - The software instance doesn't need to be halted, as its Generate command only progresses while software reads [`GENBITS`](registers.md#genbits).
+     Stop reading and check that [`SW_CMD_STS.CMD_ACK`](registers.md#sw_cmd_sts) is not set.
+1. Set the field corresponding to the instance in [`GEN_ABORT`](registers.md#gen_abort) to `kMultiBitBool4True`.
+1. If the instance was halted, resume it by setting [`INT_STATE_HALT`](registers.md#int_state_halt) back to `kMultiBitBool4False`.
+   The abort takes effect once resumed.
+1. Wait for the bit of the instance in [`GEN_ABORT_STATUS`](registers.md#gen_abort_status) to be set, then clear it by writing 1.
+1. Instantiate the instance again.
+
+If no Generate command was in progress, e.g., because it completed before the abort, the abort is ignored and a recoverable alert is raised with [`RECOV_ALERT_STS.GEN_ABORT_INVALID_ALERT`](registers.md#recov_alert_sts) set.
+It can be cleared by writing 0, without disabling CSRNG.
+
+An enabled EDN receiving the `GEN_ABORTED` status stops serving entropy until it is disabled and re-enabled (see the [EDN Programmer's Guide](../../edn/doc/programmers_guide.md#aborting-generate-commands)).
+To avoid this, disable the EDN before resuming the instance and re-enable it once [`GEN_ABORT_STATUS`](registers.md#gen_abort_status) is set.
+CSRNG doesn't need to be disabled.
 
 ## Device Interface Functions (DIFs)
 

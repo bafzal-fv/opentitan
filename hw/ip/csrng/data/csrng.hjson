@@ -78,7 +78,8 @@
       desc: '''
             This alert triggers (i) if an illegal state machine state is reached, or
             (ii) if an AES fatal alert condition occurs, or (iii) if a fatal integrity
-            failure is detected on the TL-UL bus.
+            failure is detected on the TL-UL bus, or (iv) if a FIFO error is detected while
+            CSRNG is enabled.
             '''
     }
   ],
@@ -129,6 +130,20 @@
     {
       name: "CSRNG.MODE.NONDETERMINISTIC",
       desc: "CSRNG can be set up to generate non-deterministic random values by using a random seed from the entropy source."
+    }
+    {
+      name: "CSRNG.HALT",
+      desc: '''
+            CSRNG allows software to halt a selected instance via !!INT_STATE_HALT without affecting other instances.
+            Halting can be enabled per instance via !!INT_STATE_HALT_ENABLE.
+            '''
+    }
+    {
+      name: "CSRNG.GENERATE_ABORT",
+      desc: '''
+            CSRNG allows software to abort a Generate command in progress via !!GEN_ABORT.
+            The aborted instance is uninstantiated.
+            '''
     }
     {
       name: "CSRNG.SAVE_AND_RESTORE",
@@ -370,7 +385,8 @@
           desc: '''
                 This bit indicates when the command interface is ready to accept the next command word.
                 Before writing each word of a command to !!CMD_REQ, this field needs to be polled.
-                Words written while this field is low are dropped.
+                Words written while this field is low are dropped, set !!ERR_CODE.SFIFO_CMD_ERR and
+                !!ERR_CODE.FIFO_WRITE_ERR, and trigger a fatal alert.
                 0b0: CSRNG is not ready to accept the next command word or the last command hasn't been acked yet.
                 0b1: CSRNG is ready to accept the next command word.
                 '''
@@ -975,7 +991,7 @@
           desc: '''This is the state of the CSRNG main state machine.
                 See the RTL file `csrng_main_sm` for the meaning of the values.
                 '''
-          resval: 0x37
+          resval: 0x17
         }
       ]
     },
@@ -1092,6 +1108,14 @@
                 Reflects whether generated bits of the instance selected by !!INT_STATE_NUM are waiting to be read by the consumer.
                 The consumer can still read these bits while the instance is halted.
                 Restoring the internal state via !!INT_STATE_VAL discards any generated bits that have not been read yet.
+                '''
+          resval: 0
+        }
+        { bits: "2",
+          name: "GEN_IN_PROGRESS",
+          desc: '''
+                Reflects whether a Generate command is in progress for the instance selected by !!INT_STATE_NUM.
+                While the instance is halted, this bit stays constant and indicates whether a Generate command can be aborted via !!GEN_ABORT.
                 '''
           resval: 0
         }

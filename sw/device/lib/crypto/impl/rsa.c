@@ -239,7 +239,7 @@ otcrypto_status_t otcrypto_rsa_public_key_construct(
   size_t num_words = 0;
   HARDENED_TRY(rsa_size_to_params(size, NULL, &num_words));
   if (public_key->key_length != num_words * sizeof(uint32_t) ||
-      modulus->len != num_words) {
+      modulus->len != num_words || (modulus->data[num_words - 1] >> 31) != 1) {
     // COVERAGE (MISSING) We do not cover bad key lengths.
     return OTCRYPTO_BAD_ARGS;
   }
@@ -704,7 +704,7 @@ otcrypto_status_t otcrypto_rsa_private_key_from_exponents(
 
   size_t num_words = 0;
   HARDENED_TRY(rsa_size_to_params(size, NULL, &num_words));
-  if (modulus->len != num_words) {
+  if (modulus->len != num_words || (modulus->data[num_words - 1] >> 31) != 1) {
     // COVERAGE (MISSING) We do not cover bad key lengths.
     return OTCRYPTO_BAD_ARGS;
   }
@@ -815,11 +815,12 @@ otcrypto_status_t otcrypto_rsa_verify(
     const otcrypto_const_word32_buf_t *signature,
     hardened_bool_t *verification_result) {
 #ifndef OTCRYPTO_DISABLE_NULL_CHECKS
-  if (public_key == NULL) {
+  if (public_key == NULL || verification_result == NULL) {
     OTCRYPTO_CMVP_OVERRIDE_NOT_APPROVED();
     return OTCRYPTO_BAD_ARGS;
   }
 #endif
+  *verification_result = kHardenedBoolFalse;
   HARDENED_TRY(key_mode_padding_check(public_key->key_mode, padding_mode));
   HARDENED_TRY(otcrypto_rsa_verify_async_start(public_key, signature));
   return otcrypto_rsa_verify_async_finalize(message_digest, padding_mode,
@@ -874,10 +875,12 @@ otcrypto_status_t otcrypto_rsa_hash_verify_final(
     OTCRYPTO_CMVP_OVERRIDE_NOT_APPROVED();
   }
 #ifndef OTCRYPTO_DISABLE_NULL_CHECKS
-  if (public_key == NULL || public_key->key == NULL) {
+  if (public_key == NULL || public_key->key == NULL ||
+      verification_result == NULL) {
     return OTCRYPTO_BAD_ARGS;
   }
 #endif
+  *verification_result = kHardenedBoolFalse;
 #ifdef FIPS_MODE
   // Public key validation (NIST SP 800-89, Section 5.3.3).
   HARDENED_TRY(rsa_public_key_validate(public_key));
@@ -1040,7 +1043,8 @@ otcrypto_status_t otcrypto_rsa_keypair_from_cofactor_async_start(
   rsa_size_t rsa_size = (rsa_size_t)0;
   size_t num_words = 0;
   HARDENED_TRY(rsa_size_to_params(size, &rsa_size, &num_words));
-  if (cofactor_share0->len != num_words / 2 || modulus->len != num_words) {
+  if (cofactor_share0->len != num_words / 2 || modulus->len != num_words ||
+      (modulus->data[num_words - 1] >> 31) != 1) {
     // COVERAGE (MISSING) We do not cover bad size.
     return OTCRYPTO_BAD_ARGS;
   }
@@ -1401,8 +1405,9 @@ static otcrypto_status_t rsa_decrypt_exp_async_start(
     return OTCRYPTO_BAD_ARGS;
   }
 
-  HARDENED_TRY_WIPE_DMEM(rsa_decrypt_start(rsa_size, d0, d1, exponent, n,
-                                           ciphertext->data, checksum));
+  HARDENED_TRY_WIPE_DMEM(
+      rsa_decrypt_start(rsa_size, private_key->config.key_mode, d0, d1,
+                        exponent, n, ciphertext->data, checksum));
   return otcrypto_eval_exit(OTCRYPTO_OK);
 }
 
@@ -1445,11 +1450,8 @@ otcrypto_status_t otcrypto_rsa_decrypt_async_finalize(
     const otcrypto_const_byte_buf_t *label, otcrypto_byte_buf_t *plaintext,
     size_t *plaintext_bytelen) {
   OTCRYPTO_SET_CMVP_INDICATOR(OTCRYPTO_FUNCTION_RSA_DECRYPT_ASYNC_FINALIZE);
-  otcrypto_key_mode_t key_mode = (launder32(hash_mode) == kOtcryptoHashModeNull)
-                                     ? kOtcryptoKeyModeRsaEncryptPkcs
-                                     : kOtcryptoKeyModeRsaEncryptOaep;
-  return rsa_decrypt_finalize_with_mode(key_mode, hash_mode, label, plaintext,
-                                        plaintext_bytelen);
+  return rsa_decrypt_finalize_with_mode((otcrypto_key_mode_t)0, hash_mode,
+                                        label, plaintext, plaintext_bytelen);
 }
 
 static status_t public_exponent_check(uint32_t exponent) {
@@ -1480,10 +1482,11 @@ otcrypto_status_t otcrypto_rsa_verify_exp(
     hardened_bool_t *verification_result) {
   OTCRYPTO_SET_CMVP_INDICATOR(OTCRYPTO_FUNCTION_RSA_VERIFY_EXP);
 #ifndef OTCRYPTO_DISABLE_NULL_CHECKS
-  if (public_key == NULL) {
+  if (public_key == NULL || verification_result == NULL) {
     return OTCRYPTO_BAD_ARGS;
   }
 #endif
+  *verification_result = kHardenedBoolFalse;
   HARDENED_TRY(public_exponent_check(exponent));
   HARDENED_TRY(key_mode_padding_check(public_key->key_mode, padding_mode));
   HARDENED_TRY(rsa_verify_exp_async_start(public_key, exponent, signature));

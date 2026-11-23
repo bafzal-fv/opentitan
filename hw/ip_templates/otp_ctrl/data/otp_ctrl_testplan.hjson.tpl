@@ -60,6 +60,22 @@
       tests: ["otp_ctrl_smoke"]
     }
     {
+      name: bkdr_write_partitions
+      desc: '''
+            Provision the buffered partitions through the `otp_ctrl_mem_bkdr_util_pkg` helpers
+            that top-level environments use to preload OTP, and check that the hardware accepts
+            the result.
+
+            - backdoor write random contents and the matching digest into every buffered
+              partition through `otp_write_<partition>_partition()`
+            - drive pwrmgr's request pin to trigger OTP initialization, expect it to complete
+            - check that no partition reports an error and that every digest CSR exposes the
+              backdoor-written digest
+            '''
+      stage: V2
+      tests: ["otp_ctrl_bkdr_write_partitions"]
+    }
+    {
       name: dai_access_partition_walk
       desc: '''
             Similar to UVM's memory walk test, this test ensures every address in each partition
@@ -293,6 +309,16 @@
       desc: '''Covers whether the partition holding FIELD_ENTROPY is locked when scoreboard
             checks the `keymgr_field_entropy_o` value, crossed with
             whether `lc_seed_hw_rd_en_i` is On.
+            '''
+    }
+  % endif
+  % if any(item["name"] == "SECONDARY_ROOT_KEY_SHARE0" for part in otp_mmap["partitions"] for item in part["items"]):
+    {
+      name: keymgr_secondary_root_key_o_cg
+      desc: '''Covers the following conditions when scoreboard checks the
+            `keymgr_secondary_root_key_o` value:
+            - whether the partition holding SECONDARY_ROOT_KEY_SHARE0/1 is locked
+            - whether `lc_seed_hw_rd_en_i` is On
             '''
     }
   % endif

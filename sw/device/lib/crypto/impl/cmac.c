@@ -101,6 +101,10 @@ static status_t check_key(const otcrypto_blinded_key_t *key) {
   if (key->config.key_mode != kOtcryptoKeyModeAesCmac) {
     return OTCRYPTO_BAD_ARGS;
   }
+  if (key->config.key_length != 16 && key->config.key_length != 24 &&
+      key->config.key_length != 32) {
+    return OTCRYPTO_BAD_ARGS;
+  }
 
   // Check the integrity of the key.
   if (launder32(otcrypto_integrity_blinded_key_check(key)) !=
@@ -153,7 +157,8 @@ static status_t cmac_key_construct(const otcrypto_blinded_key_t *key,
   ctx->sideload = key->config.hw_backed;
   ctx->key_len_words = keyblob_share_num_words(key->config);
   ctx->keymgr_dpe_slot_idx = key->config.keymgr_dpe_slot_idx;
-  if (ctx->key_len_words > ARRAYSIZE(ctx->key_share0)) {
+  if (ctx->key_len_words == 0 ||
+      ctx->key_len_words > ARRAYSIZE(ctx->key_share0)) {
     return OTCRYPTO_BAD_ARGS;
   }
 
@@ -164,6 +169,9 @@ static status_t cmac_key_construct(const otcrypto_blinded_key_t *key,
     // COVERAGE (MISSING) Sideloaded keys for CMAC are not covered.
     HARDENED_CHECK_EQ(ctx->sideload, kHardenedBoolTrue);
     OTCRYPTO_CMVP_OVERRIDE_NOT_APPROVED();
+    if (key->keyblob_length != kKeyblobHwBackedBytes) {
+      return OTCRYPTO_BAD_ARGS;
+    }
     HARDENED_TRY(
         hardened_memcpy(ctx->key_share0, key->keyblob, kKeyblobHwBackedWords));
   } else if (launder32(ctx->sideload) == kHardenedBoolFalse) {

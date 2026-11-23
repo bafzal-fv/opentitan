@@ -59,11 +59,19 @@ OT_NOINLINE OT_WARN_UNUSED_RESULT static status_t internal_p384_keygen_start(
 
 OT_NOINLINE static status_t load_private_scalar(
     const otcrypto_blinded_key_t *key, p384_masked_scalar_t *scalar) {
-  HARDENED_TRY(hardened_memcpy(scalar->share0, key->keyblob,
-                               kP384MaskedScalarTotalShareWords));
-  HARDENED_CHECK_EQ(hardened_memeq(key->keyblob, scalar->share0,
-                                   kP384MaskedScalarTotalShareWords),
-                    kHardenedBoolTrue);
+  uint32_t *share0;
+  uint32_t *share1;
+  HARDENED_TRY(keyblob_to_shares(key, &share0, &share1));
+  HARDENED_TRY(
+      hardened_memcpy(scalar->share0, share0, kP384MaskedScalarShareWords));
+  HARDENED_TRY(
+      hardened_memcpy(scalar->share1, share1, kP384MaskedScalarShareWords));
+  HARDENED_CHECK_EQ(
+      hardened_memeq(share0, scalar->share0, kP384MaskedScalarShareWords),
+      kHardenedBoolTrue);
+  HARDENED_CHECK_EQ(
+      hardened_memeq(share1, scalar->share1, kP384MaskedScalarShareWords),
+      kHardenedBoolTrue);
   scalar->checksum = p384_masked_scalar_checksum(scalar);
   return OTCRYPTO_OK;
 }
@@ -250,6 +258,12 @@ otcrypto_status_t otcrypto_ecdsa_p384_sign_config_k(
     const otcrypto_blinded_key_t *secret_scalar,
     const otcrypto_hash_digest_t message_digest,
     otcrypto_word32_buf_t *signature) {
+#ifndef OTCRYPTO_DISABLE_NULL_CHECKS
+  if (signature == NULL || signature->data == NULL) {
+    return OTCRYPTO_BAD_ARGS;
+  }
+#endif
+  HARDENED_TRY(p384_signature_length_check(signature->len));
   HARDENED_TRY(otcrypto_ecdsa_p384_sign_config_k_async_start(
       private_key, secret_scalar, message_digest));
   return otcrypto_ecdsa_p384_sign_async_finalize(signature);
@@ -259,6 +273,12 @@ otcrypto_status_t otcrypto_ecdsa_p384_sign(
     const otcrypto_blinded_key_t *private_key,
     const otcrypto_hash_digest_t message_digest,
     otcrypto_word32_buf_t *signature) {
+#ifndef OTCRYPTO_DISABLE_NULL_CHECKS
+  if (signature == NULL || signature->data == NULL) {
+    return OTCRYPTO_BAD_ARGS;
+  }
+#endif
+  HARDENED_TRY(p384_signature_length_check(signature->len));
   HARDENED_TRY(
       otcrypto_ecdsa_p384_sign_async_start(private_key, message_digest));
   return otcrypto_ecdsa_p384_sign_async_finalize(signature);
@@ -549,18 +569,18 @@ otcrypto_status_t otcrypto_ecdsa_p384_sign_config_k_async_start(
   HARDENED_TRY(otcrypto_ecdsa_p384_sign_async_start_setup(secret_scalar,
                                                           message_digest));
 
-  // Load the secret key d.
-  HARDENED_CHECK_EQ(launder32(private_key->config.hw_backed),
-                    kHardenedBoolFalse);
+  // Load the secret key d (rejects hw_backed keys with BAD_ARGS).
   p384_masked_scalar_t private_scalar;
   HARDENED_TRY(load_private_scalar(private_key, &private_scalar));
+  HARDENED_CHECK_EQ(launder32(private_key->config.hw_backed),
+                    kHardenedBoolFalse);
 
   // Load the secret scalar k.
   // The use of fixed scalars should be limited to KATs.
-  HARDENED_CHECK_EQ(launder32(secret_scalar->config.hw_backed),
-                    kHardenedBoolFalse);
   p384_masked_scalar_t config_k_scalar;
   HARDENED_TRY(load_private_scalar(secret_scalar, &config_k_scalar));
+  HARDENED_CHECK_EQ(launder32(secret_scalar->config.hw_backed),
+                    kHardenedBoolFalse);
 
   HARDENED_TRY_WIPE_DMEM(p384_ecdsa_sign_config_k_start(
       message_digest.data, &private_scalar, &config_k_scalar));
@@ -631,7 +651,7 @@ otcrypto_status_t otcrypto_ecdsa_p384_sign_async_finalize(
   hardened_bool_t should_wipe __attribute__((cleanup(sideload_wipe_guard))) =
       kHardenedBoolTrue;
 #ifndef OTCRYPTO_DISABLE_NULL_CHECKS
-  if (signature->data == NULL) {
+  if (signature == NULL || signature->data == NULL) {
     return OTCRYPTO_BAD_ARGS;
   }
 #endif
@@ -657,8 +677,8 @@ otcrypto_status_t otcrypto_ecdsa_p384_verify_async_start(
   OTCRYPTO_SET_CMVP_INDICATOR(OTCRYPTO_FUNCTION_ECDSA_P384_VERIFY_ASYNC_START);
   OTCRYPTO_HEALTH_CHECK(kTestP384VerifyBit);
 #ifndef OTCRYPTO_DISABLE_NULL_CHECKS
-  if (public_key == NULL || signature->data == NULL ||
-      message_digest.data == NULL || public_key->key == NULL) {
+  if (public_key == NULL || public_key->key == NULL || signature == NULL ||
+      signature->data == NULL || message_digest.data == NULL) {
     return OTCRYPTO_BAD_ARGS;
   }
 #endif
@@ -719,6 +739,11 @@ otcrypto_status_t otcrypto_ecdsa_p384_verify_async_finalize(
   }
 #endif
   *verification_result = kHardenedBoolFalse;
+#ifndef OTCRYPTO_DISABLE_NULL_CHECKS
+  if (signature == NULL || signature->data == NULL) {
+    return OTCRYPTO_BAD_ARGS;
+  }
+#endif
 
   // Verify the input buffer
   HARDENED_CHECK_EQ(kHardenedBoolTrue, OTCRYPTO_CHECK_BUF(signature));
@@ -905,6 +930,7 @@ otcrypto_status_t otcrypto_ecdh_p384_async_finalize(
     return OTCRYPTO_BAD_ARGS;
   }
 #endif
+  HARDENED_TRY(keyblob_ensure_xor_masked(shared_secret->config));
 
   // Shared keys cannot be sideloaded because they are software-generated.
   if (launder32(shared_secret->config.hw_backed) != kHardenedBoolFalse) {
@@ -912,11 +938,24 @@ otcrypto_status_t otcrypto_ecdh_p384_async_finalize(
   }
   HARDENED_CHECK_EQ(shared_secret->config.hw_backed, kHardenedBoolFalse);
 
-  // Check shared secret length (affine point x-coordinate || y-coordinate).
-  if (launder32(shared_secret->config.key_length) != kP384SharedSecretBytes) {
-    return OTCRYPTO_BAD_ARGS;
+  // Check shared secret length (either 96-byte full affine point x || y or
+  // 48-byte x-coordinate only).
+  uint32_t expected_len = launder32(0);
+  switch (launder32(shared_secret->config.key_length)) {
+    case kP384SharedSecretBytes:
+      HARDENED_CHECK_EQ(shared_secret->config.key_length,
+                        kP384SharedSecretBytes);
+      expected_len = launder32(expected_len) | kP384SharedSecretBytes;
+      break;
+    case kP384CoordBytes:
+      HARDENED_CHECK_EQ(shared_secret->config.key_length, kP384CoordBytes);
+      expected_len = launder32(expected_len) | kP384CoordBytes;
+      break;
+    default:
+      return OTCRYPTO_BAD_ARGS;
   }
-  HARDENED_CHECK_EQ(shared_secret->config.key_length, kP384SharedSecretBytes);
+  HARDENED_CHECK_NE(expected_len, 0);
+  HARDENED_CHECK_EQ(launder32(expected_len), shared_secret->config.key_length);
   if (launder32(shared_secret->keyblob_length) !=
       keyblob_num_words(shared_secret->config) * sizeof(uint32_t)) {
     return OTCRYPTO_BAD_ARGS;
@@ -952,6 +991,8 @@ otcrypto_status_t otcrypto_ecdh_p384_async_finalize(
   HARDENED_TRY(hardened_memcpy(share1, ss.x_share1, kP384CoordWords));
   HARDENED_TRY(
       hardened_memcpy(share1 + kP384CoordWords, ss.y_share1, kP384CoordWords));
+  HARDENED_CHECK_LE(keyblob_share_num_words(shared_secret->config),
+                    ARRAYSIZE(share0));
   HARDENED_TRY(keyblob_from_shares(share0, share1, shared_secret->config,
                                    shared_secret->keyblob));
 
@@ -1172,8 +1213,11 @@ otcrypto_status_t otcrypto_ecc_p384_arith_share_private_key(
     otcrypto_blinded_key_t *arith_private_key) {
   OTCRYPTO_LOCKED_STATE_CHECK();
 #ifndef OTCRYPTO_DISABLE_NULL_CHECKS
-  if (bool_private_key_share0 == NULL || bool_private_key_share1 == NULL ||
-      arith_private_key == NULL || arith_private_key->keyblob == NULL) {
+  if (bool_private_key_share0 == NULL ||
+      bool_private_key_share0->data == NULL ||
+      bool_private_key_share1 == NULL ||
+      bool_private_key_share1->data == NULL || arith_private_key == NULL ||
+      arith_private_key->keyblob == NULL) {
     return OTCRYPTO_BAD_ARGS;
   }
 #endif

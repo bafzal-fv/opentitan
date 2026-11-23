@@ -13,21 +13,24 @@ module csrng_ctr_drbg import csrng_pkg::*; (
   // Global enable
   input  logic               enable_i,
 
-  // Command interface request, arbitrated from command stages
-  input  logic                       req_vld_i,
-  output logic                       req_rdy_o,
-  input  csrng_core_data_t           req_data_i,
-  input  logic [SeedLen-1:0]         req_entropy_i,
-  input  logic                       req_entropy_fips_i,
-  input  logic                       req_glast_i,
-  input  logic                       req_gen_first_i,
-  input  logic [GenBitsCtrWidth-1:0] req_glen_i,
+  // Command interface request, arbitrated from command stages. The request must be held stable
+  // until it is acknowledged, which also signals the completion of the command.
+  input  logic                       cmd_req_i,
+  input  csrng_core_data_t           cmd_req_data_i,
+  input  logic         [SeedLen-1:0] cmd_req_entropy_i,
+  input  logic                       cmd_req_entropy_fips_i,
+  input  logic                       cmd_req_glast_i,
+  input  logic                       cmd_req_gen_first_i,
+  input  logic [GenBitsCtrWidth-1:0] cmd_req_glen_i,
+  input  logic                 [3:0] cmd_req_clen_i,
 
-  // Command interface response to state db and command stages
+  // Command interface acknowledgement to the main FSM and command stages
+  output logic               cmd_ack_o,
+  output csrng_core_data_t   cmd_ack_data_o,
+  output csrng_cmd_sts_e     cmd_ack_sts_o,
+
+  // Command interface response to state db
   output logic               state_db_wr_o,
-  output logic               rsp_vld_o,
-  output csrng_core_data_t   rsp_data_o,
-  output csrng_cmd_sts_e     rsp_sts_o,
 
   // Generated bits output to command stages
   output logic               bits_vld_o,
@@ -52,8 +55,8 @@ module csrng_ctr_drbg import csrng_pkg::*; (
   import csrng_reg_pkg::NumApps;
 
   // Number of calls to the block cipher required for each call of UPDate()
-  localparam int unsigned NumBlkPerUpd   = SeedLen/BlkLen;
-  localparam int unsigned NumBlkPerUpdLg = $clog2(NumBlkPerUpd);
+  localparam int unsigned NumBlkPerUpd = SeedLen/BlkLen;
+  localparam int unsigned ConcatCtrW   = $clog2(NumBlkPerUpd + 1);
 
   // The GENerate command consists of up to three sub commands
   typedef enum logic [1:0] {
@@ -85,8 +88,8 @@ module csrng_ctr_drbg import csrng_pkg::*; (
   // Minimum Hamming weight: 1
   // Maximum Hamming weight: 5
   //
-  localparam int StateWidth = 6;
-  typedef enum logic [StateWidth-1:0] {
+  localparam int CtrDrbgStateWidth = 6;
+  typedef enum logic [CtrDrbgStateWidth-1:0] {
     Idle       = 6'b101110,
     CtrInc     = 6'b100001,
     ReqSend    = 6'b110100,
@@ -123,8 +126,8 @@ module csrng_ctr_drbg import csrng_pkg::*; (
   //--------------------------------------------
 
   // Scratch register for commands that call block_encrypt more than once and pointer into it
-  logic        [SeedLen-1:0] concat_key_v_q, concat_key_v_d;
-  logic [NumBlkPerUpdLg-1:0] concat_ctr_q, concat_ctr_d;
+  logic    [SeedLen-1:0] concat_key_v_q, concat_key_v_d;
+  logic [ConcatCtrW-1:0] concat_ctr_q, concat_ctr_d;
 
   // Keep track of current sub command for GENerates
   gen_subcmd_e gen_subcmd_q, gen_subcmd_d;
@@ -146,34 +149,34 @@ module csrng_ctr_drbg import csrng_pkg::*; (
   //--------------------------------------------
 
   always_comb begin
-    core_data = req_data_i;
+    core_data = cmd_req_data_i;
 
-    unique case (req_data_i.cmd)
+    unique case (cmd_req_data_i.cmd)
       INS: begin
         // Reset key, v, and reseed counter; inject entropy and FIPS status
         core_data.key_v   = '0;
         core_data.rs_ctr  = '0;
         core_data.gen_ctr = '0;
-        core_data.pdata   = req_data_i.pdata ^ req_entropy_i;
-        core_data.fips    = req_entropy_fips_i;
+        core_data.pdata   = cmd_req_data_i.pdata ^ cmd_req_entropy_i;
+        core_data.fips    = cmd_req_entropy_fips_i;
       end
       RES: begin
         // Reset reseed counter; inject entropy and FIPS status
         core_data.rs_ctr = '0;
-        core_data.pdata  = req_data_i.pdata ^ req_entropy_i;
-        core_data.fips   = req_entropy_fips_i;
+        core_data.pdata  = cmd_req_data_i.pdata ^ cmd_req_entropy_i;
+        core_data.fips   = cmd_req_entropy_fips_i;
       end
       UPD: begin
         /* leave everything as-is */
       end
       GEN: begin
         // The first request of a GEN command starts the count of remaining requests
-        if (req_gen_first_i) begin
-          core_data.gen_ctr = req_glen_i;
+        if (cmd_req_gen_first_i) begin
+          core_data.gen_ctr = cmd_req_glen_i;
         end
         // Capture adata for the final update() step if not already done
-        if (!req_data_i.gen_adata_vld) begin
-          core_data.gen_adata     = req_data_i.pdata;
+        if (!cmd_req_data_i.gen_adata_vld) begin
+          core_data.gen_adata     = cmd_req_data_i.pdata;
           core_data.gen_adata_vld = 1'b1;
         end
       end
@@ -241,7 +244,7 @@ module csrng_ctr_drbg import csrng_pkg::*; (
 
   // Count the number of blocks that have been received back from block_encrypt until we have enough
   // blocks for at least SeedLen bits in total.
-  assign concat_ctr_done = (concat_ctr_q >= NumBlkPerUpd);
+  assign concat_ctr_done = (concat_ctr_q >= ConcatCtrW'(NumBlkPerUpd));
 
   // Type conversion for easier usage
   assign concat_key_v = csrng_key_v_t'(concat_key_v_q);
@@ -258,7 +261,7 @@ module csrng_ctr_drbg import csrng_pkg::*; (
       // Steer the v-response from block encrypt to the correct lane, MSB down.
       // concat_ctr_q must be lower than NumBlkPerUpd, otherwise concat_ctr_done is set and we end
       // up in the if branch above, i.e., the index into concat_key_v_d is always valid.
-      concat_key_v_d[(NumBlkPerUpd - 1 - concat_ctr_q) * BlkLen +: BlkLen]
+      concat_key_v_d[(NumBlkPerUpd - 1 - 32'(concat_ctr_q)) * BlkLen +: BlkLen]
         = block_encrypt_rsp_data_i;
     end
   end
@@ -272,8 +275,7 @@ module csrng_ctr_drbg import csrng_pkg::*; (
     gen_subcmd_d = gen_subcmd_q;
 
     // Handshake and data validity
-    req_rdy_o  = 1'b0;
-    rsp_vld_o  = 1'b0;
+    cmd_ack_o  = 1'b0;
     bits_vld_o = 1'b0;
     state_db_wr_o = 1'b0;
 
@@ -290,12 +292,11 @@ module csrng_ctr_drbg import csrng_pkg::*; (
 
     unique case (state_q)
       Idle: begin
-        if (enable_i && req_vld_i) begin
+        if (enable_i && cmd_req_i) begin
           unique case (core_data.cmd)
             UNI: begin
               // No further action needed, write to state db and flag response valid
-              req_rdy_o = 1'b1;
-              rsp_vld_o = 1'b1;
+              cmd_ack_o = 1'b1;
               state_db_wr_o = 1'b1;
             end
             INS, RES, UPD: begin
@@ -305,11 +306,8 @@ module csrng_ctr_drbg import csrng_pkg::*; (
             end
             GEN: begin
               v_ctr_load = 1'b1;
-              // Decide which GENerate sub command to execute
-              // TODO(#28153) Clarify what the exact condition for skipping the initial UPDate()
-              // call on GENerate commands is (pdata/adata being an all-zero vector or pdata/adata
-              // LENGTH being zero).
-              if (core_data.pdata != '0) begin
+              // Only the first beat of a GENerate with additional data starts with an UPDate.
+              if (cmd_req_gen_first_i && (cmd_req_clen_i != '0)) begin
                 gen_subcmd_d = UPD_BEGIN;
               end else begin
                 gen_subcmd_d = GEN_LOOP;
@@ -356,8 +354,7 @@ module csrng_ctr_drbg import csrng_pkg::*; (
       Hndshk: begin
         if (concat_ctr_done) begin
           // Enough data has been received to make up the new {key,v}; command is completed
-          req_rdy_o = 1'b1;
-          rsp_vld_o = 1'b1;
+          cmd_ack_o = 1'b1;
           state_db_wr_o = 1'b1;
           state_d = Idle;
         end else begin
@@ -379,15 +376,14 @@ module csrng_ctr_drbg import csrng_pkg::*; (
             end
           end
           GEN_LOOP: begin
-            if (req_glast_i) begin
+            if (cmd_req_glast_i) begin
               // Do the initial v increment for the UPD_FINAL step that follows
               v_ctr_inc = 1'b1;
               gen_subcmd_d = UPD_FINAL;
               state_d = ReqSend;
             end else begin
               // This was not the last beat of the generate loop; signal the command as completed
-              req_rdy_o = 1'b1;
-              rsp_vld_o = 1'b1;
+              cmd_ack_o = 1'b1;
               state_db_wr_o = 1'b1;
               state_d = Idle;
             end
@@ -395,8 +391,7 @@ module csrng_ctr_drbg import csrng_pkg::*; (
           UPD_FINAL: begin
             if (concat_ctr_done) begin
               // Enough data has been received to make up the new {key,v}; command is completed
-              req_rdy_o = 1'b1;
-              rsp_vld_o = 1'b1;
+              cmd_ack_o = 1'b1;
               state_db_wr_o = 1'b1;
               state_d = Idle;
             end else begin
@@ -451,33 +446,33 @@ module csrng_ctr_drbg import csrng_pkg::*; (
   //--------------------------------------------
 
   // Make sure the command stages get an error response in case we received an invalid command
-  assign rsp_sts_o = (core_data.cmd == INV) ? CMD_STS_INVALID_ACMD : CMD_STS_SUCCESS;
+  assign cmd_ack_sts_o = (core_data.cmd == INV) ? CMD_STS_INVALID_ACMD : CMD_STS_SUCCESS;
 
   always_comb begin
     // Default case only relevant for UNInstantiate and invalid commands
-    rsp_data_o = core_data;
+    cmd_ack_data_o = core_data;
 
     // For all commands that update the internal state, send new {key,v} to state db
     // For GENerate commands, we need a more involved handling of the three sub commands
     if (core_data.cmd inside {INS, RES, UPD}) begin
-      rsp_data_o.key_v = csrng_key_v_t'(concat_key_v ^ core_data.pdata);
+      cmd_ack_data_o.key_v = csrng_key_v_t'(concat_key_v ^ core_data.pdata);
     end else if (core_data.cmd == GEN) begin
       unique case (gen_subcmd_q)
         UPD_BEGIN: begin
-          rsp_data_o.key_v = csrng_key_v_t'(concat_key_v ^ core_data.pdata);
+          cmd_ack_data_o.key_v = csrng_key_v_t'(concat_key_v ^ core_data.pdata);
         end
         GEN_LOOP: begin
-          rsp_data_o.key_v.v = v_ctr_sized;           // Old value + 1, key unchanged
-          rsp_data_o.gen_ctr = core_data.gen_ctr - 1; // One less request remaining
+          cmd_ack_data_o.key_v.v = v_ctr_sized;           // Old value + 1, key unchanged
+          cmd_ack_data_o.gen_ctr = core_data.gen_ctr - 1; // One less request remaining
         end
         UPD_FINAL: begin
-          rsp_data_o.key_v = csrng_key_v_t'(concat_key_v ^ core_data.gen_adata);
+          cmd_ack_data_o.key_v = csrng_key_v_t'(concat_key_v ^ core_data.gen_adata);
           // Increase the reseed counter on the last beat of every GENerate
-          rsp_data_o.rs_ctr  = core_data.rs_ctr + 1;
-          rsp_data_o.gen_ctr = core_data.gen_ctr - 1;
+          cmd_ack_data_o.rs_ctr  = core_data.rs_ctr + 1;
+          cmd_ack_data_o.gen_ctr = core_data.gen_ctr - 1;
           // The adata is no longer needed once the GENerate has completed
-          rsp_data_o.gen_adata     = '0;
-          rsp_data_o.gen_adata_vld = 1'b0;
+          cmd_ack_data_o.gen_adata     = '0;
+          cmd_ack_data_o.gen_adata_vld = 1'b0;
         end
         default: /* We should never get here */ ;
       endcase

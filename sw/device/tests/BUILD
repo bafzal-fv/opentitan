@@ -765,6 +765,7 @@ CHERIOT_SMOKETEST_DEPS = [
     "//hw/top:sram_ctrl_c_regs",
     "//hw/top:top_lib",
     "//hw/top:uart_c_regs",
+    "//sw/device/lib/base:csr",
     "//sw/device/lib/base:multibits",
     "//sw/device/silicon_creator/lib:manifest_def",
 ]
@@ -2459,6 +2460,41 @@ opentitan_test(
         "//sw/device/lib/runtime:print",
         "//sw/device/lib/testing:keymgr_dpe_testutils",
         "//sw/device/lib/testing/test_framework:ottf_main",
+    ],
+)
+
+opentitan_test(
+    name = "keymgr_dpe_otbn_hkdf_smoketest",
+    srcs = ["keymgr_dpe_otbn_hkdf_smoketest.c"],
+    exec_env = dicts.add(
+        EARLGREY_TEST_ENVS,
+        EARLGREY_SILICON_OWNER_ROM_EXT_ENVS,
+        {
+            "//hw/top_earlgrey:silicon_creator": None,
+        },
+    ),
+    qemu = qemu_params(
+        globals = {
+            # keymgr_dpe_testutils_startup() uses rstmgr, keep running on fatal resets:
+            "ot-rstmgr.fatal_reset": 0,
+        },
+    ),
+    # Run in both Owner and non-Owner envs to test otbn as key derivation engine.
+    run_in_ci = [
+        "//hw/top_earlgrey:fpga_cw340_sival_rom_ext",
+        "//hw/top_earlgrey:fpga_cw340_rom_with_fake_keys",
+    ],
+    verilator = verilator_params(timeout = "long"),
+    deps = [
+        "//hw/top/dt",
+        "//sw/device/lib/dif:keymgr_dpe",
+        "//sw/device/lib/dif:kmac",
+        "//sw/device/lib/dif:otbn",
+        "//sw/device/lib/runtime:log",
+        "//sw/device/lib/testing:keymgr_dpe_testutils",
+        "//sw/device/lib/testing:otbn_testutils",
+        "//sw/device/lib/testing/test_framework:ottf_main",
+        "//sw/otbn/keymgr:keymgr_test",
     ],
 )
 
