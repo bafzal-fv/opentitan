@@ -12,9 +12,9 @@ rram = enable_rram_tap  # the RRAM TAP on TAP strap value 0
 insel_max = 2 ** (n_mio_pads + 1).bit_length() - 1
 outsel_max = 2 ** (n_mio_periph_out + 2).bit_length() - 1
 padsel_max = 2 ** max(n_mio_pads + 1, n_dio_pads - 1).bit_length() - 1
-def n(base, with_usb=0, with_strap=0, with_rram=0):
+def n(base, with_usb=0, with_strap=0, with_rram=0, with_eg=0):
     return (base + (with_usb if usb else 0) + (with_strap if strap else 0)
-            + (with_rram if rram else 0))
+            + (with_rram if rram else 0) + (with_eg if eg_top else 0))
 def free(lo, hi):
     if lo > hi:
         return 'above {} (no such value on this top)'.format(hi)
@@ -26,11 +26,32 @@ def on(flag, text):
 %>\
 {
   name: "pinmux_fpv"
-  // The top the plan was written for and checked on. Other tops render it from the
-  // same template with their own parameters; their requirements are not reviewed.
+  // The requirements of the pinmux FPV testplan (doc/fpv/README.md), one entry each:
+  //   name, desc   the requirement ID and its statement
+  //   source      where the rule comes from: !!REGISTER.FIELD names a register field
+  //               (reggen's form), a Markdown link names a document section or a key
+  //   kind        "spec": a specification states the rule; "RTL": none does, and the
+  //               rule follows the design's present behaviour or leaves the outcome
+  //               to a specification question
+  //   testpoint   its testpoint in pinmux_env_fpv_testplan.hjson
+  //   checks      what decides it: "<check name> (<planned assertion>)", the CSR
+  //               checker, another testbench, or a check out of scope or waiting
+  //   why         why those checks prove it
+  //   milestone   the verification stage of its testpoint: V1, V2 or V2S
+  //   priority    the order of work within a stage: "1" before "2"
+  //   security    true when a security property depends on it
+  //   state       "open" until its checks are proven; with a reason where no check
+  //               of this plan decides it
+  // The file holds, besides the entries:
+  //   written_for   the top the plan was written for and read against
+  //   rendered_for  the top of this copy; other tops render it from the same
+  //                 template with their own parameters, and their requirements
+  //                 are not reviewed
+  //   terms         the words the requirements use, each with its meaning
+  //   groups        the requirements by feature; a group's conditions say when
+  //                 its requirements hold and define its own words
   written_for: "earlgrey"
   rendered_for: "${topname}"
-  spec_commit: "5b8df2b85493add710eb5b8af7d6c263ce9acb87"
   terms: [
     {
       name: '''`n`'''
@@ -56,16 +77,32 @@ def on(flag, text):
       name: '''Forwarded value'''
       desc: '''The watched signal sampled each `clk_aon_i` cycle, through the filter when `FILTER` is 1'''
     }
+    {
+      name: '''Asleep, awake'''
+      desc: '''A pad is asleep while its sleep status bit is 1, awake while it is 0'''
+    }
+    {
+      name: '''AON'''
+      desc: '''The always-on domain: the logic on `clk_aon_i` and `rst_aon_ni`'''
+    }
+    {
+      name: '''Lands'''
+      desc: '''A written or sampled value lands in the cycle the register or flop it is meant for takes it'''
+    }
+    {
+      name: '''Hardware write'''
+      desc: '''A write to a register field made by the pinmux logic, not by software over the bus'''
+    }
 % if strap:
     {
       name: '''Full reset'''
-      desc: '''`rst_sys_ni` ([Non-debug Module Reset](hw/top_earlgrey/ip_autogen/pinmux/doc/theory_of_operation.md#non-debug-module-reset))'''
+      desc: '''A reset that asserts `rst_sys_ni`, which the top connects to the system reset tree ([top_${topname}.hjson${eg(' `module.pinmux`')}](hw/top_${topname}/data/top_${topname}.hjson))'''
     }
 % endif
 % if strap:
     {
       name: '''NDM reset'''
-      desc: '''A reset that asserts `rst_ni` and `rst_aon_ni`, not `rst_sys_ni` ([Non-debug Module Reset](hw/top_earlgrey/ip_autogen/pinmux/doc/theory_of_operation.md#non-debug-module-reset))'''
+      desc: '''A reset that asserts `rst_ni` and `rst_aon_ni`, not `rst_sys_ni`: the top connects those two to the life cycle reset tree ([top_${topname}.hjson${eg(' `module.pinmux`')}](hw/top_${topname}/data/top_${topname}.hjson)), the tree a non-debug module reset request asserts outside PROD and PROD_END ([Summary](hw/top_${topname}/ip_autogen/rstmgr/doc/theory_of_operation.md#summary)); what is on `rst_sys_ni` survives it ([Non-debug Module Reset](hw/top_earlgrey/ip_autogen/pinmux/doc/theory_of_operation.md#non-debug-module-reset))'''
     }
 % endif
 % if strap:
@@ -92,6 +129,36 @@ def on(flag, text):
       desc: '''A TAP is connected while the TAP straps name it and its gate is open: the life cycle TAP at straps 01; the RISC-V TAP at straps 10 while the latch is On; the DFT TAP at straps 11 while `lc_dft_en_i` is On; on a top with the RRAM TAP (`enable_rram_tap`), the RRAM TAP at straps 00 while `RRAM_JTAG_SEL` is `kMultiBitBool4True` and `lc_nvm_debug_en_i` is On; at straps 00, no TAP otherwise ([Strap Sampling and TAP Isolation](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#strap-sampling-and-tap-isolation), [Non-debug Module Reset](hw/top_earlgrey/ip_autogen/pinmux/doc/theory_of_operation.md#non-debug-module-reset))'''
     }
 % endif
+% if strap:
+    {
+      name: '''Owns'''
+      desc: '''A TAP owns the JTAG pads while it is connected: the pads then carry the TAP's signals, not what the pad muxes select'''
+    }
+% endif
+% if strap:
+    {
+      name: '''Cut'''
+      desc: '''A TAP is cut while its gate is shut, or while the TAP straps name another TAP or none'''
+    }
+% endif
+% if eg_top:
+    {
+      name: '''Allowed pad'''
+      desc: '''For a signal: its `pads` list names the pad, or the list is empty'''
+    }
+% endif
+% if eg_top:
+    {
+      name: '''Main pad'''
+      desc: '''A pad of bank VIOA or VIOB: IOA, IOB and the SPI pads, 34 of 61'''
+    }
+% endif
+% if eg_top:
+    {
+      name: '''Main off'''
+      desc: '''The Main section's reset with the AON resets high. A Main peripheral's input then has no requirement, as that peripheral is off.'''
+    }
+% endif
   ]
   groups: [
     {
@@ -108,8 +175,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_listen"
-          checks: ["CHK_PAD_LISTEN_01 reads tie 0 (assert_PadListen_ReadsTie0)"]
-          why: '''In every cycle the check compares each MIO peripheral input whose select is 0 with 0. An input that reads a pad or 1 under select 0, even for one cycle, fails it.'''
+          checks: ["reads tie 0 (assert_PadListen_ReadsTie0)"]
+          why: '''In every cycle the check compares each MIO peripheral input whose select is 0 with 0.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -123,8 +190,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_listen"
-          checks: ["CHK_PAD_LISTEN_02 reads tie 1 (assert_PadListen_ReadsTie1)"]
-          why: '''In every cycle the check compares each MIO peripheral input whose select is 1 with 1. An input that reads a pad or 0 under select 1 fails it.'''
+          checks: ["reads tie 1 (assert_PadListen_ReadsTie1)"]
+          why: '''In every cycle the check compares each MIO peripheral input whose select is 1 with 1.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -139,8 +206,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_listen"
-          checks: ["CHK_PAD_LISTEN_03 reads selected pad (assert_PadListen_ReadsSelectedPad)"]
-          why: '''For each select from 2 to ${n_mio_pads + 1} the check compares the input with `mio_in_i` of pad select minus 2, in the same cycle. An input that reads another pad, or the right pad a cycle late, differs in some cycle and fails it.'''
+          checks: ["reads selected pad (assert_PadListen_ReadsSelectedPad)"]
+          why: '''For each select from 2 to ${n_mio_pads + 1} the check compares the input with `mio_in_i` of pad select minus 2, in the same cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -155,8 +222,8 @@ def on(flag, text):
           ]
           kind: "RTL"
           testpoint: "pad_listen"
-          checks: ["CHK_PAD_LISTEN_04 no pad reads 0 (assert_PadListen_NoPadReads0)"]
-          why: '''For selects ${free(n_mio_pads + 2, insel_max)}, which name no pad, the check compares the input with 0. An input that reads a pad there, for example by wrapping the select around, or reads 1, fails it.'''
+          checks: ["no pad reads 0 (assert_PadListen_NoPadReads0)"]
+          why: '''For selects ${free(n_mio_pads + 2, insel_max)}, which name no pad, the check compares the input with 0.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -170,8 +237,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_listen"
-          checks: ["CHK_PAD_LISTEN_05 DIO reads its pad (assert_PadListen_DIOReadsItsPad)"]
-          why: '''The check compares each DIO peripheral input with its own pad's `dio_in_i` in the same cycle, whatever the registers hold. An input that reads another DIO pad, depends on a register or lags by a cycle fails it.'''
+          checks: ["DIO reads its pad (assert_PadListen_DioReadsItsPad)"]
+          why: '''The check compares each DIO peripheral input with its own pad's `dio_in_i` in the same cycle, whatever the registers hold.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -187,8 +254,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "reset_state"
-          checks: ["CHK_PAD_LISTEN_01 reads tie 0 (assert_PadListen_ReadsTie0)"]
-          why: '''The generated register checker keeps each input select at its reset value 0 until software writes it, and _reads tie 0_ (CHK_PAD_LISTEN_01) makes an input whose select is 0 read 0 in the same cycle. An input that reads 1 before its select is written fails one of the two.'''
+          checks: ["reads tie 0 (assert_PadListen_ReadsTie0)", "the CSR checker"]
+          why: '''The CSR checker keeps each input select at 0 until written, and _reads tie 0_ makes such an input read 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -210,8 +277,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_01 tie 0 drives 0 (assert_PadOutput_Tie0Drives0)"]
-          why: '''While an awake pad's select is 0, the check compares the pad's output with 0 in every cycle. A pad that puts 1 or a peripheral's data on its output there fails it.'''
+          checks: ["tie 0 drives 0 (assert_PadOutput_Tie0Drives0)"]
+          why: '''While an awake pad's select is 0, the check compares the pad's output with 0 in every cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -225,8 +292,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_01 tie 0 drives 0 (assert_PadOutput_Tie0Drives0)"]
-          why: '''Under select 0 the check compares the pad's output enable with 1 in every cycle. A pad left high-Z, or following a peripheral's enable, under select 0 fails it.'''
+          checks: ["tie 0 drives 0 (assert_PadOutput_Tie0Drives0)"]
+          why: '''Under select 0 the check compares the pad's output enable with 1 in every cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -240,8 +307,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_02 tie 1 drives 1 (assert_PadOutput_Tie1Drives1)"]
-          why: '''While an awake pad's select is 1, the check compares the pad's output with 1 in every cycle. A pad that puts 0 or a peripheral's data on its output there fails it.'''
+          checks: ["tie 1 drives 1 (assert_PadOutput_Tie1Drives1)"]
+          why: '''While an awake pad's select is 1, the check compares the pad's output with 1 in every cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -255,8 +322,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_02 tie 1 drives 1 (assert_PadOutput_Tie1Drives1)"]
-          why: '''Under select 1 the check compares the pad's output enable with 1 in every cycle. A pad left high-Z, or following a peripheral's enable, under select 1 fails it.'''
+          checks: ["tie 1 drives 1 (assert_PadOutput_Tie1Drives1)"]
+          why: '''Under select 1 the check compares the pad's output enable with 1 in every cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -270,8 +337,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_03 select 2 is high-Z (assert_PadOutput_Select2IsHighZ)"]
-          why: '''While an awake pad's select is 2, the check compares the pad's output enable with 0 in every cycle. A pad that drives under select 2, even for one cycle, fails it.'''
+          checks: ["select 2 is high-Z (assert_PadOutput_Select2IsHighZ)"]
+          why: '''While an awake pad's select is 2, the check compares the pad's output enable with 0 in every cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -285,8 +352,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_03 select 2 is high-Z (assert_PadOutput_Select2IsHighZ)"]
-          why: '''Under select 2 the check compares the pad's output with 0 in every cycle. A pad that puts 1 or a peripheral's data on its output while high-Z fails it.'''
+          checks: ["select 2 is high-Z (assert_PadOutput_Select2IsHighZ)"]
+          why: '''Under select 2 the check compares the pad's output with 0 in every cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -302,8 +369,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_04 drives selected output (assert_PadOutput_DrivesSelectedOutput)"]
-          why: '''For each select from 3 to ${n_mio_periph_out + 2} the check compares the pad's output with `periph_to_mio_i[k]`, `k` the select minus 3, in the same cycle. A pad that carries another output's data, or the right data a cycle late, fails it.'''
+          checks: ["drives selected output (assert_PadOutput_DrivesSelectedOutput)"]
+          why: '''For each select from 3 to ${n_mio_periph_out + 2} the check compares the pad's output with `periph_to_mio_i[k]`, `k` the select minus 3, in the same cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -319,8 +386,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_04 drives selected output (assert_PadOutput_DrivesSelectedOutput)"]
-          why: '''The check compares the pad's output enable with `periph_to_mio_oe_i[k]` in the same cycle, together with the data. A pad that pairs one output's data with another output's enable, or lags the enable by a cycle, fails it.'''
+          checks: ["drives selected output (assert_PadOutput_DrivesSelectedOutput)"]
+          why: '''The check compares the pad's output enable with `periph_to_mio_oe_i[k]`, `k` as for the data, in the same cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -335,8 +402,8 @@ def on(flag, text):
           ]
           kind: "RTL"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_05 no output is high-Z (assert_PadOutput_NoOutputIsHighZ)"]
-          why: '''For selects ${free(n_mio_periph_out + 3, outsel_max)}, which name no output, the check compares the pad's output enable with 0. A pad that drives there, for example by wrapping the select onto a real output, fails it.'''
+          checks: ["no output is high-Z (assert_PadOutput_NoOutputIsHighZ)"]
+          why: '''For selects ${free(n_mio_periph_out + 3, outsel_max)}, which name no output, the check compares the pad's output enable with 0.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -351,8 +418,8 @@ def on(flag, text):
           ]
           kind: "RTL"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_05 no output is high-Z (assert_PadOutput_NoOutputIsHighZ)"]
-          why: '''For selects ${free(n_mio_periph_out + 3, outsel_max)} the check compares the pad's output with 0. A pad that puts 1 or any output's data on its output there fails it.'''
+          checks: ["no output is high-Z (assert_PadOutput_NoOutputIsHighZ)"]
+          why: '''For selects ${free(n_mio_periph_out + 3, outsel_max)} the check compares the pad's output with 0.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -366,8 +433,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_06 DIO drives its peripheral (assert_PadOutput_DIODrivesItsPeripheral)"]
-          why: '''The check compares each awake DIO pad's output with its own peripheral's, `periph_to_dio_i[d]`, in the same cycle, whatever the registers hold. A pad that carries another peripheral, depends on a register or lags by a cycle fails it.'''
+          checks: ["DIO drives its peripheral (assert_PadOutput_DioDrivesItsPeripheral)"]
+          why: '''The check compares each awake DIO pad's output with `periph_to_dio_i[d]` in the same cycle, whatever the registers hold.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -381,8 +448,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_06 DIO drives its peripheral (assert_PadOutput_DIODrivesItsPeripheral)"]
-          why: '''The check compares each awake DIO pad's output enable with `periph_to_dio_oe_i[d]` in the same cycle, whatever the registers hold. A pad that takes another peripheral's enable, or lags by a cycle, fails it.'''
+          checks: ["DIO drives its peripheral (assert_PadOutput_DioDrivesItsPeripheral)"]
+          why: '''The check compares each awake DIO pad's output enable with `periph_to_dio_oe_i[d]` in the same cycle, whatever the registers hold.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -398,8 +465,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "reset_state"
-          checks: ["CHK_PAD_OUTPUT_03 select 2 is high-Z (assert_PadOutput_Select2IsHighZ)"]
-          why: '''The generated register checker keeps each output select at its reset value 2 until software writes it, and _select 2 is high-Z_ (CHK_PAD_OUTPUT_03) makes an awake pad that no TAP owns drive (0, 0) on select 2. A pad that drives before its select is written fails one of the two; an asleep pad and a JTAG pad a TAP owns are decided by the sleep and JTAG pad checks.'''
+          checks: ["select 2 is high-Z (assert_PadOutput_Select2IsHighZ)", "the CSR checker"]
+          why: '''The CSR checker keeps each output select at 2 until written; _select 2 is high-Z_ then makes an awake pad high-Z.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -410,7 +477,7 @@ def on(flag, text):
     {
       name: '''Pad attributes'''
       conditions: [
-        '''every row holds in every cycle, asleep or awake, except on a JTAG pad while a TAP owns it. "Written" means a write the register block accepts, its lock open (Register locks); "reads back" means what a read of the register returns. A pad type "keeps" an attribute bit when its pads implement that bit ([Pad Attributes](hw/top_${topname}/ip_autogen/pinmux/doc/programmers_guide.md#pad-attributes)); which bits a type keeps is fixed, the same on every pad of the type and for good. A one-bit field is kept when its bit is; each bit of `slew_rate` and `drive_strength` is kept or not on its own, as "certain pads may only support two drive-strength bits, instead of four" ([Pad Attributes](hw/top_${topname}/ip_autogen/pinmux/doc/programmers_guide.md#pad-attributes)). Every pad keeps `invert` ([Generic Pad Wrapper](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#generic-pad-wrapper)).'''
+        '''every row holds in every cycle, asleep or awake, except on a JTAG pad while a TAP owns it. "Written" means a write the register block accepts, its lock open (Register locks); "reads back" means what a read of the register returns. A pad type "keeps" an attribute bit when its pads implement that bit ([Pad Attributes](hw/top_${topname}/ip_autogen/pinmux/doc/programmers_guide.md#pad-attributes)), the same on every pad of the type and for good. A one-bit field is kept when its bit is; each bit of `slew_rate` and `drive_strength` is kept or not on its own ([Pad Attributes](hw/top_${topname}/ip_autogen/pinmux/doc/programmers_guide.md#pad-attributes)).'''
       ]
       requirements: [
         {
@@ -423,8 +490,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `invert` of `mio_attr_o` for the pad with the same field of what a read of `MIO_PAD_ATTR_p` returns. A pad that inverts while the register reads 0, or the reverse, or takes the bit a cycle late, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `invert` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -440,8 +507,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `virtual_od_en` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`. A pad that gets a virtual open drain the register does not show, or loses one it shows, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `virtual_od_en` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -457,8 +524,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `pull_en` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`. A pad that gets a pull the register does not show, or loses one it shows, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `pull_en` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -474,8 +541,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `pull_select` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`. A pad pulled the other way from what the register shows fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `pull_select` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -491,8 +558,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `keeper_en` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`. A pad whose keeper is on while the register shows it off, or the reverse, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `keeper_en` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -508,8 +575,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `schmitt_en` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`. A pad whose Schmitt trigger differs from what the register shows fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `schmitt_en` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -525,8 +592,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `od_en` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`. A pad set to open drain while the register shows push-pull, or the reverse, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `od_en` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -542,8 +609,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `input_disable` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`. A pad whose input is cut off while the register shows it on, or the reverse, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `input_disable` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -559,8 +626,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares both bits of field `slew_rate` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`. A pad that gets another slew rate than the register shows fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares both bits of field `slew_rate` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -576,8 +643,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares the four bits of field `drive_strength` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`. A pad that gets another drive strength than the register shows fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares the four bits of field `drive_strength` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -593,8 +660,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `invert` of `dio_attr_o` for the pad with the same field of what a read of `DIO_PAD_ATTR_d` returns. A pad that inverts while the register reads 0, or the reverse, or takes the bit a cycle late, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `invert` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -610,8 +677,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `virtual_od_en` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`. A pad that gets a virtual open drain the register does not show, or loses one it shows, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `virtual_od_en` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -627,8 +694,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `pull_en` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`. A pad that gets a pull the register does not show, or loses one it shows, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `pull_en` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -644,8 +711,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `pull_select` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`. A pad pulled the other way from what the register shows fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `pull_select` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -661,8 +728,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `keeper_en` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`. A pad whose keeper is on while the register shows it off, or the reverse, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `keeper_en` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -678,8 +745,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `schmitt_en` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`. A pad whose Schmitt trigger differs from what the register shows fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `schmitt_en` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -695,8 +762,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `od_en` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`. A pad set to open drain while the register shows push-pull, or the reverse, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `od_en` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -712,8 +779,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `input_disable` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`. A pad whose input is cut off while the register shows it on, or the reverse, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `input_disable` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -729,8 +796,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares both bits of field `slew_rate` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`. A pad that gets another slew rate than the register shows fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares both bits of field `slew_rate` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -746,8 +813,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares the four bits of field `drive_strength` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`. A pad that gets another drive strength than the register shows fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares the four bits of field `drive_strength` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -761,8 +828,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_02 invert reads back (assert_PadAttr_InvertReadsBack)"]
-          why: '''On every pad type, from the pad's first attribute write on, the check compares the `invert` bit of the read-back with the `invert` bit of the last attribute write. A pad type that drops inversion, reading 0 after a write of 1, fails it; with _pad gets read-back_ (CHK_PAD_ATTR_01) the pad then inverts as written.'''
+          checks: ["invert reads back (assert_PadAttr_InvertReadsBack)"]
+          why: '''On every pad type, the check compares the `invert` bit of the read-back with that of the pad's last attribute write.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -777,8 +844,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_03 open drain reads back (assert_PadAttr_OpenDrainReadsBack)"]
-          why: '''On every BidirOd pad, from the pad's first attribute write on, the check compares the `od_en` bit of the read-back with the `od_en` bit of the pad's last attribute write. A BidirOd pad whose `od_en` reads 0 after a write of 1, or keeps an older value, fails it.'''
+          checks: ["open drain reads back (assert_PadAttr_OpenDrainReadsBack)"]
+          why: '''On every BidirOd pad, the check compares the `od_en` bit of the read-back with that of the pad's last attribute write.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -793,8 +860,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_04 virtual open drain reads back (assert_PadAttr_VirtualOpenDrainReadsBack)"]
-          why: '''On every BidirStd pad, from the pad's first attribute write on, the check compares the `virtual_od_en` bit of the read-back with the `virtual_od_en` bit of the pad's last attribute write. A BidirStd pad whose `virtual_od_en` reads 0 after a write of 1, or keeps an older value, fails it.'''
+          checks: ["virtual open drain reads back (assert_PadAttr_VirtualOpenDrainReadsBack)"]
+          why: '''On every BidirStd pad, the check compares the `virtual_od_en` bit of the read-back with that of the last attribute write.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -810,8 +877,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_05 no open drain elsewhere (assert_PadAttr_NoOpenDrainElsewhere)"]
-          why: '''On every pad not of type BidirOd, the check compares the `od_en` bit of the read-back with 0 in every cycle, whatever software wrote. A pad of another type that stores and returns a written `od_en` bit fails it.'''
+          checks: ["no open drain elsewhere (assert_PadAttr_NoOpenDrainElsewhere)"]
+          why: '''On every pad not of type BidirOd, the check requires the `od_en` bit of the read-back to be 0, whatever software wrote.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -827,8 +894,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_06 no virtual open drain elsewhere (assert_PadAttr_NoVirtualOpenDrainElsewhere)"]
-          why: '''On every pad not of type BidirStd, the check compares the `virtual_od_en` bit of the read-back with 0 in every cycle, whatever software wrote. A pad of another type that stores and returns a written `virtual_od_en` bit fails it.'''
+          checks: ["no virtual open drain elsewhere (assert_PadAttr_NoVirtualOpenDrainElsewhere)"]
+          why: '''On every pad not of type BidirStd, the check requires the `virtual_od_en` bit of the read-back to be 0, whatever software wrote.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -844,8 +911,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_07 supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
-          why: '''Per pad type the check requires the `pull_en` bit of the read-back to read 0 when written 0, and to read 1 for a write of 1 on every pad of the type once one pad of the type has done so. A kept bit that reads 1 after a write of 0, or 0 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
+          why: '''The check requires `pull_en` to read back a written 0, and a written 1 once a pad of its type has read one back.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -861,8 +928,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_07 supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
-          why: '''Per pad type the check requires the `pull_select` bit of the read-back to read 0 when written 0, and to read 1 for a write of 1 on every pad of the type once one pad of the type has done so. A kept bit that reads 1 after a write of 0, or 0 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
+          why: '''The check requires `pull_select` to read back a written 0, and a written 1 once a pad of its type has read one back.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -878,8 +945,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_07 supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
-          why: '''Per pad type the check requires the `keeper_en` bit of the read-back to read 0 when written 0, and to read 1 for a write of 1 on every pad of the type once one pad of the type has done so. A kept bit that reads 1 after a write of 0, or 0 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
+          why: '''The check requires `keeper_en` to read back a written 0, and a written 1 once a pad of its type has read one back.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -895,8 +962,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_07 supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
-          why: '''Per pad type the check requires the `schmitt_en` bit of the read-back to read 0 when written 0, and to read 1 for a write of 1 on every pad of the type once one pad of the type has done so. A kept bit that reads 1 after a write of 0, or 0 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
+          why: '''The check requires `schmitt_en` to read back a written 0, and a written 1 once a pad of its type has read one back.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -912,8 +979,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_07 supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
-          why: '''Per pad type the check requires the `input_disable` bit of the read-back to read 0 when written 0, and to read 1 for a write of 1 on every pad of the type once one pad of the type has done so. A kept bit that reads 1 after a write of 0, or 0 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
+          why: '''The check requires `input_disable` to read back a written 0, and a written 1 once a pad of its type has read one back.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -929,8 +996,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_07 supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
-          why: '''Per pad type and per bit of `slew_rate`, the check requires the bit of the read-back to read 0 when written 0, and to read 1 for a write of 1 on every pad of the type once one pad of the type has done so. A kept bit that reads 1 after a write of 0, or 0 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
+          why: '''The check requires each bit of `slew_rate` to read back a written 0, and a written 1 once a pad of its type has read one back.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -946,8 +1013,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_07 supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
-          why: '''Per pad type and per bit of `drive_strength`, the check requires the bit of the read-back to read 0 when written 0, and to read 1 for a write of 1 on every pad of the type once one pad of the type has done so. A kept bit that reads 1 after a write of 0, or 0 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
+          why: '''The check requires each bit of `drive_strength` to read back a written 0, and a written 1 once a pad of its type has read one back.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -962,8 +1029,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_08 unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
-          why: '''Per pad type the check requires the `pull_en` bit of the read-back to read 0 when written 0, and to read 0 on every pad of the type, whatever is written, once a write of 1 has read 0 on one pad of the type. A bit not kept that reads 1 after a write of 0, or 1 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
+          why: '''The check requires `pull_en` to read back a written 0, and 0 on every pad of its type once one read a written 1 as 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -978,8 +1045,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_08 unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
-          why: '''Per pad type the check requires the `pull_select` bit of the read-back to read 0 when written 0, and to read 0 on every pad of the type, whatever is written, once a write of 1 has read 0 on one pad of the type. A bit not kept that reads 1 after a write of 0, or 1 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
+          why: '''The check requires `pull_select` to read back a written 0, and 0 on every pad of its type once one read a written 1 as 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -994,8 +1061,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_08 unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
-          why: '''Per pad type the check requires the `keeper_en` bit of the read-back to read 0 when written 0, and to read 0 on every pad of the type, whatever is written, once a write of 1 has read 0 on one pad of the type. A bit not kept that reads 1 after a write of 0, or 1 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
+          why: '''The check requires `keeper_en` to read back a written 0, and 0 on every pad of its type once one read a written 1 as 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1010,8 +1077,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_08 unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
-          why: '''Per pad type the check requires the `schmitt_en` bit of the read-back to read 0 when written 0, and to read 0 on every pad of the type, whatever is written, once a write of 1 has read 0 on one pad of the type. A bit not kept that reads 1 after a write of 0, or 1 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
+          why: '''The check requires `schmitt_en` to read back a written 0, and 0 on every pad of its type once one read a written 1 as 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1026,8 +1093,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_08 unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
-          why: '''Per pad type the check requires the `input_disable` bit of the read-back to read 0 when written 0, and to read 0 on every pad of the type, whatever is written, once a write of 1 has read 0 on one pad of the type. A bit not kept that reads 1 after a write of 0, or 1 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
+          why: '''The check requires `input_disable` to read back a written 0, and 0 on every pad of its type once one read a written 1 as 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1042,8 +1109,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_08 unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
-          why: '''Per pad type and per bit of `slew_rate`, the check requires the bit of the read-back to read 0 when written 0, and to read 0 on every pad of the type, whatever is written, once a write of 1 has read 0 on one pad of the type. A bit not kept that reads 1 after a write of 0, or 1 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
+          why: '''The check requires each bit of `slew_rate` to read back a written 0, and 0 on every pad of its type once one read a written 1 as 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1058,8 +1125,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_08 unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
-          why: '''Per pad type and per bit of `drive_strength`, the check requires the bit of the read-back to read 0 when written 0, and to read 0 on every pad of the type, whatever is written, once a write of 1 has read 0 on one pad of the type. A bit not kept that reads 1 after a write of 0, or 1 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
+          why: '''The check requires each bit of `drive_strength` to read back a written 0, and 0 on every pad of its type once one read a written 1 as 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1067,7 +1134,7 @@ def on(flag, text):
         }
         {
           name: REQ_ATTR_10
-          desc: '''After reset, every pad's attribute output shall be its reset value, with the fields its type does not keep at 0. ${eg("Every field's reset value is 0, except `pull_en` of MIO pad 30 (IOC8, TAP strap 0), which is 1.", "Every field's reset value is 0, except the fields the `attrs` of the pad's entry in the top description set.")}'''
+          desc: '''After reset, each pad's attribute output shall be its reset value, 0 in fields its type does not keep. ${eg('All are 0 but `pull_en` of MIO pad 30 (IOC8), which is 1.', "All are 0 but the fields the `attrs` of the pad's top entry set.")}'''
           source: [
             '''!!MIO_PAD_ATTR'''
             '''!!DIO_PAD_ATTR'''
@@ -1077,8 +1144,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_09 reset attributes (assert_PadAttr_ResetAttributes)"]
-          why: '''${eg("Until the pad's first attribute write after reset, the check compares the pad's attribute output with the reset attributes: 0 in every field but `pull_en` on MIO pad 30, with each field the pad's type does not keep at 0; the kept fields are the ones _supported bits read back_ (CHK_PAD_ATTR_07) holds the type to. A pad that leaves reset with another value, with a field its type does not keep at 1, or pad 30 without its pull where its type keeps `pull_en`, fails it.", 'Not written for this top.')}'''
+          checks: ["reset attributes (assert_PadAttr_ResetAttributes)"]
+          why: '''Until the pad's first attribute write after reset, the check compares the pad's attribute output with the reset attributes.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1089,7 +1156,7 @@ def on(flag, text):
     {
       name: '''Sleep retention'''
       conditions: [
-        '''"pad" is MIO pad `p` or DIO pad `d`; "status bit" is its bit in `MIO_PAD_SLEEP_STATUS` or `DIO_PAD_SLEEP_STATUS`; "sleep entry" is a rise of `sleep_en_i`. The mode rows hold while no TAP owns the pad and the sleep mode is unchanged since sleep entry.'''
+        '''"pad" is MIO pad `p` or DIO pad `d`; "status bit" is its bit in `MIO_PAD_SLEEP_STATUS` or `DIO_PAD_SLEEP_STATUS`. "Sleep entry" is a rise of `sleep_en_i`. The mode rows hold while no TAP owns the pad and the sleep mode is unchanged since sleep entry.'''
       ]
       requirements: [
         {
@@ -1101,8 +1168,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_01 bit set at entry (assert_PadSleep_BitSetAtEntry)"]
-          why: '''For every sleep entry with the pad's sleep enable at 1 and no software clear of its status bit, the check requires the bit to be 1 in the next cycle. A bit that stays 0, or rises a cycle late, fails it; a cycle with a clear is decided by _clear wins_ (CHK_PAD_SLEEP_05).'''
+          checks: ["bit set at entry (assert_PadSleep_BitSetAtEntry)"]
+          why: '''For every sleep entry with the sleep enable at 1 and no software clear of the bit, the check requires the status bit to be 1 in the next cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1117,8 +1184,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_02 bit set only at entry (assert_PadSleep_BitSetOnlyAtEntry)"]
-          why: '''For every rise of a status bit the check requires a sleep entry with the pad's sleep enable at 1 in the cycle before. A bit that rises with the enable at 0, without a rise of `sleep_en_i`, or while `sleep_en_i` merely stays high, fails it.'''
+          checks: ["bit set only at entry (assert_PadSleep_BitSetOnlyAtEntry)"]
+          why: '''For every rise of a status bit the check requires a sleep entry with the pad's sleep enable at 1 in the cycle before.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1133,8 +1200,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_06 tie low in sleep (assert_PadSleep_TieLowInSleep)"]
-          why: '''While the status bit is 1 and the mode taken at the entry is 0, the check compares the output of a pad no TAP owns with 0 in the same cycle. A pad that still carries its peripheral or its select's drive fails it.'''
+          checks: ["tie low in sleep (assert_PadSleep_TieLowInSleep)"]
+          why: '''While the status bit is 1 with mode 0 taken at the entry, the check compares the output of a pad no TAP owns with 0 in the same cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1149,8 +1216,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_06 tie low in sleep (assert_PadSleep_TieLowInSleep)"]
-          why: '''While held in mode 0, the check compares the output enable of a pad no TAP owns with 1. A pad left high-Z, or following its peripheral's enable, fails it.'''
+          checks: ["tie low in sleep (assert_PadSleep_TieLowInSleep)"]
+          why: '''While held in mode 0, the check compares the output enable of a pad no TAP owns with 1.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1164,8 +1231,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_07 tie high in sleep (assert_PadSleep_TieHighInSleep)"]
-          why: '''While the status bit is 1 and the mode taken at the entry is 1, the check compares the output of a pad no TAP owns with 1 in the same cycle. A pad that still carries its peripheral or its select's drive fails it.'''
+          checks: ["tie high in sleep (assert_PadSleep_TieHighInSleep)"]
+          why: '''While the status bit is 1 with mode 1 taken at the entry, the check compares the output of a pad no TAP owns with 1 in the same cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1179,8 +1246,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_07 tie high in sleep (assert_PadSleep_TieHighInSleep)"]
-          why: '''While held in mode 1, the check compares the output enable of a pad no TAP owns with 1. A pad left high-Z, or following its peripheral's enable, fails it.'''
+          checks: ["tie high in sleep (assert_PadSleep_TieHighInSleep)"]
+          why: '''While held in mode 1, the check compares the output enable of a pad no TAP owns with 1.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1194,8 +1261,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_08 high-Z in sleep (assert_PadSleep_HighZInSleep)"]
-          why: '''While the status bit is 1 and the mode taken at the entry is 2, the check compares the output enable of a pad no TAP owns with 0 in the same cycle. A pad that keeps driving in sleep fails it.'''
+          checks: ["high-Z in sleep (assert_PadSleep_HighZInSleep)"]
+          why: '''While the status bit is 1 with mode 2 taken at the entry, the check compares the output enable of a pad no TAP owns with 0 in the same cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1209,8 +1276,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_08 high-Z in sleep (assert_PadSleep_HighZInSleep)"]
-          why: '''While held in mode 2, the check compares the output of a pad no TAP owns with 0. A pad that leaves its peripheral's data or 1 on its output fails it.'''
+          checks: ["high-Z in sleep (assert_PadSleep_HighZInSleep)"]
+          why: '''While held in mode 2, the check compares the output of a pad no TAP owns with 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1225,8 +1292,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_09 keep holds (assert_PadSleep_KeepHolds)"]
-          why: '''While the status bit is 1 and the mode taken at the entry is 3, the check compares the output of a pad no TAP owns with the output it drove in the last cycle before the bit became 1. A pad that follows its peripheral or its select, or keeps the value of another cycle, fails it. No specification states which output a JTAG pad that a TAP owned in that last cycle keeps, so the check claims none for it.'''
+          checks: ["keep holds (assert_PadSleep_KeepHolds)"]
+          why: '''While held in mode 3, the check compares a pad's output with its output at the sleep entry that set the bit, if no TAP owned it then or now.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1241,8 +1308,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_09 keep holds (assert_PadSleep_KeepHolds)"]
-          why: '''While held in mode 3, the check compares the output enable of a pad no TAP owns with the one it drove in the last cycle before the bit became 1. A pad that turns high-Z after driving, or starts to drive after being high-Z, fails it. No specification states which enable a JTAG pad that a TAP owned in that last cycle keeps, so the check claims none for it.'''
+          checks: ["keep holds (assert_PadSleep_KeepHolds)"]
+          why: '''While held in mode 3, the check compares a pad's output enable with its enable at the sleep entry that set the bit, if no TAP owned it then or now.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1257,8 +1324,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_03 bit holds until cleared (assert_PadSleep_BitHoldsUntilCleared)", "CHK_PAD_SLEEP_04 clear releases (assert_PadSleep_ClearReleases)"]
-          why: '''The check _bit holds until cleared_ (CHK_PAD_SLEEP_03) requires a bit at 1 to be 1 in the next cycle unless software clears it, whatever `sleep_en_i`, the sleep enable and the peripherals do; a bit that falls when sleep ends, or on a write of 1, fails it. The check _clear releases_ (CHK_PAD_SLEEP_04) requires a software clear to give 0 in the next cycle, so the bit ends at the clear and not later.'''
+          checks: ["bit holds until cleared (assert_PadSleep_BitHoldsUntilCleared)", "clear releases (assert_PadSleep_ClearReleases)"]
+          why: '''The first fails a bit at 1 that falls without a software clear; the second requires 0 in the cycle after a clear.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1266,15 +1333,15 @@ def on(flag, text):
         }
         {
           name: REQ_SLP_08
-          desc: '''While its status bit is 0, a pad shall drive what it drives awake: an MIO pad what its output select names, a DIO pad the output and output enable of its own peripheral.'''
+          desc: '''While its status bit is 0, an MIO pad shall drive what its output select names, and a DIO pad the output and output enable of its own peripheral.'''
           source: [
             '''[Retention Logic](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#retention-logic)'''
             '''[Sleep Features](hw/top_${topname}/ip_autogen/pinmux/doc/programmers_guide.md#sleep-features)'''
           ]
           kind: "spec"
           testpoint: "sleep_release"
-          checks: ["CHK_PAD_OUTPUT_01 tie 0 drives 0 (assert_PadOutput_Tie0Drives0)", "CHK_PAD_OUTPUT_02 tie 1 drives 1 (assert_PadOutput_Tie1Drives1)", "CHK_PAD_OUTPUT_03 select 2 is high-Z (assert_PadOutput_Select2IsHighZ)", "CHK_PAD_OUTPUT_04 drives selected output (assert_PadOutput_DrivesSelectedOutput)", "CHK_PAD_OUTPUT_05 no output is high-Z (assert_PadOutput_NoOutputIsHighZ)", "CHK_PAD_OUTPUT_06 DIO drives its peripheral (assert_PadOutput_DIODrivesItsPeripheral)"]
-          why: '''Each holds in every cycle the pad is awake, its status bit at 0, whether the bit was never set or was cleared; together they cover every select and every DIO pad. A pad that still drives the value of its sleep mode in a cycle its bit reads 0 fails the check of its select; a JTAG pad a TAP owns is decided by the JTAG pad checks.'''
+          checks: ["tie 0 drives 0 (assert_PadOutput_Tie0Drives0)", "tie 1 drives 1 (assert_PadOutput_Tie1Drives1)", "select 2 is high-Z (assert_PadOutput_Select2IsHighZ)", "drives selected output (assert_PadOutput_DrivesSelectedOutput)", "no output is high-Z (assert_PadOutput_NoOutputIsHighZ)", "DIO drives its peripheral (assert_PadOutput_DioDrivesItsPeripheral)"]
+          why: '''Each holds while the bit is 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1290,8 +1357,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_05 clear wins (assert_PadSleep_ClearWins)"]
-          why: '''For a cycle with both a sleep entry, the pad's sleep enable at 1, and a software clear of the bit, the check requires the bit to be 0 in the next cycle. A design that lets the hardware set win fails it.'''
+          checks: ["clear wins (assert_PadSleep_ClearWins)"]
+          why: '''For a sleep entry with the sleep enable at 1 in the cycle of a software clear of the bit, the check requires the bit to be 0 in the next cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1306,8 +1373,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_10 mode write while held (assert_PadSleep_ModeWriteWhileHeld)"]
-          why: '''After a write to the sleep mode while the bit is 1, the check requires the pad to keep driving the sleep value of the mode taken at the entry. A design that applies the new mode at once changes the pad's drive and fails it.'''
+          checks: ["mode write while held (assert_PadSleep_ModeWriteWhileHeld)"]
+          why: '''After a sleep mode write while the bit is 1, the check requires the pad to keep the sleep value of the mode taken at the entry.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1322,8 +1389,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_06 tie low in sleep (assert_PadSleep_TieLowInSleep)", "CHK_PAD_SLEEP_07 tie high in sleep (assert_PadSleep_TieHighInSleep)", "CHK_PAD_SLEEP_08 high-Z in sleep (assert_PadSleep_HighZInSleep)", "CHK_PAD_SLEEP_09 keep holds (assert_PadSleep_KeepHolds)"]
-          why: '''Each of the four sleep mode checks compares a held pad's drive with the sleep value of the mode the register held at the sleep entry that set its bit, so after a release the next entry takes the mode written while held. A design that keeps the old mode, or never takes the new one, drives the wrong sleep value and fails one of them. That the register holds the written mode is checked by the generated register checker.'''
+          checks: ["tie low in sleep (assert_PadSleep_TieLowInSleep)", "tie high in sleep (assert_PadSleep_TieHighInSleep)", "high-Z in sleep (assert_PadSleep_HighZInSleep)", "keep holds (assert_PadSleep_KeepHolds)", "the CSR checker"]
+          why: '''Each uses the mode taken at entry; the CSR checker checks the write is kept.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1334,7 +1401,7 @@ def on(flag, text):
     {
       name: '''Register locks'''
       conditions: [
-        '''"lock" is one bit of a `*_REGWEN` register; it locks the registers of the same index. The rule that a locked pad's attributes do not change (`REQ_LOCK_03a`, `REQ_LOCK_03b`) holds except on a JTAG pad while a TAP owns it.'''
+        '''"lock" is one bit of a `*_REGWEN` register; it locks the registers of the same index, and is open at 1 and closed at 0. The rule that a locked pad's attributes do not change (`REQ_LOCK_03a`, `REQ_LOCK_03b`) holds except on a JTAG pad while a TAP owns it.'''
       ]
       requirements: [
         {
@@ -1346,8 +1413,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "fpv_csr_rw"
-          checks: ["the generated CSR checker"]
-          why: '''After reset the generated register checker expects every lock at its reset value 1, bit 31 of `ALERT_TEST` included, and compares each lock's value and read with it; a lock that leaves reset at 0 fails the first compare.'''
+          checks: ["the CSR checker"]
+          why: '''After reset the CSR checker expects every lock, bit 31 of `ALERT_TEST` included, at 1 and compares its value and read with it.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1362,8 +1429,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "fpv_csr_rw"
-          checks: ["the generated CSR checker"]
-          why: '''The generated register checker predicts each lock as `rw0c`: an accepted write of 0 clears it and nothing sets it; a lock that returns to 1 before a reset fails the compare.'''
+          checks: ["the CSR checker"]
+          why: '''The CSR checker predicts each lock as `rw0c`: an accepted write of 0 clears it and nothing sets it; a lock that returns to 1 before a reset fails the compare.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1379,8 +1446,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "fpv_csr_rw"
-          checks: ["the generated CSR checker"]
-          why: '''The generated register checker predicts each lock as `rw0c`, which keeps a closed lock at 0 over a write of 1; a lock that such a write reopens fails the compare.'''
+          checks: ["the CSR checker"]
+          why: '''The CSR checker predicts each lock as `rw0c`, which keeps a closed lock at 0 over a write of 1; a lock that such a write reopens fails the compare.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1395,8 +1462,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "fpv_csr_rw"
-          checks: ["CHK_REGWEN_02 locked read-back holds (assert_Regwen_LockedReadBackHolds)"]
-          why: '''The generated register checker holds each register whose lock reads 0 over every write to it; a register that takes such a write fails it. The attribute registers, whose value the pinmux supplies, are decided by _locked read-back holds_ (CHK_REGWEN_02) on every pad, a JTAG pad a TAP owns included: a locked attribute register whose read-back changes fails it.'''
+          checks: ["locked read-back holds (assert_Regwen_LockedReadBackHolds)", "the CSR checker"]
+          why: '''The CSR checker holds a register whose lock reads 0 over writes; _locked read-back holds_ decides the attribute registers.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1411,8 +1478,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "regwen"
-          checks: ["CHK_REGWEN_01 locked attribute holds (assert_Regwen_LockedAttributeHolds)"]
-          why: '''It compares the pad's attribute output in each cycle its lock is 0 with the output in the next cycle, on a pad that is not a JTAG pad a TAP owns. Any change, from a write or from anything else, fails it.'''
+          checks: ["locked attribute holds (assert_Regwen_LockedAttributeHolds)"]
+          why: '''It holds the pad's attribute output over every cycle its lock is closed, on a pad no TAP owns.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1427,8 +1494,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "regwen"
-          checks: ["CHK_REGWEN_02 locked read-back holds (assert_Regwen_LockedReadBackHolds)"]
-          why: '''It compares what the pad's attribute register reads back in each cycle its lock is 0 with the read-back in the next cycle, on every pad, a JTAG pad a TAP owns included. A locked register that takes a write, whole or in part, fails it.'''
+          checks: ["locked read-back holds (assert_Regwen_LockedReadBackHolds)"]
+          why: '''It holds each pad's read-back over every cycle its lock is closed, an owned JTAG pad included.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1439,20 +1506,20 @@ def on(flag, text):
     {
       name: '''Register block and bus'''
       conditions: [
-        '''a "failed request" is a request whose command integrity code does not match, or a write whose data integrity code does not match ([Usage of User Bits](hw/ip/tlul/README.md#usage-of-user-bits): the data code covers "the write data"). A read whose only mismatch is in its data code is not a failed request, and no row checks its response or its alert. The "in-band reset" is the alert handler's re-initialization, during which it puts a signal integrity error on its ping and acknowledge pairs on purpose ([Employed Solution](hw/top_earlgrey/ip_autogen/alert_handler/doc/theory_of_operation.md#employed-solution)). The sender's answer to it, a signal integrity error on `alert_tx_o` and then a return to idle ([Employed Solution](hw/top_earlgrey/ip_autogen/alert_handler/doc/theory_of_operation.md#employed-solution)), has no row: the sender is the shared primitive `prim_alert_sender` (`rtl/pinmux.sv`:143-147), whose own upstream FPV drives the in-band reset and checks the return to idle (`hw/ip/prim/fpv/tb/prim_alert_rxtx_*`, `InBandInitFromReceiverToSender_A`). The alert rows read `alert_tx_o`, with an alert handler. An "illegal combination of address, size and mask" is a request whose address, size and mask do not correspond as TileLink requires (TileLink 1.9.3 p. 49-51: "a_size, a_address and a_mask are required to correspond with one another"): an address not aligned to its size (p. 51: "a_address must be aligned to a_size"), a size above 2, a mask bit set on a byte lane outside the access, or a `PutFullData` whose mask leaves a lane of the access 0. [Explicit Error Cases](hw/ip/tlul/README.md#explicit-error-cases) lists the last three "for example"; the unaligned address is verification's reading.'''
+        '''a "failed request" is one whose command integrity code does not match, or a write whose data integrity code does not match ([Usage of User Bits](hw/ip/tlul/README.md#usage-of-user-bits)). No row checks the response or the alert of a read whose only mismatch is in its data code. The "in-band reset" is the alert handler's re-initialization. During it, the handler puts a signal integrity error on its ping and acknowledge pairs on purpose ([Employed Solution](hw/top_earlgrey/ip_autogen/alert_handler/doc/theory_of_operation.md#employed-solution)). An "illegal combination of address, size and mask" is an address not aligned to its size, a size above 2, or a mask bit set outside the access. It is also a `PutFullData` mask with a lane of the access at 0.'''
       ]
       requirements: [
         {
           name: REQ_REG_01a
-          desc: '''Every register field shall take software's reads and writes as the access type of its register description entry says, for every request not answered with an error and, for a write, while the lock of its register reads 1 or it has no lock.'''
+          desc: '''Every register field shall act as its access type says on software reads and writes answered without an error, a write while its lock reads 1 or it has none.'''
           source: [
             '''the register description: each field's `swaccess`, e.g. !!MIO_PAD_SLEEP_STATUS `swaccess: "rw0c"`'''
             '''[Configuration and Register Definition File Format](util/reggen/README.md#configuration-and-register-definition-file-format)'''
           ]
           kind: "spec"
           testpoint: "fpv_csr_rw"
-          checks: ["CHK_PAD_ATTR_10 read-back changes only on a write (assert_PadAttr_ReadBackChangesOnlyOnAWrite)"]
-          why: '''The generated register checker predicts each field from its access type and each request whose integrity codes are correct, and compares the field and every read with it; a field that takes a write its type or a closed lock refuses fails it. The attribute registers keep no value of their own (the pinmux supplies it), so their storage is decided by _read-back changes only on a write_ (CHK_PAD_ATTR_10): a read-back that changes with no accepted write to the pad's attribute register before it fails it. A write refused for its integrity code and the hardware set of a sleep status bit are left to the pinmux's own bus and sleep checks.'''
+          checks: ["read-back changes only on a write (assert_PadAttr_ReadBackChangesOnlyOnAWrite)", "the CSR checker"]
+          why: '''The CSR checker predicts each field from its access type, the pad_attr check the attribute registers.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1467,8 +1534,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "fpv_csr_rw"
-          checks: ["the generated CSR checker"]
-          why: '''After reset the generated register checker expects each field at its reset value; a field that leaves reset with another value fails the first compare. The attribute registers, whose value the pinmux supplies, are left to _reset attributes_ (CHK_PAD_ATTR_09).'''
+          checks: ["the CSR checker"]
+          why: '''After reset the CSR checker expects each field at its reset value; _reset attributes_ decides the attribute registers.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1482,8 +1549,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_01 device rules (assert_Bus_DeviceRules)"]
-          why: '''The TL-UL VIP's device rules match each response on the pinmux's port to an open request. A request left without a response, or a second response to one request, fails them.'''
+          checks: ["device rules (assert_Bus_DeviceRules)"]
+          why: '''The TL-UL ABVIP's device rules match each response on the pinmux's port to one open request.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1497,8 +1564,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_01 device rules (assert_Bus_DeviceRules)"]
-          why: '''The TL-UL VIP's device rules hold every response to the TL-UL handshake and compare its `d_source` with its request's `a_source`. A response that carries another source ID fails them.'''
+          checks: ["device rules (assert_Bus_DeviceRules)"]
+          why: '''The TL-UL ABVIP's device rules compare each response's `d_source` with its request's `a_source`.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1506,15 +1573,15 @@ def on(flag, text):
         }
         {
           name: REQ_BUS_01c
-          desc: '''The pinmux shall answer with an error only a request that fails its integrity check, has an undefined opcode, has an illegal combination of address, size and mask, is a write of 8 or 16 bits not aligned to a word, is a write narrower than its register, or targets an address no register maps; a read whose only mismatch is in its data integrity code may get either answer.'''
+          desc: '''Only a failed request, a case of `REQ_BUS_10a` to `REQ_BUS_10d` or one to an address no register maps shall get an error.'''
           source: [
             '''[Explicit Error Cases](hw/ip/tlul/README.md#explicit-error-cases)'''
             '''[Error responses](util/reggen/README.md#error-responses)'''
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_02 errors as the register checker predicts"]
-          why: '''It requires `d_error` 1 on a request that is not a failed request exactly when one of the listed causes holds, as the generated register checker's error checks predict; a read whose only fault is its data integrity code may get either answer, so the check leaves it out. A good request answered with an error fails it; a failed request is a listed cause, so its error never does.'''
+          checks: ["errors as the register checker predicts", "the CSR checker"]
+          why: '''The CSR checker's error checks require `d_error` 1 on a request not failed exactly for a listed cause.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1529,8 +1596,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_03 response codes correct (assert_Bus_ResponseCodesCorrect)"]
-          why: '''It recomputes the response code from each response's opcode, size and error with the encoder both ends of the link share, and compares it with the code sent. A code over other fields, or a stale one, fails it.'''
+          checks: ["response codes correct (assert_Bus_ResponseCodesCorrect)"]
+          why: '''It recomputes the response code from each response's opcode, size and error with the shared encoder and compares it with the code sent.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1545,8 +1612,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_03 response codes correct (assert_Bus_ResponseCodesCorrect)"]
-          why: '''It recomputes the data code over each response's data with the encoder both ends of the link share, and compares it with the code sent. A code computed over other data fails it.'''
+          checks: ["response codes correct (assert_Bus_ResponseCodesCorrect)"]
+          why: '''It recomputes the data code over each response's data with the shared encoder and compares it with the code sent.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1561,8 +1628,8 @@ def on(flag, text):
           ]
           kind: "RTL"
           testpoint: "bus"
-          checks: ["CHK_BUS_04 failed request errors (assert_Bus_FailedRequestErrors)"]
-          why: '''It requires `d_error` 1 on the response to every failed request: a bad command code, or a write with a bad data code. A design that answers a tampered request as a good one fails it.'''
+          checks: ["failed request errors (assert_Bus_FailedRequestErrors)"]
+          why: '''It requires `d_error` 1 on the response to every failed request.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1576,8 +1643,8 @@ def on(flag, text):
           ]
           kind: "RTL"
           testpoint: "bus"
-          checks: ["CHK_BUS_05 failed write changes nothing (assert_Bus_FailedWriteChangesNothing)"]
-          why: '''It holds every register over a failed write, the attribute registers by their read-back; a status bit takes only its hardware set. An AON field with an earlier write still crossing is left to _no change without a write_ (CHK_WAKEUP_SYNC_02), which lets it take only that write; a failed write that lands fails one of the two.'''
+          checks: ["failed write changes nothing (assert_Bus_FailedWriteChangesNothing)"]
+          why: '''It holds every register over a failed write, but for an AON field taking an earlier write not yet landed.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1592,8 +1659,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "alert"
-          checks: ["CHK_ALERT_01 failed request alerts (assert_Alert_FailedRequestAlerts)"]
-          why: '''It requires an alert event on `alert_tx_o` within 40 cycles of every failed request, the alert handler answering by the alert protocol. A design that ignores a tampered request, or alerts late, fails it.'''
+          checks: ["failed request alerts (assert_Alert_FailedRequestAlerts)"]
+          why: '''It requires an alert event on `alert_tx_o` within 40 cycles of every failed request.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -1608,8 +1675,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "alert"
-          checks: ["CHK_ALERT_02 fatal alert repeats (assert_Alert_FatalAlertRepeats)"]
-          why: '''After a failed request it requires an alert event within 40 cycles of every cycle, until reset. A sender that stops after one event, or after the handler's answer, fails it.'''
+          checks: ["fatal alert repeats (assert_Alert_FatalAlertRepeats)"]
+          why: '''After a failed request it requires an alert event within 40 cycles of every cycle, until reset.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -1619,14 +1686,14 @@ def on(flag, text):
           name: REQ_BUS_07
           desc: '''Outside the alert handler's in-band reset, a write of 1 to `ALERT_TEST` bit 0 not answered with an error, while its bit 31 is 1, shall send one alert event.'''
           source: [
-            '''`doc/registers.md`:668: "Write 1 to trigger one alert event of this kind."'''
+            '''The register page says of bit 0: "Write 1 to trigger one alert event of this kind." (!!ALERT_TEST)'''
             '''[Test Alert Register Creation](doc/contributing/hw/comportability/README.md#test-alert-register-creation)'''
             '''[Employed Solution](hw/top_earlgrey/ip_autogen/alert_handler/doc/theory_of_operation.md#employed-solution)'''
           ]
           kind: "spec"
           testpoint: "alert"
-          checks: ["CHK_ALERT_03 test sends an event (assert_Alert_TestSendsAnEvent)", "CHK_ALERT_04 no alert without a cause (assert_Alert_NoAlertWithoutACause)"]
-          why: '''The check _test sends an event_ (CHK_ALERT_03) requires each alert test's credit to be used up by an alert event within 40 cycles; _no alert without a cause_ (CHK_ALERT_04) lets each event use up one credit, so one test gives one event. A lost test fails _test sends an event_, and a second event for one test fails _no alert without a cause_.'''
+          checks: ["test sends an event (assert_Alert_TestSendsAnEvent)", "no alert without a cause (assert_Alert_NoAlertWithoutACause)"]
+          why: '''Each alert test needs an event within 40 cycles, and each event uses up one test credit, so one test gives one event.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -1636,13 +1703,13 @@ def on(flag, text):
           name: REQ_BUS_08
           desc: '''Outside the alert handler's in-band reset, while `ALERT_TEST` bit 31 is 0, a write to its bit 0 that is not a failed request shall send no alert.'''
           source: [
-            '''`doc/registers.md`:666: "Write 0 to disable alert testing until the next reset."'''
+            '''The register page says of bit 31: "Write 0 to disable alert testing until the next reset." (!!ALERT_TEST)'''
             '''[Employed Solution](hw/top_earlgrey/ip_autogen/alert_handler/doc/theory_of_operation.md#employed-solution)'''
           ]
           kind: "spec"
           testpoint: "alert"
-          checks: ["CHK_ALERT_04 no alert without a cause (assert_Alert_NoAlertWithoutACause)"]
-          why: '''A write of bit 0 while bit 31 of `ALERT_TEST` is 0 sets no test credit, so an alert event that follows it with no other cause finds no credit and fails the check. After a read whose only fault is its data integrity code, which may raise the alert or not, the check claims nothing until reset.'''
+          checks: ["no alert without a cause (assert_Alert_NoAlertWithoutACause)"]
+          why: '''A write of bit 0 while bit 31 of `ALERT_TEST` is 0 sets no test credit, so an alert event with no other cause fails it.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -1650,15 +1717,15 @@ def on(flag, text):
         }
         {
           name: REQ_BUS_09
-          desc: '''Outside the alert handler's in-band reset and apart from answering a ping, the fatal alert shall be sent only after a failed request or an alert test; a read whose only mismatch is in its data integrity code may raise it or not.'''
+          desc: '''Outside the in-band reset and apart from ping answers, the fatal alert shall be sent only after a failed request or an alert test.'''
           source: [
             '''[pinmux.hjson `alert_list` fatal_fault](hw/top_${topname}/ip_autogen/pinmux/data/pinmux.hjson)'''
             '''[Employed Solution](hw/top_earlgrey/ip_autogen/alert_handler/doc/theory_of_operation.md#employed-solution)'''
           ]
           kind: "spec"
           testpoint: "alert"
-          checks: ["CHK_ALERT_04 no alert without a cause (assert_Alert_NoAlertWithoutACause)"]
-          why: '''It allows an alert event only after a failed request since reset, or against a ping or test credit, each event using up one credit and a ping's credit lapsing 40 cycles after its ping. An event with no failed request, test or ping behind it fails the check. After a read whose only fault is its data integrity code, which may raise the alert or not, the check claims nothing until reset.'''
+          checks: ["no alert without a cause (assert_Alert_NoAlertWithoutACause)"]
+          why: '''It allows an alert event only after a failed request or against a ping or test credit, one per event.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -1673,8 +1740,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_02 errors as the register checker predicts"]
-          why: '''The generated register checker's error checks require `d_error` 1 on a request with an undefined opcode, and an error only for a listed cause. A block that serves such a request, or refuses a good one, fails them; the run leaves opcodes free.'''
+          checks: ["errors as the register checker predicts", "the CSR checker"]
+          why: '''The CSR checker's error checks require `d_error` 1 on an undefined opcode, which the run leaves free.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1682,15 +1749,15 @@ def on(flag, text):
         }
         {
           name: REQ_BUS_10b
-          desc: '''A request with an *illegal combination of address, size and mask*, as the Scope above defines it, shall get an error response.'''
+          desc: '''A request with an *illegal combination of address, size and mask*, as the Conditions above defines it, shall get an error response.'''
           source: [
             '''[Explicit Error Cases](hw/ip/tlul/README.md#explicit-error-cases)'''
             '''TileLink 1.9.3 p. 51: "a_address must be aligned to a_size."'''
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_02 errors as the register checker predicts"]
-          why: '''The generated register checker's error checks require `d_error` 1 on a request with a size above 2, a lane outside the access, a full write with a lane at 0, or an address not aligned to its size. Masks are contiguous in the run, so the checker's either-way rule for a non-contiguous mask never applies; a block that answers such a request without an error fails them.'''
+          checks: ["errors as the register checker predicts", "the CSR checker"]
+          why: '''The CSR checker's error checks require `d_error` 1 on an illegal fit, masks kept contiguous in the run.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1705,8 +1772,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_02 errors as the register checker predicts"]
-          why: '''The generated register checker's error checks require `d_error` 1 on an 8 or 16 bit write to an address not aligned to a word. A block that answers such a write without an error fails them.'''
+          checks: ["errors as the register checker predicts", "the CSR checker"]
+          why: '''The CSR checker's error checks require `d_error` 1 on an 8 or 16 bit write not aligned to a word.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1720,8 +1787,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_02 errors as the register checker predicts"]
-          why: '''The generated register checker's error checks require `d_error` 1 on a write narrower than its register, the register's width set by its fields in the register description. A block that answers such a write without an error fails them.'''
+          checks: ["errors as the register checker predicts", "the CSR checker"]
+          why: '''The CSR checker's error checks require `d_error` 1 on a write narrower than its register.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1736,8 +1803,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_02 errors as the register checker predicts"]
-          why: '''The generated register checker's error checks require `d_error` 1 on a request to an address within the decoded bits that no register maps. A block that answers such a request without an error fails them.'''
+          checks: ["errors as the register checker predicts", "the CSR checker"]
+          why: '''The CSR checker's error checks require `d_error` 1 on an address no register maps.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1752,8 +1819,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_06 error write changes nothing"]
-          why: '''It holds every register over a write answered with an error: the generated register checker the stored fields, _read-back changes only on a write_ (CHK_PAD_ATTR_10) the attribute registers it leaves out (`hwext`), and _no change without a write_ (CHK_WAKEUP_SYNC_02) and _no clear without a write_ (CHK_WAKEUP_SYNC_04) the AON fields and cause bits. A block that lets such a write land fails one of them.'''
+          checks: ["error write changes nothing", "the CSR checker"]
+          why: '''An error write is no accepted write, so the CSR checker and the attribute and AON no-write checks hold every register.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1764,14 +1831,10 @@ def on(flag, text):
     {
       name: '''Wakeup detectors'''
       conditions: [
-        '''`w` is a detector (0 to ${n_wkup_detect - 1}); a cycle is a `clk_aon_i` cycle (watched signal, forwarded value: terms).'''
-        '''Register values are those the AON logic holds once a write has crossed.'''
-        '''The rows hold with scan mode not True.'''
-        '''They hold with the mode unchanged while enabled; the other fields may change while enabled.'''
-        '''They hold whatever `sleep_en_i` does.'''
-        '''They hold whatever `clk_i` does, stopped included: in sleep "only the wakeup detector logic will be actively clocked" ([Retention and Wakeup Features](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#retention-and-wakeup-features)).'''
-        '''They are checked from the filter's fourth sample after `rst_aon_ni`.'''
-        '''The timed rows (`REQ_WKUP_09a` to `REQ_WKUP_10b`) hold for `CNT_TH` 1 and above: no spec says what a timed detector does with 0, the reset value.'''
+        '''`w` is a detector (0 to ${n_wkup_detect - 1}); a cycle is a `clk_aon_i` cycle; the watched signal and the forwarded value are defined in the Terms.'''
+        '''Register values are those the AON logic holds once a write has crossed. The rows hold with the mode unchanged while enabled, the other fields free to change.'''
+        '''They hold whatever `sleep_en_i`, `clk_i` (stopped included) and the scan mode do, except scan mode True while the detector watches a scan clock pad.'''
+        '''They are checked from the filter's fourth sample after `rst_aon_ni`. The timed rows (`REQ_WKUP_09a` to `REQ_WKUP_10b`) hold for `CNT_TH` 1 and above.'''
       ]
       requirements: [
         {
@@ -1787,8 +1850,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_03 edge sets cause (assert_Wakeup_EdgeSetsCause)", "CHK_WAKEUP_04 timed high sets cause (assert_Wakeup_TimedHighSetsCause)", "CHK_WAKEUP_05 timed low sets cause (assert_Wakeup_TimedLowSetsCause)", "CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''The checks read the pattern on the forwarded value of the MIO pad or constant the select names: a detector on another pad misses this pad's edge or fires on the other's, and a constant read at the wrong level misses a timed detection or makes a false one.'''
+          checks: ["edge sets cause (assert_Wakeup_EdgeSetsCause)", "timed high sets cause (assert_Wakeup_TimedHighSetsCause)", "timed low sets cause (assert_Wakeup_TimedLowSetsCause)", "no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''The checks watch the MIO pad or constant the select names.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1805,8 +1868,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_03 edge sets cause (assert_Wakeup_EdgeSetsCause)", "CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''The checks read the pattern on the forwarded value of the DIO pad the select names: a detector on another pad misses an edge of this one or fires on an edge of the other.'''
+          checks: ["edge sets cause (assert_Wakeup_EdgeSetsCause)", "no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''The checks watch the forwarded value of the DIO pad the select names.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1821,8 +1884,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_05 timed low sets cause (assert_Wakeup_TimedLowSetsCause)", "CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''A select that names no pad watches 0: in mode 4 a detector that reads 1 never fires, and one that reads a pad fires on its edges or its level 1, which no pattern of 0 answers.'''
+          checks: ["timed low sets cause (assert_Wakeup_TimedLowSetsCause)", "no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''The checks watch 0 on a select that names no pad, so mode 4 must fire and no edge may set the bit.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1836,8 +1899,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_03 edge sets cause (assert_Wakeup_EdgeSetsCause)", "CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''With `FILTER` 0 the forwarded value is the pad as sampled: a detector that drops a sample misses an edge, and one that sees a level the pad never had fires with no pattern; a delay of up to 4 cycles is allowed.'''
+          checks: ["edge sets cause (assert_Wakeup_EdgeSetsCause)", "no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''With `FILTER` 0 the forwarded value the checks watch is the pad as sampled, up to 4 cycles late.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1851,8 +1914,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_03 edge sets cause (assert_Wakeup_EdgeSetsCause)", "CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''A level held for 4 samples is an edge of the forwarded value and a 3-sample glitch is none: a filter that needs more samples misses the 4-sample level, and one that needs fewer fires on the glitch.'''
+          checks: ["edge sets cause (assert_Wakeup_EdgeSetsCause)", "no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''A level held for 4 samples is an edge of the forwarded value, and a 3-sample glitch is none.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1867,8 +1930,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_01 posedge sets cause (assert_Wakeup_PosedgeSetsCause)"]
-          why: '''It wants a hardware write of 1 to bit `w` of `WKUP_CAUSE` within 8 cycles of each rise of the forwarded value at which `EN` is 1 and stays 1 for 4 more cycles: a detector that misses a rise, a one-sample pulse included, fails it.'''
+          checks: ["posedge sets cause (assert_Wakeup_PosedgeSetsCause)"]
+          why: '''It wants a hardware write of 1 within 8 cycles of each rise of the forwarded value, a one-sample pulse included, with `EN` 1 then and 4 cycles on.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1883,8 +1946,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''In mode 0 it refuses a hardware write of 1 to a cause bit at 0 that no rise of the forwarded value, seen up to 4 cycles late with `EN` 1, answers: a detector that also fires on a fall fails it.'''
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''In mode 0 it refuses a hardware write of 1 to a cause bit at 0 that no rise of the forwarded value, seen up to 4 cycles late with `EN` 1, answers.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1898,8 +1961,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_02 negedge sets cause (assert_Wakeup_NegedgeSetsCause)"]
-          why: '''It wants a hardware write of 1 to bit `w` of `WKUP_CAUSE` within 8 cycles of each fall of the forwarded value at which `EN` is 1 and stays 1 for 4 more cycles: a detector that misses a fall fails it.'''
+          checks: ["negedge sets cause (assert_Wakeup_NegedgeSetsCause)"]
+          why: '''It wants a hardware write of 1 to bit `w` within 8 cycles of each fall of the forwarded value with `EN` 1 then and for 4 more cycles.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1913,7 +1976,7 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)"]
           why: '''In mode 1 it refuses a hardware write of 1 to a cause bit at 0 that no fall of the forwarded value answers: a detector that fires on a rise fails it.'''
           milestone: "V2"
           priority: "1"
@@ -1928,8 +1991,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_03 edge sets cause (assert_Wakeup_EdgeSetsCause)"]
-          why: '''It wants a hardware write of 1 to bit `w` of `WKUP_CAUSE` within 8 cycles of each rise and each fall of the forwarded value at which `EN` is 1 and stays 1 for 4 more cycles: a detector that sees only one direction fails it.'''
+          checks: ["edge sets cause (assert_Wakeup_EdgeSetsCause)"]
+          why: '''It wants a hardware write of 1 to bit `w` within 8 cycles of each rise and each fall of the forwarded value with `EN` 1 then and for 4 more cycles.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1943,8 +2006,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''In mode 2 it refuses a hardware write of 1 to a cause bit at 0 that no rise or fall of the forwarded value answers: a detector that fires on a steady pad fails it.'''
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''In mode 2 it refuses a hardware write of 1 to a cause bit at 0 that no rise or fall of the forwarded value answers.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1961,8 +2024,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_04 timed high sets cause (assert_Wakeup_TimedHighSetsCause)"]
-          why: '''It counts the cycles in a row with `EN` 1 and the forwarded value 1, and asks for a hardware write of 1 to the cause bit within 8 cycles once the count reaches `CNT_TH` + 1, the later of the two counts, `CNT_TH` or `CNT_TH` + 1, that the specification's wording allows: a detector that never fires, or fires later, fails it. It makes no claim on a level that began while `EN` was 0, as no specification says whether those cycles count.'''
+          checks: ["timed high sets cause (assert_Wakeup_TimedHighSetsCause)"]
+          why: '''It wants the cause bit set within 8 cycles of the forwarded value 1 for `CNT_TH` + 1 cycles in a row with `EN` 1, the later count allowed.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1977,8 +2040,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''In mode 3 it refuses a hardware write of 1 to the cause bit while the forwarded value has been 1 for fewer than `CNT_TH` cycles in a row with `EN` 1: a detector that fires early fails it. It makes no claim on a level that began while `EN` was 0, as no specification says whether those cycles count.'''
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''In mode 3 it refuses a set of the cause bit while the forwarded value has been 1 for fewer than `CNT_TH` cycles in a row with `EN` 1.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1995,8 +2058,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_05 timed low sets cause (assert_Wakeup_TimedLowSetsCause)"]
-          why: '''It counts the cycles in a row with `EN` 1 and the forwarded value 0, and asks for a hardware write of 1 to the cause bit within 8 cycles once the count reaches `CNT_TH` + 1, the later of the two counts, `CNT_TH` or `CNT_TH` + 1, that the specification's wording allows: a detector that never fires, or fires later, fails it. It makes no claim on a level that began while `EN` was 0, as no specification says whether those cycles count.'''
+          checks: ["timed low sets cause (assert_Wakeup_TimedLowSetsCause)"]
+          why: '''It wants the cause bit set within 8 cycles of the forwarded value 0 for `CNT_TH` + 1 cycles in a row with `EN` 1, the later count allowed.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -2011,8 +2074,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''In mode 4 it refuses a hardware write of 1 to the cause bit while the forwarded value has been 0 for fewer than `CNT_TH` cycles in a row with `EN` 1: a detector that fires early fails it. It makes no claim on a level that began while `EN` was 0, as no specification says whether those cycles count.'''
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''In mode 4 it refuses a set of the cause bit while the forwarded value has been 0 for fewer than `CNT_TH` cycles in a row with `EN` 1.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -2026,8 +2089,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_01 posedge sets cause (assert_Wakeup_PosedgeSetsCause)", "CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''Both checks read `MODE` 5, 6 and 7 as mode 0: a detector there that misses a rise fails _posedge sets cause_ (CHK_WAKEUP_01), and one that fires on a fall or a level fails _no false cause_ (CHK_WAKEUP_06).'''
+          checks: ["posedge sets cause (assert_Wakeup_PosedgeSetsCause)", "no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''Both checks read `MODE` 5, 6 and 7 as mode 0.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -2041,8 +2104,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''It refuses a hardware write of 1 to a cause bit at 0 that no pattern seen with `EN` 1 answers: a disabled detector that fires on its pattern fails it. An edge within 4 cycles of an enable change may set the bit or not.'''
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''It refuses a hardware write of 1 to a cause bit at 0 that no pattern with `EN` 1 answers; an edge within 4 cycles of an enable change may set it or not.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -2056,8 +2119,8 @@ def on(flag, text):
           ]
           kind: "RTL"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)", "CHK_WAKEUP_01 posedge sets cause (assert_Wakeup_PosedgeSetsCause)"]
-          why: '''The checks sample the pad whatever `EN` is, so a pad steady at 1 before the enable is no rise: a detector whose sampling restarts at the enable sees one and sets the cause bit, which _no false cause_ (CHK_WAKEUP_06) refuses. The check _posedge sets cause_ (CHK_WAKEUP_01) wants a rise that completes just after the enable to be detected.'''
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)", "posedge sets cause (assert_Wakeup_PosedgeSetsCause)"]
+          why: '''The checks sample the pad whatever `EN` is: a pad at 1 before the enable is no rise, a rise just after it is one.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -2071,8 +2134,8 @@ def on(flag, text):
           ]
           kind: "RTL"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)", "CHK_WAKEUP_01 posedge sets cause (assert_Wakeup_PosedgeSetsCause)"]
-          why: '''The checks' filter counts samples whatever `EN` is: a filter that restarts at the enable turns a pad steady at 1 into a new rise and sets the cause bit, which _no false cause_ (CHK_WAKEUP_06) refuses. The check _posedge sets cause_ (CHK_WAKEUP_01) wants a rise whose 4 samples span the enable to be detected.'''
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)", "posedge sets cause (assert_Wakeup_PosedgeSetsCause)"]
+          why: '''The checks' filter runs whatever `EN` is: a rise whose 4 samples span the enable counts, a pad at 1 before it does not.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -2089,8 +2152,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_01 posedge sets cause (assert_Wakeup_PosedgeSetsCause)", "CHK_WAKEUP_02 negedge sets cause (assert_Wakeup_NegedgeSetsCause)", "CHK_WAKEUP_03 edge sets cause (assert_Wakeup_EdgeSetsCause)", "CHK_WAKEUP_04 timed high sets cause (assert_Wakeup_TimedHighSetsCause)", "CHK_WAKEUP_05 timed low sets cause (assert_Wakeup_TimedLowSetsCause)", "CHK_WAKEUP_07 set lands (assert_Wakeup_SetLands)"]
-          why: '''The five mode checks (CHK_WAKEUP_01 to CHK_WAKEUP_05) want a hardware write of 1 to bit `w` within 8 cycles of each detection, and _set lands_ (CHK_WAKEUP_07) wants the bit 1 in the next cycle: a detection that never reaches bit `w`, or reaches another bit, fails them. A set in the cycle software's clear of the bit lands ends 0, as `REQ_WKUP_17` says.'''
+          checks: ["posedge sets cause (assert_Wakeup_PosedgeSetsCause)", "negedge sets cause (assert_Wakeup_NegedgeSetsCause)", "edge sets cause (assert_Wakeup_EdgeSetsCause)", "timed high sets cause (assert_Wakeup_TimedHighSetsCause)", "timed low sets cause (assert_Wakeup_TimedLowSetsCause)", "set lands (assert_Wakeup_SetLands)"]
+          why: '''Set within 8 cycles; bit 1 a cycle later.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -2105,8 +2168,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)", "CHK_WAKEUP_08 cause rises only on a set (assert_Wakeup_CauseRisesOnlyOnASet)"]
-          why: '''The check _no false cause_ (CHK_WAKEUP_06) refuses a hardware write of 1 to bit `w` at 0 that no pattern of detector `w` answers, and _cause rises only on a set_ (CHK_WAKEUP_08) refuses a rise of bit `w` with no such write in the cycle before: a set with no detection, a detection wired to another bit, or a bit raised by a software write of 1 fails one of them.'''
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)", "cause rises only on a set (assert_Wakeup_CauseRisesOnlyOnASet)"]
+          why: '''Only a pattern of detector `w` may set bit `w`, and bit `w` rises only on a set.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -2123,8 +2186,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup_cause"
-          checks: ["CHK_WAKEUP_CAUSE_02 cause holds until cleared (assert_WakeupCause_CauseHoldsUntilCleared)", "CHK_WAKEUP_CAUSE_01 hardware only sets cause (assert_WakeupCause_HardwareOnlySetsCause)"]
-          why: '''The check _cause holds until cleared_ (CHK_WAKEUP_CAUSE_02) allows a fall of the bit only in the cycle after software's clear of it lands or at `rst_aon_ni`, and _hardware only sets cause_ (CHK_WAKEUP_CAUSE_01) refuses a hardware write of 0 to the bit at 1 with no clear landing. A bit dropped when its detector is disabled, changes mode or sees its pad change fails _cause holds until cleared_, and _hardware only sets cause_ too when hardware writes the 0.'''
+          checks: ["cause holds until cleared (assert_WakeupCause_CauseHoldsUntilCleared)", "hardware only sets cause (assert_WakeupCause_HardwareOnlySetsCause)"]
+          why: '''The bit falls only on a landed clear or at `rst_aon_ni`; hardware writes it 0 only as a clear lands.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2140,8 +2203,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup_cause"
-          checks: ["CHK_WAKEUP_CAUSE_03 set and clear together (assert_WakeupCause_SetAndClearTogether)"]
-          why: '''It takes every cycle in which a hardware write of 1 to a cause bit meets software's clear of the same bit landing, and wants the bit 0 in the next cycle: a register that lets the set win keeps the bit at 1 and fails it.'''
+          checks: ["set and clear together (assert_WakeupCause_SetAndClearTogether)"]
+          why: '''When a hardware write of 1 to a cause bit meets a landing clear of that bit, it wants the bit 0 in the next cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2158,8 +2221,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup_cause"
-          checks: ["CHK_WAKEUP_CAUSE_04 request follows cause (assert_WakeupCause_RequestFollowsCause)"]
-          why: '''It wants `pin_wkup_req_o` 1 within 2 cycles of any cause bit rising, and 1 while any cause bit has held 1 for 3 cycles in a row: a request that leaves out one of the eight bits, or drops while a bit is still 1, fails it.'''
+          checks: ["request follows cause (assert_WakeupCause_RequestFollowsCause)"]
+          why: '''It wants `pin_wkup_req_o` 1 within 2 cycles of any cause bit rising, and while any has held 1 for 3 cycles in a row.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2176,8 +2239,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup_cause"
-          checks: ["CHK_WAKEUP_CAUSE_05 no request without cause (assert_WakeupCause_NoRequestWithoutCause)"]
-          why: '''It wants `pin_wkup_req_o` 0 once every cause bit has been 0 for 3 cycles in a row: a request that stays 1 after the last bit is cleared, or rises on a pattern that set no bit, fails it.'''
+          checks: ["no request without cause (assert_WakeupCause_NoRequestWithoutCause)"]
+          why: '''It wants `pin_wkup_req_o` 0 once every cause bit has been 0 for 3 cycles in a row.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2195,8 +2258,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup_sync"
-          checks: ["CHK_WAKEUP_SYNC_01 write lands (assert_WakeupSync_WriteLands)", "CHK_WAKEUP_SYNC_02 no change without a write (assert_WakeupSync_NoChangeWithoutAWrite)"]
-          why: '''For `EN`, _write lands_ (CHK_WAKEUP_SYNC_01) wants the AON copy to hold the written value within 4 cycles of each write accepted with its lock open, until the next one lands, and _no change without a write_ (CHK_WAKEUP_SYNC_02) allows a change only to a written value not yet landed. An enable write lost, late or landing another value fails _write lands_; a change no write explains fails _no change without a write_.'''
+          checks: ["write lands (assert_WakeupSync_WriteLands)", "no change without a write (assert_WakeupSync_NoChangeWithoutAWrite)"]
+          why: '''For `EN`, each accepted write lands within 4 cycles, and only a write not yet landed changes the field.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2214,8 +2277,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup_sync"
-          checks: ["CHK_WAKEUP_SYNC_01 write lands (assert_WakeupSync_WriteLands)", "CHK_WAKEUP_SYNC_02 no change without a write (assert_WakeupSync_NoChangeWithoutAWrite)"]
-          why: '''For `MODE`, `FILTER` and `MIODIO`, each its own field, _write lands_ (CHK_WAKEUP_SYNC_01) wants the AON copy to hold the written value within 4 cycles of each write accepted with its lock open, until the next one lands, and _no change without a write_ (CHK_WAKEUP_SYNC_02) allows a change only to a written value not yet landed. A configuration write lost, late or landing another value fails _write lands_; a field that changes with no write behind it fails _no change without a write_.'''
+          checks: ["write lands (assert_WakeupSync_WriteLands)", "no change without a write (assert_WakeupSync_NoChangeWithoutAWrite)"]
+          why: '''For `MODE`, `FILTER` and `MIODIO`, each accepted write lands within 4 cycles and only a write not yet landed changes one.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2233,8 +2296,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup_sync"
-          checks: ["CHK_WAKEUP_SYNC_01 write lands (assert_WakeupSync_WriteLands)", "CHK_WAKEUP_SYNC_02 no change without a write (assert_WakeupSync_NoChangeWithoutAWrite)"]
-          why: '''For `CNT_TH`, _write lands_ (CHK_WAKEUP_SYNC_01) wants the AON copy to hold the written value within 4 cycles of each write accepted with its lock open, until the next one lands, and _no change without a write_ (CHK_WAKEUP_SYNC_02) allows a change only to a written value not yet landed. A threshold write lost, late or landing another value fails _write lands_; a threshold that changes with no write behind it fails _no change without a write_.'''
+          checks: ["write lands (assert_WakeupSync_WriteLands)", "no change without a write (assert_WakeupSync_NoChangeWithoutAWrite)"]
+          why: '''For `CNT_TH`, each accepted write lands within 4 cycles, and only a write not yet landed changes the field.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2252,8 +2315,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup_sync"
-          checks: ["CHK_WAKEUP_SYNC_03 clear lands (assert_WakeupSync_ClearLands)", "CHK_WAKEUP_SYNC_05 landed clear clears cause (assert_WakeupSync_LandedClearClearsCause)", "CHK_WAKEUP_SYNC_04 no clear without a write (assert_WakeupSync_NoClearWithoutAWrite)"]
-          why: '''The check _clear lands_ (CHK_WAKEUP_SYNC_03) wants each software clear of bit `w` of `WKUP_CAUSE` to land in the AON logic within 10 cycles, _landed clear clears cause_ (CHK_WAKEUP_SYNC_05) wants the bit 0 in the cycle after it lands, and _no clear without a write_ (CHK_WAKEUP_SYNC_04) refuses a clear landing with no software clear behind it. A clear lost, late or landing without effect fails _clear lands_ or _landed clear clears cause_; a write of 1 that clears fails _no clear without a write_.'''
+          checks: ["clear lands (assert_WakeupSync_ClearLands)", "landed clear clears cause (assert_WakeupSync_LandedClearClearsCause)", "no clear without a write (assert_WakeupSync_NoClearWithoutAWrite)"]
+          why: '''A clear lands within 10 cycles, the bit 0 a cycle later; none lands without a write.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2267,8 +2330,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup_sync"
-          checks: ["CHK_WAKEUP_SYNC_06 writes land in order (assert_WakeupSync_WritesLandInOrder)"]
-          why: '''It compares the AON cycles in which a configuration write and a later enable write land: an enable that holds before the configuration fails it.'''
+          checks: ["writes land in order (assert_WakeupSync_WritesLandInOrder)"]
+          why: '''It compares the AON cycles in which a configuration write and a later enable write land: the enable may not land first.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2282,7 +2345,7 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "wakeup_sync"
-          checks: ["CHK_WAKEUP_SYNC_06 writes land in order (assert_WakeupSync_WritesLandInOrder)"]
+          checks: ["writes land in order (assert_WakeupSync_WritesLandInOrder)"]
           why: '''It compares the AON cycles in which a threshold write and a later enable write land: an enable that holds before the threshold fails it.'''
           milestone: "V2"
           priority: "2"
@@ -2295,7 +2358,22 @@ def on(flag, text):
     {
       name: '''USB wakeup'''
       conditions: [
-        '''the module is usbdev's AON/Wake module, placed in the pinmux as usbdev is not in the AON power domain ([USB Wakeup Detection Module](hw/top_earlgrey/ip_autogen/pinmux/doc/theory_of_operation.md#usb-wakeup-detection-module)); what it does is usbdev's spec and testbench (`REQ_USB_06`), and the other rows check how it is connected. A pinmux port and a port of the module have the same role when usbdev's docs give the module's port the job of the port the top connects to the pinmux port:'''
+        '''the module is usbdev's AON/Wake module ([USB Wakeup Detection Module](hw/top_earlgrey/ip_autogen/pinmux/doc/theory_of_operation.md#usb-wakeup-detection-module)); each port below has the role usbdev's docs give the port it connects to:'''
+        '''`usbdev_dppullup_en`: D+ pull-up enable, routed to the module's input `usbdev_dppullup_en_i` ([AON/Wake Interface Pins](hw/ip/usbdev/doc/theory_of_operation.md#aonwake-interface-pins))'''
+        '''`usbdev_dnpullup_en`: D- pull-up enable, routed to the module's input `usbdev_dnpullup_en_i` ([AON/Wake Interface Pins](hw/ip/usbdev/doc/theory_of_operation.md#aonwake-interface-pins))'''
+        '''`usbdev_suspend_req`: "Request to activate the AON/Wake module" ([Inter-Module Signals](hw/ip/usbdev/doc/interfaces.md#inter-module-signals))'''
+        '''`usbdev_wake_ack`: "Acknowledge a wake signal from the AON/Wake" ([Inter-Module Signals](hw/ip/usbdev/doc/interfaces.md#inter-module-signals))'''
+        '''`usb_dppullup_en`: D+ pull-up enable from the module's output `usb_dppullup_en_o` ([AON/Wake Interface Pins](hw/ip/usbdev/doc/theory_of_operation.md#aonwake-interface-pins))'''
+        '''`usb_dnpullup_en`: D- pull-up enable from the module's output `usb_dnpullup_en_o` ([AON/Wake Interface Pins](hw/ip/usbdev/doc/theory_of_operation.md#aonwake-interface-pins))'''
+        '''`usbdev_bus_not_idle`: The event "the USB is in a non-idle state" ([Inter-Module Signals](hw/ip/usbdev/doc/interfaces.md#inter-module-signals))'''
+        '''`usbdev_bus_reset`: The event "a USB Bus Reset occurred" ([Inter-Module Signals](hw/ip/usbdev/doc/interfaces.md#inter-module-signals))'''
+        '''`usbdev_sense_lost`: The event "the VBUS/SENSE signal became deasserted" ([Inter-Module Signals](hw/ip/usbdev/doc/interfaces.md#inter-module-signals))'''
+        '''`usbdev_wake_detect_active`: "the external AON/Wake module is active" ([Inter-Module Signals](hw/ip/usbdev/doc/interfaces.md#inter-module-signals)): the module's output `wake_detect_active_aon_o` ([AON/Wake Interface Pins](hw/ip/usbdev/doc/theory_of_operation.md#aonwake-interface-pins))'''
+        '''A suspend request is a `clk_aon_i` cycle with `usbdev_suspend_req` at 1, a wake acknowledge one with `usbdev_wake_ack` at 1.'''
+        '''The USB lines are the module's D+, D- and VBUS inputs, free at any time; the module is active while `usbdev_wake_detect_active` is 1.'''
+        '''Idle (J state) is, with one pad pull-up enable at 1, that line at 1 and the other at 0; with none or both, the bus-not-idle event is not checked.'''
+        '''The two pull-up rows hold with usbdev's pull-up enables unchanged just before the suspend request.'''
+        '''The wiring rows follow usbdev's documents; the pinmux theory of operation names only `usb_wkup_req` ([USB Wakeup Detection Module](hw/top_earlgrey/ip_autogen/pinmux/doc/theory_of_operation.md#usb-wakeup-detection-module)).'''
       ]
       requirements: [
         {
@@ -2308,8 +2386,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "usb_conn"
-          checks: ["CHK_USB_CONN_01 D+ pull-up enable in (assert_UsbConn_DpPullUpEnableIn)"]
-          why: '''It compares the module's `usbdev_dppullup_en_i` port with `usbdev_dppullup_en` in every cycle: a port tied off, inverted, fed through a flop or from another signal differs in some cycle and fails it.'''
+          checks: ["D+ pull-up enable in (assert_UsbConn_DpPullUpEnableIn)"]
+          why: '''It compares the module's `usbdev_dppullup_en_i` port with `usbdev_dppullup_en` in every cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2325,8 +2403,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "usb_conn"
-          checks: ["CHK_USB_CONN_02 D- pull-up enable in (assert_UsbConn_DnPullUpEnableIn)"]
-          why: '''It compares the module's `usbdev_dnpullup_en_i` port with `usbdev_dnpullup_en` in every cycle: a port tied off, inverted, fed through a flop or from another signal, the D+ pull-up enable included, differs in some cycle and fails it.'''
+          checks: ["D- pull-up enable in (assert_UsbConn_DnPullUpEnableIn)"]
+          why: '''It compares the module's `usbdev_dnpullup_en_i` port with `usbdev_dnpullup_en` in every cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2342,8 +2420,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "usb_conn"
-          checks: ["CHK_USB_CONN_03 suspend request in (assert_UsbConn_SuspendRequestIn)"]
-          why: '''It compares the module's suspend request port with `usbdev_suspend_req` in every cycle: a request routed to another port, or delayed, fails it, a one-cycle pulse included.'''
+          checks: ["suspend request in (assert_UsbConn_SuspendRequestIn)"]
+          why: '''It compares the module's suspend request port with `usbdev_suspend_req` in every cycle, a one-cycle pulse included.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2359,8 +2437,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "usb_conn"
-          checks: ["CHK_USB_CONN_04 wake acknowledge in (assert_UsbConn_WakeAcknowledgeIn)"]
-          why: '''It compares the module's wake acknowledge port with `usbdev_wake_ack` in every cycle: an acknowledge routed to another port, or delayed, fails it.'''
+          checks: ["wake acknowledge in (assert_UsbConn_WakeAcknowledgeIn)"]
+          why: '''It compares the module's wake acknowledge port with `usbdev_wake_ack` in every cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2376,8 +2454,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "usb_conn"
-          checks: ["CHK_USB_CONN_05 D+ pull-up enable out (assert_UsbConn_DpPullUpEnableOut)"]
-          why: '''It compares `usb_dppullup_en` with the module's `usb_dppullup_en_o` port in every cycle: an output driven from usbdev's own pull-up enable, from the D- port or through a flop differs in some cycle and fails it.'''
+          checks: ["D+ pull-up enable out (assert_UsbConn_DpPullUpEnableOut)"]
+          why: '''It compares `usb_dppullup_en` with the module's `usb_dppullup_en_o` port in every cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2393,8 +2471,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "usb_conn"
-          checks: ["CHK_USB_CONN_06 D- pull-up enable out (assert_UsbConn_DnPullUpEnableOut)"]
-          why: '''It compares `usb_dnpullup_en` with the module's `usb_dnpullup_en_o` port in every cycle: an output driven from usbdev's own pull-up enable, from the D+ port or through a flop differs in some cycle and fails it.'''
+          checks: ["D- pull-up enable out (assert_UsbConn_DnPullUpEnableOut)"]
+          why: '''It compares `usb_dnpullup_en` with the module's `usb_dnpullup_en_o` port in every cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2410,8 +2488,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "usb_conn"
-          checks: ["CHK_USB_CONN_07 bus not idle out (assert_UsbConn_BusNotIdleOut)"]
-          why: '''It compares `usbdev_bus_not_idle` with the module's resume event port in every cycle: taking the bus reset or VBUS lost event instead fails it in a cycle where the two events differ.'''
+          checks: ["bus not idle out (assert_UsbConn_BusNotIdleOut)"]
+          why: '''It compares `usbdev_bus_not_idle` with the module's resume event port in every cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2427,8 +2505,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "usb_conn"
-          checks: ["CHK_USB_CONN_08 bus reset out (assert_UsbConn_BusResetOut)"]
-          why: '''It compares `usbdev_bus_reset` with the module's bus reset event port in every cycle: taking the resume or VBUS lost event instead fails it in a cycle where the two events differ.'''
+          checks: ["bus reset out (assert_UsbConn_BusResetOut)"]
+          why: '''It compares `usbdev_bus_reset` with the module's bus reset event port in every cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2444,8 +2522,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "usb_conn"
-          checks: ["CHK_USB_CONN_09 sense lost out (assert_UsbConn_SenseLostOut)"]
-          why: '''It compares `usbdev_sense_lost` with the module's VBUS lost event port in every cycle: taking the resume or bus reset event instead fails it in a cycle where the two events differ.'''
+          checks: ["sense lost out (assert_UsbConn_SenseLostOut)"]
+          why: '''It compares `usbdev_sense_lost` with the module's VBUS lost event port in every cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2461,7 +2539,7 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "usb_conn"
-          checks: ["CHK_USB_CONN_10 active out (assert_UsbConn_ActiveOut)"]
+          checks: ["active out (assert_UsbConn_ActiveOut)"]
           why: '''It compares `usbdev_wake_detect_active` with the module's `wake_detect_active_aon_o` port in every cycle: a value from another port, or delayed, fails it.'''
           milestone: "V2"
           priority: "2"
@@ -2477,8 +2555,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "usb_conn"
-          checks: ["CHK_USB_CONN_11 wake request out (assert_UsbConn_WakeRequestOut)"]
-          why: '''It compares `usb_wkup_req` with the module's `wake_req_aon_o` port in every cycle: a request from another signal, or through a flop, fails it, a one-cycle pulse included.'''
+          checks: ["wake request out (assert_UsbConn_WakeRequestOut)"]
+          why: '''It compares `usb_wkup_req` with the module's `wake_req_aon_o` port in every cycle, a one-cycle pulse included.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2495,7 +2573,7 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "usb_conn"
-          checks: ["CHK_USB_CONN_12 module on AON clock (assert_UsbConn_ModuleOnAONClock)"]
+          checks: ["module on AON clock (assert_UsbConn_ModuleOnAonClock)"]
           why: '''It compares the module's clock with `clk_aon_i` in every cycle; the run clocks `clk_aon_i` slower than `clk_i`, so a module on `clk_i` fails it.'''
           milestone: "V2"
           priority: "2"
@@ -2512,12 +2590,12 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "usb_conn"
-          checks: []
-          why: '''Not covered by formal: reset behaviour is out of scope. Every run holds both resets released, so a module reset by `rst_ni` would pass the wiring checks.'''
+          checks: ["module on AON reset (check_UsbConn_ModuleOnAonReset)"]
+          why: '''It fails on any flop of the module whose reset pin `rst_aon_ni` does not drive.'''
           milestone: "V2"
           priority: "2"
           security: false
-          state: "${eg('open: no check in this plan', 'open: not reviewed for this top')}"
+          state: "${eg('open', 'open: not reviewed for this top')}"
         }
         {
           name: REQ_USB_05a
@@ -2531,7 +2609,7 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "usb_conn"
-          checks: ["CHK_USB_CONN_14 bus inputs (assert_UsbConn_BusInputs)"]
+          checks: ["bus inputs (assert_UsbConn_BusInputs)"]
           why: '''${eg("It compares the module's D+ input with the DIO pad USB_P in every cycle: an input taken from USB_N or another pad, or through a flop, fails it.", 'Not written for this top.')}'''
           milestone: "V2"
           priority: "2"
@@ -2550,7 +2628,7 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "usb_conn"
-          checks: ["CHK_USB_CONN_14 bus inputs (assert_UsbConn_BusInputs)"]
+          checks: ["bus inputs (assert_UsbConn_BusInputs)"]
           why: '''${eg("It compares the module's D- input with the DIO pad USB_N in every cycle: an input taken from USB_P or another pad, or through a flop, fails it.", 'Not written for this top.')}'''
           milestone: "V2"
           priority: "2"
@@ -2568,24 +2646,203 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "usb_conn"
-          checks: ["CHK_USB_CONN_14 bus inputs (assert_UsbConn_BusInputs)"]
-          why: '''It compares the module's VBUS input with usbdev's sense input after its input select in every cycle: a VBUS taken from a fixed pad, before the select, differs once the select names another pad and fails it.'''
+          checks: ["bus inputs (assert_UsbConn_BusInputs)"]
+          why: '''It compares the module's VBUS input with usbdev's sense input after its input select in every cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
           state: "${eg('open', 'open: not reviewed for this top')}"
         }
         {
-          name: REQ_USB_06
-          desc: '''The module shall activate on the suspend request, hold the pull-ups, report resume, bus reset and VBUS loss, and release on the wake acknowledge, as usbdev's spec says.'''
+          name: REQ_USB_06a
+          desc: '''While the module is inactive, a suspend request shall make it active within a bounded time.'''
           source: [
-            '''[Optional external AON/Wake functionality](hw/ip/usbdev/doc/theory_of_operation.md#optional-external-aonwake-functionality)'''
+            '''[Suspending](hw/ip/usbdev/doc/wake_resume.md#suspending)'''
+            '''[usbdev.hjson `wake_control.suspend_req`](hw/ip/usbdev/data/usbdev.hjson)'''
+            '''[Inter-Module Signals](hw/ip/usbdev/doc/interfaces.md#inter-module-signals)'''
             '''[top_${topname}_pinmux.ipconfig.hjson `enable_usb_wakeup`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
           ]
           kind: "spec"
           testpoint: "usb_module"
-          checks: ["usbdev's tests"]
-          why: '''Out of scope here: usbdev's own testbench decides the module's behaviour, by its tests `usbdev_aon_wake_resume`, `_reset` and `_disconnect`. This plan checks only that the module is wired to the pinmux's ports and pads.'''
+          checks: ["request activates (assert_UsbModule_RequestActivates)"]
+          why: '''It wants `usbdev_wake_detect_active` 1 within 2 AON clock cycles of each suspend request while inactive.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_USB_06b
+          desc: '''While the module is active, a wake acknowledge shall make it inactive within a bounded time.'''
+          source: [
+            '''[Resuming](hw/ip/usbdev/doc/wake_resume.md#resuming)'''
+            '''[usbdev.hjson `wake_control.wake_ack`](hw/ip/usbdev/data/usbdev.hjson)'''
+            '''[Inter-Module Signals](hw/ip/usbdev/doc/interfaces.md#inter-module-signals)'''
+            '''[Inter-Module Signals](hw/top_${topname}/ip_autogen/pinmux/doc/interfaces.md#inter-module-signals)'''
+            '''[top_${topname}_pinmux.ipconfig.hjson `enable_usb_wakeup`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
+          ]
+          kind: "spec"
+          testpoint: "usb_module"
+          checks: ["acknowledge releases (assert_UsbModule_AcknowledgeReleases)"]
+          why: '''It wants `usbdev_wake_detect_active` 0 within 2 AON clock cycles of each wake acknowledge while active.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_USB_06c
+          desc: '''Apart from a suspend request made while it is inactive and a wake acknowledge made while it is active, nothing shall change whether the module is active.'''
+          source: [
+            '''[Suspending](hw/ip/usbdev/doc/wake_resume.md#suspending)'''
+            '''[Resuming](hw/ip/usbdev/doc/wake_resume.md#resuming)'''
+            '''[usbdev.hjson `wake_control.suspend_req`](hw/ip/usbdev/data/usbdev.hjson)'''
+            '''[usbdev.hjson `wake_control.wake_ack`](hw/ip/usbdev/data/usbdev.hjson)'''
+            '''[Inter-Module Signals](hw/ip/usbdev/doc/interfaces.md#inter-module-signals)'''
+            '''[top_${topname}_pinmux.ipconfig.hjson `enable_usb_wakeup`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
+          ]
+          kind: "spec"
+          testpoint: "usb_module"
+          checks: ["no other state change (assert_UsbModule_NoOtherStateChange)"]
+          why: '''It lets `usbdev_wake_detect_active` rise only after a suspend request and fall only after a wake acknowledge.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_USB_06d
+          desc: '''While the module is inactive, each pad pull-up enable (`usb_dppullup_en`, `usb_dnpullup_en`) shall equal usbdev's enable of the same line in the same cycle.'''
+          source: [
+            '''[AON/Wake Interface Pins](hw/ip/usbdev/doc/theory_of_operation.md#aonwake-interface-pins)'''
+            '''[Resuming](hw/ip/usbdev/doc/wake_resume.md#resuming)'''
+            '''[usbdev.hjson `wake_control.wake_ack`](hw/ip/usbdev/data/usbdev.hjson)'''
+            '''[Inter-Module Signals](hw/top_${topname}/ip_autogen/pinmux/doc/interfaces.md#inter-module-signals)'''
+            '''[top_${topname}_pinmux.ipconfig.hjson `enable_usb_wakeup`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
+          ]
+          kind: "spec"
+          testpoint: "usb_module"
+          checks: ["inactive passes pull-ups (assert_UsbModule_InactivePassesPullUps)"]
+          why: '''It compares each pull-up enable to the pads with usbdev's enable of its line while the module is inactive.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_USB_06e
+          desc: '''With the module active and `usbdev_sense_lost` at 0, each pad pull-up enable shall keep usbdev's enable of its line at the activating suspend request.'''
+          source: [
+            '''[Overview](hw/ip/usbdev/doc/wake_resume.md#overview)'''
+            '''[Inter-Module Signals](hw/top_${topname}/ip_autogen/pinmux/doc/interfaces.md#inter-module-signals)'''
+            '''[chip_usbdev_testplan.hjson `chip_sw_usbdev_aon_pullup`](hw/top_earlgrey/data/ip/chip_usbdev_testplan.hjson)'''
+            '''[top_${topname}_pinmux.ipconfig.hjson `enable_usb_wakeup`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
+          ]
+          kind: "spec"
+          testpoint: "usb_module"
+          checks: ["active holds pull-ups (assert_UsbModule_ActiveHoldsPullUps)", "waits: pull-ups after VBUS loss"]
+          why: '''It wants each pull-up enable at usbdev's value at the suspend request while `usbdev_sense_lost` is 0.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_USB_06f
+          desc: '''While the module is active, each held condition shall set its event within a bounded time: bus not idle, bus reset (D+ and D- low), sense lost (VBUS low).'''
+          source: [
+            '''[Optional external AON/Wake functionality](hw/ip/usbdev/doc/theory_of_operation.md#optional-external-aonwake-functionality)'''
+            '''[AON/Wake Clocking](hw/ip/usbdev/doc/theory_of_operation.md#aonwake-clocking)'''
+            '''[usbdev.hjson `wake_events.disconnected`](hw/ip/usbdev/data/usbdev.hjson)'''
+            '''[usbdev.hjson `wake_events.bus_reset`](hw/ip/usbdev/data/usbdev.hjson)'''
+            '''[usbdev.hjson `wake_events.bus_not_idle`](hw/ip/usbdev/data/usbdev.hjson)'''
+            '''[Inter-Module Signals](hw/ip/usbdev/doc/interfaces.md#inter-module-signals)'''
+            '''[Inter-Module Signals](hw/top_${topname}/ip_autogen/pinmux/doc/interfaces.md#inter-module-signals)'''
+            '''[usbdev_testplan.hjson `aon_wake_resume`](hw/ip/usbdev/data/usbdev_testplan.hjson)'''
+            '''[usbdev_testplan.hjson `aon_wake_reset`](hw/ip/usbdev/data/usbdev_testplan.hjson)'''
+            '''[usbdev_testplan.hjson `aon_wake_disconnect`](hw/ip/usbdev/data/usbdev_testplan.hjson)'''
+            '''[top_${topname}_pinmux.ipconfig.hjson `enable_usb_wakeup`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
+          ]
+          kind: "spec"
+          testpoint: "usb_module"
+          checks: ["held condition sets event (assert_UsbModule_HeldConditionSetsEvent)"]
+          why: '''It wants each event at 1 once its condition has been on the lines in a cycle and the 8 after it.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_USB_06g
+          desc: '''An event shall be set only after its own condition was on the USB lines while the module was active, for at least the shortest time the module must report.'''
+          source: [
+            '''[usbdev.hjson `wake_events.disconnected`](hw/ip/usbdev/data/usbdev.hjson)'''
+            '''[usbdev.hjson `wake_events.bus_reset`](hw/ip/usbdev/data/usbdev.hjson)'''
+            '''[usbdev.hjson `wake_events.bus_not_idle`](hw/ip/usbdev/data/usbdev.hjson)'''
+            '''[Inter-Module Signals](hw/top_${topname}/ip_autogen/pinmux/doc/interfaces.md#inter-module-signals)'''
+            '''[AON/Wake Clocking](hw/ip/usbdev/doc/theory_of_operation.md#aonwake-clocking)'''
+            '''[top_${topname}_pinmux.ipconfig.hjson `enable_usb_wakeup`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
+          ]
+          kind: "spec"
+          testpoint: "usb_module"
+          checks: ["event only after its condition (assert_UsbModule_EventOnlyAfterItsCondition)", "waits: short condition sets no event"]
+          why: '''It lets an event rise only on its own condition, seen with the module active from then on.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_USB_06h
+          desc: '''An event, once set, shall stay set for as long as the module stays active.'''
+          source: [
+            '''[Resuming](hw/ip/usbdev/doc/wake_resume.md#resuming)'''
+            '''[Inter-Module Signals](hw/ip/usbdev/doc/interfaces.md#inter-module-signals)'''
+            '''[top_${topname}_pinmux.ipconfig.hjson `enable_usb_wakeup`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
+          ]
+          kind: "spec"
+          testpoint: "usb_module"
+          checks: ["event holds while active (assert_UsbModule_EventHoldsWhileActive)"]
+          why: '''It wants an event at 1 to stay 1 in the next cycle while the module stays active, whatever the USB lines do.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_USB_06i
+          desc: '''A wake acknowledge made while the module is active shall clear each of the three events within a bounded time.'''
+          source: [
+            '''[Resuming](hw/ip/usbdev/doc/wake_resume.md#resuming)'''
+            '''[Inter-Module Signals](hw/top_${topname}/ip_autogen/pinmux/doc/interfaces.md#inter-module-signals)'''
+            '''[top_${topname}_pinmux.ipconfig.hjson `enable_usb_wakeup`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
+          ]
+          kind: "spec"
+          testpoint: "usb_module"
+          checks: ["acknowledge clears events (assert_UsbModule_AcknowledgeClearsEvents)"]
+          why: '''It wants each of the three events at 0 in one of the 4 AON clock cycles after each wake acknowledge while active.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_USB_06j
+          desc: '''The module's wake request shall be 1 exactly while at least one of its three events is set.'''
+          source: [
+            '''[Overview](hw/ip/usbdev/doc/wake_resume.md#overview)'''
+            '''[usbdev_testplan.hjson `aon_wake_resume`](hw/ip/usbdev/data/usbdev_testplan.hjson)'''
+            '''[usbdev_testplan.hjson `aon_wake_reset`](hw/ip/usbdev/data/usbdev_testplan.hjson)'''
+            '''[usbdev_testplan.hjson `aon_wake_disconnect`](hw/ip/usbdev/data/usbdev_testplan.hjson)'''
+            '''[Inter-Module Signals](hw/ip/usbdev/doc/interfaces.md#inter-module-signals)'''
+            '''[Inter-Module Signals](hw/top_${topname}/ip_autogen/pinmux/doc/interfaces.md#inter-module-signals)'''
+            '''[Wakeup Recording](hw/top_${topname}/ip_autogen/pwrmgr/doc/theory_of_operation.md#wakeup-recording)'''
+            '''[top_${topname}_pinmux.ipconfig.hjson `enable_usb_wakeup`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
+          ]
+          kind: "spec"
+          testpoint: "usb_module"
+          checks: ["wake request follows events (assert_UsbModule_WakeRequestFollowsEvents)"]
+          why: '''It compares `usb_wkup_req` with the three events in every cycle: 1 when at least one is 1, else 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2598,7 +2855,7 @@ def on(flag, text):
     {
       name: '''Strap sampling'''
       conditions: [
-        '''the TAP straps are seen through the TAP that connects; full reset and NDM reset: terms. Life cycle conditions follow the life cycle definition table ([Manufacturing States](doc/security/specs/device_life_cycle/README.md#manufacturing-states)), after the delay before a life cycle input counts.${eg(" The pads named are Earlgrey's.", '')}'''
+        '''the TAP straps are seen through the TAP that connects (TAP selection and the JTAG pads); full reset and NDM reset are defined in the Terms. Life cycle conditions follow the definition table ([Manufacturing States](doc/security/specs/device_life_cycle/README.md#manufacturing-states)), after the input synchronizer delay. ${eg("The pads named are Earl Grey's.", '')}'''
       ]
       requirements: [
         {
@@ -2611,8 +2868,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "strap"
-          checks: ["CHK_STRAP_01 pulse samples the straps (assert_Strap_PulseSamplesTheStraps)"]
-          why: '''${eg('At every strap pulse with `dft_hold_tap_sel_i` at 0, whatever the life cycle inputs, the check compares strap 0 in the next cycle with MIO 30 (IOC8) of the pulse cycle or of the cycle after it: the one value where the pad holds it in both cycles, either value where the two differ. A strap 0 that misses the pulse, or takes another pad or a value from neither cycle, fails it.', 'Not written for this top.')}'''
+          checks: ["pulse samples the straps (assert_Strap_PulseSamplesTheStraps)"]
+          why: '''${eg('It compares strap 0 after a strap pulse with MIO 30 (IOC8) of the pulse cycle or the next.', 'Not written for this top.')}'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2620,7 +2877,7 @@ def on(flag, text):
         }
         {
           name: REQ_STRAP_02a
-          desc: '''At each `strap_en_i` pulse while `dft_hold_tap_sel_i` is 0, TAP strap 1 shall take ${eg("pad IOC5's value (MIO 27)", "its pad's value")} if the live `lc_hw_debug_en_i` is On. Where both straps sample their pads while `lc_dft_en_i` is On and `dft_hold_tap_sel_i` is 0 (`REQ_STRAP_03`), that sampling takes precedence.'''
+          desc: '''At a `strap_en_i` pulse with `dft_hold_tap_sel_i` 0 and `lc_hw_debug_en_i` On, TAP strap 1 shall take ${eg("pad IOC5's value (MIO 27)", "its pad's value")}, unless `REQ_STRAP_03` applies.'''
           source: [
             '''[Strap Sampling and TAP Isolation](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#strap-sampling-and-tap-isolation)'''
             '''[top_${topname}.hjson${eg(' `targets.asic.pinmux.special_signals tap1`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
@@ -2629,8 +2886,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "strap"
-          checks: ["CHK_STRAP_01 pulse samples the straps (assert_Strap_PulseSamplesTheStraps)"]
-          why: '''${eg('With `dft_hold_tap_sel_i` at 0 and `lc_hw_debug_en_i` On for the two cycles before the pulse, the check compares strap 1 in the next cycle with MIO 27 (IOC5) of the pulse cycle or of the cycle after it, the one value where the pad holds it in both; a strap 1 that keeps its old value fails it. While `lc_dft_en_i` is On the strap follows its pad instead, which _straps follow the pads_ (CHK_STRAP_02) decides.', 'Not written for this top.')}'''
+          checks: ["pulse samples the straps (assert_Strap_PulseSamplesTheStraps)"]
+          why: '''${eg('With `lc_hw_debug_en_i` steadily On, it compares strap 1 after the pulse with MIO 27 (IOC5) of the pulse cycle or the next.', 'Not written for this top.')}'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2638,7 +2895,7 @@ def on(flag, text):
         }
         {
           name: REQ_STRAP_02b
-          desc: '''At each `strap_en_i` pulse, TAP strap 1 shall keep its value if the live `lc_hw_debug_en_i` is not On. Where both straps sample their pads while `lc_dft_en_i` is On and `dft_hold_tap_sel_i` is 0 (`REQ_STRAP_03`), that sampling takes precedence.'''
+          desc: '''At each `strap_en_i` pulse with the live `lc_hw_debug_en_i` not On, TAP strap 1 shall keep its value, unless the sampling of `REQ_STRAP_03` applies.'''
           source: [
             '''[Strap Sampling and TAP Isolation](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#strap-sampling-and-tap-isolation)'''
             '''[top_${topname}.hjson${eg(' `targets.asic.pinmux.special_signals tap1`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
@@ -2647,8 +2904,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "strap"
-          checks: ["CHK_STRAP_01 pulse samples the straps (assert_Strap_PulseSamplesTheStraps)"]
-          why: '''${eg('With `dft_hold_tap_sel_i` at 0 and neither `lc_hw_debug_en_i` nor `lc_dft_en_i` On in the two cycles before the pulse, the check asserts strap 1 unchanged in the next cycle, whatever IOC5 carries. A PROD chip whose strap 1 takes its pad fails it.', 'Not written for this top.')}'''
+          checks: ["pulse samples the straps (assert_Strap_PulseSamplesTheStraps)"]
+          why: '''With neither `lc_hw_debug_en_i` nor `lc_dft_en_i` On before the pulse, it asserts strap 1 unchanged after it.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2665,8 +2922,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "strap"
-          checks: ["CHK_STRAP_02 straps follow the pads (assert_Strap_StrapsFollowThePads)"]
-          why: '''${eg('While `lc_dft_en_i` has been On for the two cycles before and `dft_hold_tap_sel_i` is 0, the check compares both straps with MIO 30 and MIO 27 of the cycle before, a strap pulse cycle included, whatever `lc_hw_debug_en_i` is. A strap that holds, or a strap 1 that stops following its pad, fails it.', 'Not written for this top.')}'''
+          checks: ["straps follow the pads (assert_Strap_StrapsFollowThePads)"]
+          why: '''${eg('While `lc_dft_en_i` is steadily On, it compares both straps with MIO 30 and MIO 27 of the cycle before.', 'Not written for this top.')}'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2681,8 +2938,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "strap"
-          checks: ["CHK_STRAP_03 straps hold (assert_Strap_StrapsHold)"]
-          why: '''While `dft_hold_tap_sel_i` is 1, the check asserts both straps unchanged in the next cycle, at a strap pulse and with `lc_dft_en_i` On too. A design that samples during the hold fails it.'''
+          checks: ["straps hold (assert_Strap_StrapsHold)"]
+          why: '''While `dft_hold_tap_sel_i` is 1, it asserts both straps unchanged in the next cycle, at a strap pulse and with `lc_dft_en_i` On too.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2690,15 +2947,15 @@ def on(flag, text):
         }
         {
           name: REQ_STRAP_05
-          desc: '''Outside a `strap_en_i` pulse, and outside the sampling while `lc_dft_en_i` is On and `dft_hold_tap_sel_i` is 0 (`REQ_STRAP_03`), the TAP straps shall keep their values.'''
+          desc: '''Outside a `strap_en_i` pulse and the sampling of `REQ_STRAP_03` (`lc_dft_en_i` On, `dft_hold_tap_sel_i` 0), the TAP straps shall keep their values.'''
           source: [
             '''[Strap Sampling and TAP Isolation](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#strap-sampling-and-tap-isolation)'''
             '''[top_${topname}_pinmux.ipconfig.hjson `enable_strap_sampling`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
           ]
           kind: "spec"
           testpoint: "strap"
-          checks: ["CHK_STRAP_03 straps hold (assert_Strap_StrapsHold)"]
-          why: '''${eg('With no strap pulse and `lc_dft_en_i` not On in the two cycles before, the check asserts both straps unchanged whatever the pads do. A strap that follows IOC5 or IOC8 after boot, when software uses them as GPIOs, fails it.', 'Not written for this top.')}'''
+          checks: ["straps hold (assert_Strap_StrapsHold)"]
+          why: '''With no strap pulse and `lc_dft_en_i` not On in the two cycles before, it asserts both straps unchanged whatever the pads do.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2713,8 +2970,8 @@ def on(flag, text):
           ]
           kind: "RTL"
           testpoint: "strap"
-          checks: ["CHK_STRAP_04 unsampled strap reads 0 (assert_Strap_UnsampledStrapReads0)", "CHK_STRAP_01 pulse samples the straps (assert_Strap_PulseSamplesTheStraps)", "CHK_STRAP_03 straps hold (assert_Strap_StrapsHold)"]
-          why: '''The check _unsampled strap reads 0_ (CHK_STRAP_04) asserts both straps 0 in full reset and in every cycle after it until a sample, whatever the pads carry; a strap that leaves reset at 1, or takes a pad with no sample, fails it. A strap 1 that a PROD boot leaves unsampled keeps that 0 through the kept half of _pulse samples the straps_ (CHK_STRAP_01) and through _straps hold_ (CHK_STRAP_03).'''
+          checks: ["unsampled strap reads 0 (assert_Strap_UnsampledStrapReads0)", "pulse samples the straps (assert_Strap_PulseSamplesTheStraps)", "straps hold (assert_Strap_StrapsHold)"]
+          why: '''The first wants both straps 0 from full reset to a sample; the others keep an unsampled strap 1 at 0.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2726,6 +2983,8 @@ def on(flag, text):
           source: [
             '''[Non-debug Module Reset](hw/top_earlgrey/ip_autogen/pinmux/doc/theory_of_operation.md#non-debug-module-reset)'''
             '''[Reset Request Handling](hw/top_${topname}/ip_autogen/pwrmgr/doc/theory_of_operation.md#reset-request-handling)'''
+            '''[System Reset Tree](hw/top_${topname}/ip_autogen/rstmgr/doc/theory_of_operation.md#system-reset-tree)'''
+            '''[Summary](hw/top_${topname}/ip_autogen/rstmgr/doc/theory_of_operation.md#summary)'''
             '''[top_${topname}.hjson${eg(' `resets.nodes lc_io_div4`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
             '''[top_${topname}.hjson${eg(' `resets.nodes sys_io_div4`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
             '''[top_${topname}.hjson${eg(' `module.pinmux`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
@@ -2733,16 +2992,16 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "strap"
-          checks: []
-          why: '''Not covered by formal: reset behaviour is out of scope.'''
+          checks: ["straps outside NDM reset (check_Strap_StrapsOutsideNdmReset)"]
+          why: '''It fails on `rst_ni` or `rst_aon_ni`, which an NDM reset asserts, at a reset pin or in the input cone of a sampled TAP strap flop.'''
           milestone: "V2S"
           priority: "1"
           security: true
-          state: "${eg('open: no check in this plan', 'open: not reviewed for this top')}"
+          state: "${eg('open', 'open: not reviewed for this top')}"
         }
         {
           name: REQ_STRAP_08
-          desc: '''With `SecVolatileRawUnlockEn` 0${eg(', the Earlgrey value,', ',')} `strap_en_override_i` shall not change the straps.'''
+          desc: '''With `SecVolatileRawUnlockEn` 0${eg(', the Earl Grey value,', ',')} `strap_en_override_i` shall not change the straps.'''
           source: [
             '''[Inter-Module Signals](hw/top_${topname}/ip_autogen/pinmux/doc/interfaces.md#inter-module-signals)'''
             '''[pinmux.hjson `param_list` SecVolatileRawUnlockEn](hw/top_${topname}/ip_autogen/pinmux/data/pinmux.hjson)'''
@@ -2751,8 +3010,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "strap"
-          checks: ["CHK_STRAP_03 straps hold (assert_Strap_StrapsHold)"]
-          why: '''The input `strap_en_override_i` takes any value in any cycle of the proof, and the check asserts the straps unchanged whenever no sample is due, through every override value. A strap that samples when the override rises fails it.'''
+          checks: ["straps hold (assert_Strap_StrapsHold)"]
+          why: '''With `strap_en_override_i` free in every cycle, it asserts the straps unchanged whenever no sample is due.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2765,7 +3024,7 @@ def on(flag, text):
     {
       name: '''Latched debug enable'''
       conditions: [
-        '''the latch, On and Off are as terms defines them.'''
+        '''the latch, On and Off are defined in the Terms.'''
       ]
       requirements: [
         {
@@ -2778,8 +3037,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "latch"
-          checks: ["CHK_LATCH_02 pulse samples debug enable (assert_Latch_PulseSamplesDebugEnable)"]
-          why: '''At a strap pulse with `lc_hw_debug_en_i` On for the two cycles before, `lc_hw_debug_clr_i`, `lc_check_byp_en_i` and `lc_escalate_en_i` at Off for the two cycles before, the check compares `pinmux_hw_debug_en_o` with On in the next cycle. A latch that misses the pulse stays Off and fails it.'''
+          checks: ["pulse samples debug enable (assert_Latch_PulseSamplesDebugEnable)"]
+          why: '''With `lc_hw_debug_en_i` steadily On and the clear inputs at Off, it compares `pinmux_hw_debug_en_o` with On in the next cycle.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2795,8 +3054,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "latch"
-          checks: ["CHK_LATCH_02 pulse samples debug enable (assert_Latch_PulseSamplesDebugEnable)", "CHK_LATCH_03 On only at a pulse (assert_Latch_OnOnlyAtAPulse)"]
-          why: '''The check _pulse samples debug enable_ (CHK_LATCH_02) compares the output with Off after a strap pulse with `lc_hw_debug_en_i` On in neither of the two cycles before and the three clear inputs at Off. The check _On only at a pulse_ (CHK_LATCH_03) fails any rise to On other than after a strap pulse with the debug enable On in one of the two cycles before, so a latch that follows the debug enable when it turns On later fails too.'''
+          checks: ["pulse samples debug enable (assert_Latch_PulseSamplesDebugEnable)", "On only at a pulse (assert_Latch_OnOnlyAtAPulse)"]
+          why: '''The first wants Off after a pulse with the debug enable not On; the second allows a rise to On only at an On pulse.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2807,6 +3066,8 @@ def on(flag, text):
           desc: '''With no `strap_en_i` pulse, no clear and no full reset, the latch shall keep its value, through an NDM reset too.'''
           source: [
             '''[Non-debug Module Reset](hw/top_earlgrey/ip_autogen/pinmux/doc/theory_of_operation.md#non-debug-module-reset)'''
+            '''[System Reset Tree](hw/top_${topname}/ip_autogen/rstmgr/doc/theory_of_operation.md#system-reset-tree)'''
+            '''[Summary](hw/top_${topname}/ip_autogen/rstmgr/doc/theory_of_operation.md#summary)'''
             '''[top_${topname}.hjson${eg(' `resets.nodes lc_io_div4`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
             '''[top_${topname}.hjson${eg(' `resets.nodes sys_io_div4`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
             '''[top_${topname}.hjson${eg(' `module.pinmux`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
@@ -2814,8 +3075,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "latch"
-          checks: ["CHK_LATCH_05 latch holds (assert_Latch_LatchHolds)"]
-          why: '''With no strap pulse, `lc_hw_debug_clr_i`, `lc_check_byp_en_i` and `lc_escalate_en_i` at Off in the two cycles before, the check asserts the output unchanged; a latch that drops, or follows the live debug enable, fails it. The NDM reset half is not covered: resets after the start of the run are out of scope.'''
+          checks: ["latch holds (assert_Latch_LatchHolds)", "latch outside NDM reset (check_Latch_LatchOutsideNdmReset)"]
+          why: '''The first keeps the output; the second fails on `rst_ni` or `rst_aon_ni`, NDM resets, in a latch flop's reset or input cone.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2833,8 +3094,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "latch"
-          checks: ["CHK_LATCH_04 clear turns Off (assert_Latch_ClearTurnsOff)"]
-          why: '''The check compares the output with Off in the cycle after `lc_hw_debug_clr_i` has been at any value other than Off, On included, for two cycles. A latch that stays On, or clears only at On, fails it.'''
+          checks: ["clear turns Off (assert_Latch_ClearTurnsOff)"]
+          why: '''It wants Off in the cycle after `lc_hw_debug_clr_i` has been at any value other than Off, On included, for two cycles.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2850,8 +3111,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "latch"
-          checks: ["CHK_LATCH_04 clear turns Off (assert_Latch_ClearTurnsOff)"]
-          why: '''The check compares the output with Off in the cycle after `lc_check_byp_en_i` has been at any value other than Off, On included, for two cycles. A latch that stays On through a life cycle transition, or clears only at On, fails it.'''
+          checks: ["clear turns Off (assert_Latch_ClearTurnsOff)"]
+          why: '''It wants Off in the cycle after `lc_check_byp_en_i` has been at any value other than Off, On included, for two cycles.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2867,8 +3128,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "latch"
-          checks: ["CHK_LATCH_04 clear turns Off (assert_Latch_ClearTurnsOff)"]
-          why: '''The check compares the output with Off in the cycle after `lc_escalate_en_i` has been at any of its 15 values other than Off for two cycles. A latch that ignores an escalation, or clears only at On, fails it.'''
+          checks: ["clear turns Off (assert_Latch_ClearTurnsOff)"]
+          why: '''It wants Off in the cycle after `lc_escalate_en_i` has been at any of its 15 values other than Off for two cycles.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2883,8 +3144,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "latch"
-          checks: ["CHK_LATCH_05 latch holds (assert_Latch_LatchHolds)", "CHK_LATCH_02 pulse samples debug enable (assert_Latch_PulseSamplesDebugEnable)"]
-          why: '''With `lc_hw_debug_clr_i` and `lc_check_byp_en_i` at Off, _latch holds_ (CHK_LATCH_05) asserts the output unchanged outside a strap pulse and _pulse samples debug enable_ (CHK_LATCH_02) asserts On after a pulse with the debug enable On. A latch cleared by an Off value fails one of them.'''
+          checks: ["latch holds (assert_Latch_LatchHolds)", "pulse samples debug enable (assert_Latch_PulseSamplesDebugEnable)"]
+          why: '''With debug clear and check bypass Off, the first keeps the output outside a pulse and the second gives On after an On pulse.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2900,8 +3161,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "latch"
-          checks: ["CHK_LATCH_06 output On or Off (assert_Latch_OutputOnOrOff)", "CHK_LATCH_02 pulse samples debug enable (assert_Latch_PulseSamplesDebugEnable)", "CHK_LATCH_05 latch holds (assert_Latch_LatchHolds)"]
-          why: '''The latch is seen only on `pinmux_hw_debug_en_o`: _pulse samples debug enable_ (CHK_LATCH_02) and _latch holds_ (CHK_LATCH_05) compare it with On after an On sample and while held, and _output On or Off_ (CHK_LATCH_06) rejects the 14 other encodings. An output that shows anything but On while the latch is On fails one of them.'''
+          checks: ["output On or Off (assert_Latch_OutputOnOrOff)", "pulse samples debug enable (assert_Latch_PulseSamplesDebugEnable)", "latch holds (assert_Latch_LatchHolds)"]
+          why: '''The second and third want On after an On sample and while held; the first rejects other encodings.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2917,8 +3178,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "latch"
-          checks: ["CHK_LATCH_06 output On or Off (assert_Latch_OutputOnOrOff)", "CHK_LATCH_03 On only at a pulse (assert_Latch_OnOnlyAtAPulse)", "CHK_LATCH_04 clear turns Off (assert_Latch_ClearTurnsOff)"]
-          why: '''The check _output On or Off_ (CHK_LATCH_06) rejects every value but On and Off, _On only at a pulse_ (CHK_LATCH_03) any On the latch did not take at a strap pulse, and _clear turns Off_ (CHK_LATCH_04) anything but Off after a clear. An output at another encoding, or On while the latch is Off, fails one of them.'''
+          checks: ["output On or Off (assert_Latch_OutputOnOrOff)", "On only at a pulse (assert_Latch_OnOnlyAtAPulse)", "clear turns Off (assert_Latch_ClearTurnsOff)"]
+          why: '''The first rejects other encodings, the second an On not taken at a pulse, the third all but Off after a clear.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2937,8 +3198,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "latch"
-          checks: ["CHK_LATCH_01 Off from full reset (assert_Latch_OffFromFullReset)", "CHK_LATCH_03 On only at a pulse (assert_Latch_OnOnlyAtAPulse)"]
-          why: '''The check _Off from full reset_ (CHK_LATCH_01) asserts Off in every cycle of a full reset, and _On only at a pulse_ (CHK_LATCH_03) fails any rise to On before a strap pulse with the debug enable On. Together they keep the output Off from the reset to the next pulse.'''
+          checks: ["Off from full reset (assert_Latch_OffFromFullReset)", "On only at a pulse (assert_Latch_OnOnlyAtAPulse)"]
+          why: '''The first wants Off in full reset; the second fails any rise to On before a strap pulse with the debug enable On.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2953,8 +3214,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "latch"
-          checks: ["CHK_LATCH_04 clear turns Off (assert_Latch_ClearTurnsOff)"]
-          why: '''The check covers a clear at the strap pulse too: with `lc_hw_debug_clr_i`, `lc_check_byp_en_i` or `lc_escalate_en_i` at a value other than Off for the two cycles before the pulse, the output must be Off in the next cycle even with `lc_hw_debug_en_i` On. A latch where the sample wins over the clear fails it. A clear that begins in the pulse cycle is not decided, as no specification states how soon a clear acts.'''
+          checks: ["clear turns Off (assert_Latch_ClearTurnsOff)"]
+          why: '''With a clear input not Off for the two cycles before a pulse, the check asserts Off in the next cycle even with `lc_hw_debug_en_i` On.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2967,7 +3228,8 @@ def on(flag, text):
     {
       name: '''TAP selection and the JTAG pads'''
       conditions: [
-        '''the JTAG pads are ${eg('IOR3 TCK, IOR0 TMS, IOR2 TDI, IOR4 TRST_N, IOR1 TDO (MIO 38, 35, 37, 39, 36; ', 'the pads the top description assigns to TCK, TMS, TDI, TRST_N and TDO (')}[top_${topname}.hjson${eg(' `targets.asic.pinmux.special_signals`')}](hw/top_${topname}/data/top_${topname}.hjson)). The rows hold once the straps and life cycle inputs have held for the delay of the input synchronizers; which reset drives a connected TAP's TRST_N in scan mode is open (`REQ_TAP_13`). A connected TAP: terms.'''
+        '''JTAG pads: ${eg('IOR3 TCK, IOR0 TMS, IOR2 TDI, IOR4 TRST_N, IOR1 TDO (MIO 38, 35, 37, 39, 36; ', 'the pads the top description assigns to TCK, TMS, TDI, TRST_N and TDO (')}[top_${topname}.hjson${eg(' `targets.asic.pinmux.special_signals`')}](hw/top_${topname}/data/top_${topname}.hjson)). Rows hold once straps and life cycle inputs have held for the delay of the input synchronizers, except TRST_N in scan mode.'''
+        '''REQ_TAP_08 takes "all-zero" ([Strap Sampling and TAP Isolation](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#strap-sampling-and-tap-isolation)); the existing testplan's `MioJtagAttrO_A` keeps the Schmitt trigger on.'''
       ]
       requirements: [
         {
@@ -2981,8 +3243,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "jtag"
-          checks: ["CHK_JTAG_01 connected TAP gets the pads (assert_Jtag_ConnectedTAPGetsThePads)"]
-          why: '''${eg('With TAP straps 01 the life cycle TAP is connected in every life cycle state, and the check compares the `tck` field of `lc_jtag_o` with MIO 38 (IOR3) in the same cycle, in scan mode too. A TCK from another pad, a cycle late or blocked by the life cycle state fails it.', 'Not written for this top.')}'''
+          checks: ["connected TAP gets the pads (assert_Jtag_ConnectedTapGetsThePads)"]
+          why: '''${eg('It compares `tck` of `lc_jtag_o` with MIO 38 (IOR3) in the same cycle, in every life cycle state and in scan mode.', 'Not written for this top.')}'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -2999,8 +3261,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "jtag"
-          checks: ["CHK_JTAG_01 connected TAP gets the pads (assert_Jtag_ConnectedTAPGetsThePads)"]
-          why: '''${eg('With TAP straps 01, the check compares the `tms` field of `lc_jtag_o` with MIO 35 (IOR0) in the same cycle, in every life cycle state and in scan mode. A TMS from another pad or a cycle late fails it.', 'Not written for this top.')}'''
+          checks: ["connected TAP gets the pads (assert_Jtag_ConnectedTapGetsThePads)"]
+          why: '''${eg('It compares `tms` of `lc_jtag_o` with MIO 35 (IOR0) in the same cycle, in every life cycle state and in scan mode.', 'Not written for this top.')}'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -3017,8 +3279,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "jtag"
-          checks: ["CHK_JTAG_01 connected TAP gets the pads (assert_Jtag_ConnectedTAPGetsThePads)"]
-          why: '''${eg('With TAP straps 01, the check compares the `tdi` field of `lc_jtag_o` with MIO 37 (IOR2) in the same cycle, in every life cycle state and in scan mode. A TDI from another pad or a cycle late fails it.', 'Not written for this top.')}'''
+          checks: ["connected TAP gets the pads (assert_Jtag_ConnectedTapGetsThePads)"]
+          why: '''${eg('It compares `tdi` of `lc_jtag_o` with MIO 37 (IOR2) in the same cycle, in every life cycle state and in scan mode.', 'Not written for this top.')}'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -3035,8 +3297,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "jtag"
-          checks: ["CHK_JTAG_01 connected TAP gets the pads (assert_Jtag_ConnectedTAPGetsThePads)"]
-          why: '''${eg('Outside scan mode the check compares the `trst_n` field of `lc_jtag_o` with MIO 39 (IOR4) in the same cycle; a TAP held in reset, or released, against its pad fails it. In scan mode no specification states which reset TRST_N follows, so the field is not compared there.', 'Not written for this top.')}'''
+          checks: ["connected TAP gets the pads (assert_Jtag_ConnectedTapGetsThePads)"]
+          why: '''${eg('Outside scan mode it compares `trst_n` with MIO 39 (IOR4) in the same cycle; in scan mode no specification names its reset.', 'Not written for this top.')}'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -3055,8 +3317,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "jtag"
-          checks: ["CHK_JTAG_01 connected TAP gets the pads (assert_Jtag_ConnectedTAPGetsThePads)"]
-          why: '''With TAP straps 10 and `pinmux_hw_debug_en_o` On, the check compares the four fields of `rv_jtag_o` with the JTAG pads in the same cycle; a RISC-V TAP left unconnected fails it. In scan mode TRST_N waits on `REQ_TAP_13`.'''
+          checks: ["connected TAP gets the pads (assert_Jtag_ConnectedTapGetsThePads)"]
+          why: '''It compares `rv_jtag_o` with the JTAG pads in the same cycle, TRST_N outside scan mode only.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -3075,8 +3337,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "jtag"
-          checks: ["CHK_JTAG_02 cut TAP gets zero (assert_Jtag_CutTAPGetsZero)"]
-          why: '''With TAP straps 10 and `pinmux_hw_debug_en_o` Off the RISC-V TAP is not connected, and the check asserts all four fields of `rv_jtag_o` 0. A TAP that still sees the pads after the latch is cleared, or that follows the live debug enable, fails it.'''
+          checks: ["cut TAP gets zero (assert_Jtag_CutTapGetsZero)"]
+          why: '''With TAP straps 10 and `pinmux_hw_debug_en_o` Off, it asserts all four fields of `rv_jtag_o` 0.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -3094,8 +3356,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "jtag"
-          checks: ["CHK_JTAG_01 connected TAP gets the pads (assert_Jtag_ConnectedTAPGetsThePads)"]
-          why: '''With TAP straps 11 and `lc_dft_en_i` On for the two cycles before, the check compares the four fields of `dft_jtag_o` with the JTAG pads in the same cycle; a DFT TAP left unconnected in a test state fails it. In scan mode TRST_N waits on `REQ_TAP_13`.'''
+          checks: ["connected TAP gets the pads (assert_Jtag_ConnectedTapGetsThePads)"]
+          why: '''With `lc_dft_en_i` steadily On, it compares `dft_jtag_o` with the JTAG pads in the same cycle, TRST_N outside scan mode only.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -3113,8 +3375,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "jtag"
-          checks: ["CHK_JTAG_02 cut TAP gets zero (assert_Jtag_CutTAPGetsZero)"]
-          why: '''With TAP straps 11 and `lc_dft_en_i` not On in the two cycles before, the check asserts `dft_jtag_o` all 0. A DFT TAP reachable in a PROD or DEV chip fails it.'''
+          checks: ["cut TAP gets zero (assert_Jtag_CutTapGetsZero)"]
+          why: '''With TAP straps 11 and `lc_dft_en_i` not On in the two cycles before, it asserts `dft_jtag_o` all 0.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -3131,8 +3393,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "jtag"
-          checks: ["CHK_JTAG_02 cut TAP gets zero (assert_Jtag_CutTAPGetsZero)"]
-          why: '''Outside scan mode, in every cycle, each of the life cycle, RISC-V and DFT TAPs that the straps do not name, or whose gate is not open, must see all four fields 0. A second TAP sharing the pads, or a TAP left connected after its gate closes, fails it.'''
+          checks: ["cut TAP gets zero (assert_Jtag_CutTapGetsZero)"]
+          why: '''In every cycle and scan mode value, each cut one of the life cycle, RISC-V and DFT TAPs must see all four fields 0.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -3148,8 +3410,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "jtag"
-          checks: ["CHK_JTAG_03 only On opens", "CHK_JTAG_02 cut TAP gets zero (assert_Jtag_CutTAPGetsZero)", "CHK_STRAP_01 pulse samples the straps (assert_Strap_PulseSamplesTheStraps)", "CHK_STRAP_03 straps hold (assert_Strap_StrapsHold)", "CHK_LATCH_02 pulse samples debug enable (assert_Latch_PulseSamplesDebugEnable)"]
-          why: '''The checks _only On opens_ (CHK_JTAG_03), _cut TAP gets zero_ (CHK_JTAG_02), _pulse samples the straps_ (CHK_STRAP_01), _straps hold_ (CHK_STRAP_03) and _pulse samples debug enable_ (CHK_LATCH_02) count `lc_dft_en_i` and `lc_hw_debug_en_i` as On only at 4'b0101, with both inputs free over all 16 values. A gate, a strap sample or a latch that opens on one of the 15 other values gives a request, a strap change or an On output that one of them forbids.'''
+          checks: ["only On opens", "cut TAP gets zero (assert_Jtag_CutTapGetsZero)", "pulse samples the straps (assert_Strap_PulseSamplesTheStraps)", "straps hold (assert_Strap_StrapsHold)", "pulse samples debug enable (assert_Latch_PulseSamplesDebugEnable)"]
+          why: '''Each counts only 4'b0101 as On.'''
           milestone: "V2S"
           priority: "1"
           security: true
@@ -3166,8 +3428,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "jtag_pad"
-          checks: ["CHK_JTAG_PAD_02 TDO pad drives the TAP (assert_JtagPad_TDOPadDrivesTheTAP)"]
-          why: '''While a TAP is connected and the pad awake, the check compares `mio_out_o[36]` with the `tdo` of the connected TAP's response in the same cycle, `rram_jtag_i` for a connected RRAM TAP. A pad that drives its selected peripheral, another TAP's TDO or a late value fails it; a pad in sleep mode waits on `REQ_TAP_11`.'''
+          checks: ["TDO pad drives the TAP (assert_JtagPad_TdoPadDrivesTheTap)"]
+          why: '''It compares `mio_out_o[36]` with the connected TAP's `tdo`, the RRAM TAP's included, in the same cycle while the pad is awake.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -3184,8 +3446,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "jtag_pad"
-          checks: ["CHK_JTAG_PAD_02 TDO pad drives the TAP (assert_JtagPad_TDOPadDrivesTheTAP)"]
-          why: '''While a TAP is connected and the pad awake, the check compares `mio_oe_o[36]` with the `tdo_oe` of the connected TAP's response in the same cycle. A TDO driven while the TAP releases it, or left undriven while the TAP drives, fails it; sleep mode waits on `REQ_TAP_11`.'''
+          checks: ["TDO pad drives the TAP (assert_JtagPad_TdoPadDrivesTheTap)"]
+          why: '''It compares `mio_oe_o[36]` with the connected TAP's `tdo_oe` in the same cycle while the pad is awake.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -3195,15 +3457,14 @@ def on(flag, text):
           name: REQ_TAP_07
           desc: '''While a TAP is connected, ${eg('pads IOR0, IOR2, IOR3 and IOR4', 'the TMS, TDI, TCK and TRST_N pads')} shall have output enable 0.'''
           source: [
-            '''The TAPs' standard JTAG port takes TCK, TMS, TRST_N and TDI as pad inputs and drives only TDO and its enable (the rv_dm docs `interfaces.md`:84, 89-94'''
-            '''[Security Countermeasures](hw/ip/lc_ctrl/doc/interfaces.md#security-countermeasures)'''
+            '''The TAPs' standard JTAG port takes TCK, TMS, TRST_N and TDI as pad inputs and drives only TDO and its enable ([JTAG](hw/ip/rv_dm/doc/interfaces.md#jtag); [Security Countermeasures](hw/ip/lc_ctrl/doc/interfaces.md#security-countermeasures)); the RRAM TAP's port has the same JTAG type ([Inter-Module Signals](hw/top_${topname}/ip_autogen/pinmux/doc/interfaces.md#inter-module-signals)) and takes the JTAG IOs ([Strap Sampling and TAP Isolation](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#strap-sampling-and-tap-isolation))'''
             '''[top_${topname}.hjson${eg(' `targets.asic.pinmux.special_signals`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
             '''[top_${topname}_pinmux.ipconfig.hjson `enable_strap_sampling`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
           ]
           kind: "spec"
           testpoint: "jtag_pad"
-          checks: ["CHK_JTAG_PAD_03 input pads not driven (assert_JtagPad_InputPadsNotDriven)"]
-          why: '''${eg('While a TAP is connected and the pads awake, the check asserts `mio_oe_o` 0 on MIO 35, 37, 38 and 39 whatever their output selects hold. A pad that still drives a peripheral against the debugger fails it; sleep mode waits on `REQ_TAP_11`.', 'Not written for this top.')}'''
+          checks: ["input pads not driven (assert_JtagPad_InputPadsNotDriven)"]
+          why: '''${eg('While a TAP is connected and the pads awake, it asserts `mio_oe_o` 0 on MIO 35, 37, 38 and 39 whatever their output selects hold.', 'Not written for this top.')}'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -3219,8 +3480,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "jtag_pad"
-          checks: ["CHK_JTAG_PAD_04 JTAG attributes zero (assert_JtagPad_JTAGAttributesZero)"]
-          why: '''${eg('While a TAP is connected and the pads awake, the check asserts every field of `mio_attr_o` 0 on MIO 35 to 39, with the attribute registers at any value. A pull-up, an inversion or a Schmitt trigger left on a JTAG pad fails it.', 'Not written for this top.')}'''
+          checks: ["JTAG attributes zero (assert_JtagPad_JtagAttributesZero)"]
+          why: '''${eg('While a TAP is connected and the pads awake, it asserts every field of `mio_attr_o` 0 on MIO 35 to 39, whatever the registers hold.', 'Not written for this top.')}'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -3236,48 +3497,12 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "jtag_pad"
-          checks: ["CHK_JTAG_PAD_05 attribute registers untouched (assert_JtagPad_AttributeRegistersUntouched)"]
-          why: '''In every cycle the check lets the read-back of each of the five pads' attribute registers change only by a software write. A design that clears or overwrites a register when a TAP connects or is disconnected fails it.'''
+          checks: ["attribute registers untouched (assert_JtagPad_AttributeRegistersUntouched)"]
+          why: '''In every cycle it lets each JTAG pad's attribute read-back change only by a software write.'''
           milestone: "V2S"
           priority: "2"
           security: true
           state: "${eg('open', 'open: not reviewed for this top')}"
-        }
-        {
-          name: REQ_TAP_10
-          desc: '''While a TAP is connected, a peripheral input that selects a JTAG pad shall read 0 or the pad.'''
-          source: [
-            '''[Strap Sampling and TAP Isolation](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#strap-sampling-and-tap-isolation)'''
-            '''[top_${topname}.hjson${eg(' `targets.asic.pinmux.special_signals`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
-            '''[top_${topname}_pinmux.ipconfig.hjson `enable_strap_sampling`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
-          ]
-          kind: "RTL"
-          testpoint: "jtag_pad"
-          checks: []
-          why: '''Out of scope: no spec states a value, so either value meets the spec.'''
-          milestone: "V2S"
-          priority: "2"
-          security: true
-          state: "${eg('open: no check in this plan', 'open: not reviewed for this top')}"
-        }
-        {
-          name: REQ_TAP_11
-          desc: '''While a TAP is connected and a JTAG pad's sleep mode is active, the pad shall carry one of two candidate outcomes, not yet decided: the TAP's signals, as the existing pinmux FPV testplan's JTAG rows want, or its sleep value, as the existing pinmux FPV testplan's sleep rows want.'''
-          source: [
-            '''[Retention Logic](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#retention-logic)'''
-            '''[Sleep Features](hw/top_${topname}/ip_autogen/pinmux/doc/programmers_guide.md#sleep-features)'''
-            '''[Debug](hw/top_${topname}/ip_autogen/pwrmgr/doc/theory_of_operation.md#debug)'''
-            '''[top_${topname}.hjson${eg(' `targets.asic.pinmux.special_signals`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
-            '''[top_${topname}_pinmux.ipconfig.hjson `enable_strap_sampling`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
-          ]
-          kind: "RTL"
-          testpoint: "jtag_pad"
-          checks: []
-          why: '''No specification orders a pad's sleep mode against a connected TAP, so _JTAG pad in sleep mode_ (CHK_JTAG_PAD_01) waits on that answer.'''
-          milestone: "V2S"
-          priority: "2"
-          security: true
-          state: "${eg('open: no check in this plan', 'open: not reviewed for this top')}"
         }
         {
           name: REQ_TAP_12
@@ -3291,32 +3516,17 @@ def on(flag, text):
             '''[top_${topname}.hjson${eg(' `module.pinmux`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
             '''[top_${topname}.hjson${eg(' `inter_module.connect pinmux.rv_jtag`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
             '''[top_${topname}_pinmux.ipconfig.hjson `enable_strap_sampling`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
+            '''[System Reset Tree](hw/top_${topname}/ip_autogen/rstmgr/doc/theory_of_operation.md#system-reset-tree)'''
+            '''[Summary](hw/top_${topname}/ip_autogen/rstmgr/doc/theory_of_operation.md#summary)'''
           ]
           kind: "spec"
-          testpoint: "jtag_ndm"
-          checks: []
-          why: '''Not covered by formal: reset behaviour is out of scope.'''
-          milestone: "V2S"
-          priority: "2"
-          security: true
-          state: "${eg('open: no check in this plan', 'open: not reviewed for this top')}"
-        }
-        {
-          name: REQ_TAP_13
-          desc: '''In scan mode, a connected TAP's TRST_N shall follow one of the pinmux's resets; which one is open.'''
-          source: [
-            '''[Strap Sampling and TAP Isolation](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#strap-sampling-and-tap-isolation)'''
-            '''[JTAG](hw/ip/rv_dm/doc/interfaces.md#jtag)'''
-            '''[Security Countermeasures](hw/ip/lc_ctrl/doc/interfaces.md#security-countermeasures)'''
-          ]
-          kind: "RTL"
           testpoint: "jtag"
-          checks: []
-          why: '''No specification states which reset a connected TAP's TRST_N follows in scan mode, so _scan TRST follows reset_ (CHK_JTAG_04) waits on that answer.'''
+          checks: ["TAP selection outside NDM reset (check_Jtag_TapSelectionOutsideNdmReset)", "connected TAP gets the pads (assert_Jtag_ConnectedTapGetsThePads)", "cut TAP gets zero (assert_Jtag_CutTapGetsZero)"]
+          why: '''An NDM reset reaches no TAP selection flop, and that state alone picks the TAP.'''
           milestone: "V2S"
           priority: "1"
           security: true
-          state: "${eg('open: no check in this plan', 'open: not reviewed for this top')}"
+          state: "${eg('open', 'open: not reviewed for this top')}"
         }
       ]
     }
@@ -3325,7 +3535,7 @@ def on(flag, text):
     {
       name: '''RRAM TAP'''
       conditions: [
-        '''a top with the RRAM TAP ([top_${topname}_pinmux.ipconfig.hjson](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson) `enable_rram_tap`; `top_${topname}.hjson`:1812-1813); a top without it has no row here, and its TAP straps 00 select no TAP ([Strap Sampling and TAP Isolation](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#strap-sampling-and-tap-isolation)). The RRAM TAP's port is `rram_jtag`, wired to `rram_macro` ([Inter-Module Signals](hw/top_${topname}/ip_autogen/pinmux/doc/interfaces.md#inter-module-signals); [top_${topname}.hjson${eg(' `inter_module.connect pinmux.rv_jtag`')}](hw/top_${topname}/data/top_${topname}.hjson), [top_${topname}.hjson${eg(' `inter_module.connect.lc_ctrl.lc_dft_en`')}](hw/top_${topname}/data/top_${topname}.hjson)). `RRAM_JTAG_SEL` is a 4-bit multi-bit `rw` field with no lock and reset value `kMultiBitBool4False` (!!RRAM_JTAG_SEL); the register rows `REQ_REG_01a` and `REQ_REG_01b` cover its access and reset value. No doc names the reset that clears it; verification infers `rst_ni`, the reset of the main clock `clk_i` ([pinmux.hjson `clocking`](hw/top_${topname}/ip_autogen/pinmux/data/pinmux.hjson)). The JTAG pad rows of hold for the RRAM TAP too: it is a connected TAP (terms). The rows hold once the straps and `lc_nvm_debug_en_i` have held for the delay of the input synchronizers.'''
+        '''a top with the RRAM TAP ([top_${topname}_pinmux.ipconfig.hjson](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson) `enable_rram_tap`) has these rows. On another top, TAP straps 00 select no TAP ([Strap Sampling and TAP Isolation](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#strap-sampling-and-tap-isolation)). The JTAG pad rows of TAP selection and the JTAG pads hold for it too, as a connected TAP, and its TRST_N in scan mode has no row. The rows hold once the straps and `lc_nvm_debug_en_i` have held for the delay of the input synchronizers. The TCK and TRST_N of `REQ_RRAM_01` follow their pads from a connection's second `clk_i` cycle.'''
       ]
       requirements: [
         {
@@ -3342,8 +3552,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "rram_tap"
-          checks: ["CHK_RRAM_TAP_01 connected RRAM TAP gets the pads (assert_RramTap_ConnectedRRAMTAPGetsThePads)"]
-          why: '''${eg('With TAP straps 00, `RRAM_JTAG_SEL` at `kMultiBitBool4True` and `lc_nvm_debug_en_i` On for the two cycles before, the check compares the four fields of `rram_jtag_o` with MIO 38, 35, 37 and 39 in the same cycle. An RRAM TAP left unconnected, fed from another pad or a cycle late fails it.', 'Not written for this top.')}'''
+          checks: ["connected RRAM TAP gets the pads (assert_RramTap_ConnectedRramTapGetsThePads)"]
+          why: '''${eg('While connected, it compares `rram_jtag_o` with MIO 38, 35, 37 and 39 in the same cycle, `tck` and `trst_n` from its second cycle.', 'Not written for this top.')}'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -3360,8 +3570,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "rram_tap"
-          checks: ["CHK_RRAM_TAP_02 cut RRAM TAP gets TMS and TDI 0 (assert_RramTap_CutRRAMTAPGetsTMSAndTDI0)"]
-          why: '''In every cycle the RRAM TAP is cut, from the release of `rst_ni` on, the check asserts the `tms` and `tdi` fields of `rram_jtag_o` 0 whatever the JTAG pads carry. It leaves out the cycles in which the TAP is neither connected nor cut, the two after `lc_nvm_debug_en_i` changes and those after a strap sample taken in such a window, as no specification gives how soon a life cycle input or a strap sample acts. A TAP that still sees TMS or TDI from its pads after the straps, the register or `lc_nvm_debug_en_i` deselect it fails it.'''
+          checks: ["cut RRAM TAP gets TMS and TDI 0 (assert_RramTap_CutRramTapGetsTmsAndTdi0)"]
+          why: '''In every cut cycle from the release of `rst_ni` on, it asserts `tms` and `tdi` 0 whatever the pads carry.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -3369,19 +3579,37 @@ def on(flag, text):
         }
         {
           name: REQ_RRAM_03
-          desc: '''One clock cycle after the RRAM TAP stops being connected, the TCK of `rram_jtag_o` shall stop.'''
+          desc: '''The TCK and TRST_N of `rram_jtag_o` shall be 0 in reset and in the `clk_i` cycle after reset or after any cycle with the RRAM TAP not connected.'''
           source: [
             '''[Strap Sampling and TAP Isolation](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#strap-sampling-and-tap-isolation)'''
+            '''[pinmux.hjson `clocking`](hw/top_${topname}/ip_autogen/pinmux/data/pinmux.hjson)'''
+            '''[top_${topname}_pinmux.ipconfig.hjson `enable_rram_tap`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
+          ]
+          kind: "RTL"
+          testpoint: "rram_tap"
+          checks: ["TCK and TRST low after a cut (assert_RramTap_TckAndTrstLowAfterACut)"]
+          why: '''It asserts `tck` and `trst_n` of `rram_jtag_o` 0 in reset, in the first cycle after it and in every cycle after a cut one.'''
+          milestone: "V2S"
+          priority: "2"
+          security: true
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_RRAM_09
+          desc: '''Outside reset, in the first `clk_i` cycle with the RRAM TAP no longer connected, the TCK and TRST_N of `rram_jtag_o` shall still carry their pads' values.'''
+          source: [
+            '''[Strap Sampling and TAP Isolation](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#strap-sampling-and-tap-isolation)'''
+            '''[pinmux.hjson `clocking`](hw/top_${topname}/ip_autogen/pinmux/data/pinmux.hjson)'''
             '''[top_${topname}_pinmux.ipconfig.hjson `enable_rram_tap`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
           ]
           kind: "spec"
           testpoint: "rram_tap"
-          checks: []
-          why: '''No specification states which clock the one clock cycle before TCK stops is counted in, nor what a stopped TCK holds, so _TCK stops after deselection_ (CHK_RRAM_TAP_04) waits on that answer.'''
+          checks: ["TCK and TRST run one cycle more (assert_RramTap_TckAndTrstRunOneCycleMore)"]
+          why: '''${eg('In the first cut cycle after a connected one, outside reset, it compares `tck` and `trst_n` with MIO 38 and 39.', 'Not written for this top.')}'''
           milestone: "V2S"
           priority: "2"
           security: true
-          state: "${eg('open: no check in this plan', 'open: not reviewed for this top')}"
+          state: "${eg('open', 'open: not reviewed for this top')}"
         }
         {
           name: REQ_RRAM_04
@@ -3393,8 +3621,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "rram_tap"
-          checks: ["CHK_RRAM_TAP_03 only True and On open", "CHK_RRAM_TAP_02 cut RRAM TAP gets TMS and TDI 0 (assert_RramTap_CutRRAMTAPGetsTMSAndTDI0)"]
-          why: '''The check _cut RRAM TAP gets TMS and TDI 0_ (CHK_RRAM_TAP_02) counts `lc_nvm_debug_en_i` as On only at 4'b0101, with the input free over all its values: held at any other value, the TAP is cut. A design that connects the RRAM TAP on a value other than On gives TMS or TDI from the pads, which the check forbids. It leaves out the two cycles after the input changes, as no specification gives how soon a life cycle input acts.'''
+          checks: ["only True and On open", "cut RRAM TAP gets TMS and TDI 0 (assert_RramTap_CutRramTapGetsTmsAndTdi0)"]
+          why: '''With `lc_nvm_debug_en_i` free, any held value but 4'b0101 cuts the TAP and the second wants TMS and TDI 0.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -3410,8 +3638,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "rram_tap"
-          checks: ["CHK_RRAM_TAP_06 cut until the register is written (assert_RramTap_CutUntilTheRegisterIsWritten)"]
-          why: '''The check _cut until the register is written_ (CHK_RRAM_TAP_06) asserts the `tms` and `tdi` fields of `rram_jtag_o` 0 from the release of `rst_ni` up to the first accepted write to `RRAM_JTAG_SEL`, whatever the straps and `lc_nvm_debug_en_i` are; a TAP connected after a reset before that write fails it. Whether the generated register checker's checks cover this register is open; this check does not depend on it.'''
+          checks: ["cut until the register is written (assert_RramTap_CutUntilTheRegisterIsWritten)"]
+          why: '''Until the first accepted write to `RRAM_JTAG_SEL`, it asserts `tms` and `tdi` 0 whatever the straps and `lc_nvm_debug_en_i`.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -3427,8 +3655,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "rram_tap"
-          checks: ["CHK_JTAG_01 connected TAP gets the pads (assert_Jtag_ConnectedTAPGetsThePads)", "CHK_JTAG_02 cut TAP gets zero (assert_Jtag_CutTAPGetsZero)"]
-          why: '''The checks _connected TAP gets the pads_ (CHK_JTAG_01) and _cut TAP gets zero_ (CHK_JTAG_02) decide the life cycle, RISC-V and DFT TAPs from the straps and their own gates, with `RRAM_JTAG_SEL` and `lc_nvm_debug_en_i` free over all their values. A design in which either connects, cuts or changes the request of one of the three fails one of them.'''
+          checks: ["connected TAP gets the pads (assert_Jtag_ConnectedTapGetsThePads)", "cut TAP gets zero (assert_Jtag_CutTapGetsZero)"]
+          why: '''Both decide the life cycle, RISC-V and DFT TAPs with `RRAM_JTAG_SEL` and `lc_nvm_debug_en_i` free.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -3444,29 +3672,12 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "rram_tap"
-          checks: ["CHK_RRAM_TAP_05 RRAM TAP kept through a transition (assert_RramTap_RRAMTAPKeptThroughATransition)", "CHK_RRAM_TAP_02 cut RRAM TAP gets TMS and TDI 0 (assert_RramTap_CutRRAMTAPGetsTMSAndTDI0)"]
-          why: '''The check _RRAM TAP kept through a transition_ (CHK_RRAM_TAP_05) asserts the request still equal to the JTAG pads while `lc_check_byp_en_i` is not Off or the latched debug enable is Off, and _cut RRAM TAP gets TMS and TDI 0_ (CHK_RRAM_TAP_02) holds with both free, so neither connects it. A design that cuts the RRAM TAP during a transition, as it cuts the RISC-V TAP, fails the first.'''
+          checks: ["RRAM TAP kept through a transition (assert_RramTap_RramTapKeptThroughATransition)", "cut RRAM TAP gets TMS and TDI 0 (assert_RramTap_CutRramTapGetsTmsAndTdi0)"]
+          why: '''The first keeps a connected TAP connected in a transition or with the latch Off.'''
           milestone: "V2S"
           priority: "2"
           security: true
           state: "${eg('open', 'open: not reviewed for this top')}"
-        }
-        {
-          name: REQ_RRAM_08
-          desc: '''While the RRAM TAP is not connected, before its first connection too, `rram_jtag_o` shall carry a TCK and a TRST_N whose values no spec states yet.'''
-          source: [
-            '''[Strap Sampling and TAP Isolation](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#strap-sampling-and-tap-isolation)'''
-            '''[Inter-Module Signals](hw/top_${topname}/ip_autogen/pinmux/doc/interfaces.md#inter-module-signals)'''
-            '''[top_${topname}_pinmux.ipconfig.hjson `enable_rram_tap`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
-          ]
-          kind: "RTL"
-          testpoint: "rram_tap"
-          checks: []
-          why: '''No specification states what TCK and TRST_N carry while the RRAM TAP is not connected, before its first connection too, so _TCK stops after deselection_ (CHK_RRAM_TAP_04) waits on that answer.'''
-          milestone: "V2S"
-          priority: "2"
-          security: true
-          state: "${eg('open: no check in this plan', 'open: not reviewed for this top')}"
         }
       ]
     }
@@ -3475,7 +3686,8 @@ def on(flag, text):
     {
       name: '''DFT straps'''
       conditions: [
-        '''`dft_strap_test_o` holds a valid bit and the straps, ${eg('bit 0 from IOR5 (MIO 40) and bit 1 from IOR7 (MIO 42)', 'bit 0 and bit 1 from the two DFT strap pads of the top description')} ([earlier FPV testplan: DftStrapTestO_A](hw/top_${topname}/ip_autogen/pinmux/data/pinmux_fpv_testplan.hjson); [top_${topname}.hjson${eg(' `targets.asic.pinmux.special_signals`')}](hw/top_${topname}/data/top_${topname}.hjson)).'''
+        '''`dft_strap_test_o` holds a valid bit and the straps. The straps take ${eg('bit 0 from IOR5 (MIO 40) and bit 1 from IOR7 (MIO 42)', 'bit 0 and bit 1 from the two DFT strap pads of the top description')} ([existing pinmux FPV testplan: DftStrapTestO_A](hw/top_${topname}/ip_autogen/pinmux/data/pinmux_fpv_testplan.hjson)).'''
+        '''The top description gives two DFT strap pads, the theory of operation three ([Strap Sampling and TAP Isolation](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#strap-sampling-and-tap-isolation)); the rows follow the top.'''
       ]
       requirements: [
         {
@@ -3490,8 +3702,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "dft_strap"
-          checks: ["CHK_DFT_STRAP_01 pulse samples DFT straps (assert_DftStrap_PulseSamplesDFTStraps)"]
-          why: '''At a strap pulse with `lc_dft_en_i` On for the two cycles before, the check asserts the valid bit 1 from the next cycle. A design that misses the pulse leaves it 0 and fails.'''
+          checks: ["pulse samples DFT straps (assert_DftStrap_PulseSamplesDftStraps)"]
+          why: '''At a strap pulse with `lc_dft_en_i` On for the two cycles before, it asserts the valid bit 1 from the next cycle.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -3509,8 +3721,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "dft_strap"
-          checks: ["CHK_DFT_STRAP_01 pulse samples DFT straps (assert_DftStrap_PulseSamplesDFTStraps)"]
-          why: '''${eg('At a strap pulse with `lc_dft_en_i` On for the two cycles before, the check compares the two straps in the next cycle with MIO 40 (IOR5, bit 0) and MIO 42 (IOR7, bit 1) of the pulse cycle or of the cycle after it, the one value where a pad holds it in both. A swapped or inverted strap, or a value from neither cycle, fails it.', 'Not written for this top.')}'''
+          checks: ["pulse samples DFT straps (assert_DftStrap_PulseSamplesDftStraps)"]
+          why: '''${eg('With `lc_dft_en_i` steadily On, it compares the straps after the pulse with MIO 40 and MIO 42 of the pulse cycle or the next.', 'Not written for this top.')}'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -3529,8 +3741,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "dft_strap"
-          checks: ["CHK_DFT_STRAP_02 DFT straps held (assert_DftStrap_DFTStrapsHeld)"]
-          why: '''Once the valid bit is 1, the check asserts the output unchanged into every next cycle that is not in full reset, whatever `lc_dft_en_i` and the pads do. A valid bit that drops when the test enable goes Off fails it.'''
+          checks: ["DFT straps held (assert_DftStrap_DftStrapsHeld)"]
+          why: '''Once the valid bit is 1, it asserts the output unchanged into every next cycle not in full reset, whatever `lc_dft_en_i` and the pads do.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -3549,8 +3761,8 @@ def on(flag, text):
           ]
           kind: "spec"
           testpoint: "dft_strap"
-          checks: ["CHK_DFT_STRAP_02 DFT straps held (assert_DftStrap_DFTStrapsHeld)"]
-          why: '''Once the valid bit is 1, the check asserts the two straps unchanged into every next cycle that is not in full reset. A strap that keeps following its pad while `lc_dft_en_i` stays On fails it.'''
+          checks: ["DFT straps held (assert_DftStrap_DftStrapsHeld)"]
+          why: '''Once the valid bit is 1, it asserts the two straps unchanged into every next cycle that is not in full reset.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -3560,17 +3772,480 @@ def on(flag, text):
           name: REQ_DFT_03
           desc: '''Before a sample at a `strap_en_i` pulse with `lc_dft_en_i` On, `dft_strap_test_o` shall be all 0, whatever the DFT strap pads carry.'''
           source: [
-            '''[chip_testplan.hjson `testpoints.desc`](hw/top_earlgrey/data/chip_testplan.hjson)'''
+            '''[chip_testplan.hjson `chip_sw_tap_strap_sampling`](hw/top_earlgrey/data/chip_testplan.hjson)'''
             '''[top_${topname}.hjson${eg(' `targets.asic.pinmux.special_signals`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
             '''[top_${topname}_pinmux.ipconfig.hjson `enable_strap_sampling`](hw/top_${topname}/ip_autogen/pinmux/data/top_${topname}_pinmux.ipconfig.hjson)'''
           ]
           kind: "spec"
           testpoint: "dft_strap"
-          checks: ["CHK_DFT_STRAP_03 zero until sampled (assert_DftStrap_ZeroUntilSampled)"]
-          why: '''Until a strap pulse with `lc_dft_en_i` On in either of the two cycles before, the check asserts every bit of `dft_strap_test_o` 0 with the strap pads free. A valid bit set by a PROD boot, or a pad value leaking through, fails it.'''
+          checks: ["zero until sampled (assert_DftStrap_ZeroUntilSampled)"]
+          why: '''Until a strap pulse with `lc_dft_en_i` On in either of the two cycles before, it asserts every bit of `dft_strap_test_o` 0.'''
           milestone: "V2S"
           priority: "2"
           security: true
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+      ]
+    }
+% endif
+% if eg_top:
+    {
+      name: '''${top_title} 2'''
+      conditions: [
+        '''Every ${top_title} row holds on ${top_title} 2 over the ${top_title} 2 values and pads below, unless a row here replaces or extends it.'''
+        '''Allowed pad, Main pad and Main off: Terms.'''
+        '''Pads: TAP straps 0, 1 on IOC8, IOC5; DFT straps 0, 1 on SPI_HOST_D2, SPI_HOST_D3; TCK IOA5, TMS IOA0, TDI IOA4, TRST_N IOA6, TDO IOA1.'''
+      ]
+      requirements: [
+        {
+          name: REQ_EG2_01
+          desc: '''MIO peripheral input `n` shall read 0 while `MIO_PERIPH_INSEL_n` is 2 + `p` and pad `p` is not allowed for `n`.'''
+          source: [
+            '''[Muxing Matrix](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#muxing-matrix)'''
+            '''[Pinmux Configuration](hw/top_${topname}/ip_autogen/pinmux/doc/programmers_guide.md#pinmux-configuration)'''
+            '''!!MIO_PERIPH_INSEL.IN'''
+          ]
+          kind: "spec"
+          testpoint: "sparse_insel"
+          checks: ["unlisted pad reads zero (assert_SparseInsel_UnlistedPadReadsZero)"]
+          why: '''The check compares the input with 0 while its input select is unlisted.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_02
+          desc: '''MIO pad `p` shall be high-Z (output enable 0, output 0) while `MIO_OUTSEL_p` is 3 + `k` and output `k` is not allowed for `p`.'''
+          source: [
+            '''[Muxing Matrix](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#muxing-matrix)'''
+            '''[Pinmux Configuration](hw/top_${topname}/ip_autogen/pinmux/doc/programmers_guide.md#pinmux-configuration)'''
+            '''!!MIO_OUTSEL.OUT'''
+          ]
+          kind: "spec"
+          testpoint: "sparse_outsel"
+          checks: ["unlisted output disables pad (assert_SparseOutsel_UnlistedOutputDisablesPad)", "disabled pad drives zero (assert_SparseOutsel_DisabledPadDrivesZero)"]
+          why: '''The checks compare `oe` and `out` with 0 while the pad's output select is unlisted.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_04
+          desc: '''A signal whose `pads` list is empty shall be allowed every pad.'''
+          source: [
+            '''[top_${topname}.hjson${eg(' `pinmux`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
+          ]
+          kind: "spec"
+          testpoint: "eg2_matrix"
+          checks: ["drives selected output (assert_PadOutput_DrivesSelectedOutput)"]
+          why: '''Run over the allowed pairs, the check pairs output 110, whose list is empty, with every MIO pad.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_10
+          desc: '''Each input of `gpio0` and `gpio1` shall read what its input select names, and each pad whose output select names one of their outputs shall carry it.'''
+          source: [
+            '''[top_${topname}.hjson${eg(' `pinmux.signals`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
+          ]
+          kind: "spec"
+          testpoint: "eg2_matrix"
+          checks: ["reads tie 0 (assert_PadListen_ReadsTie0)", "reads tie 1 (assert_PadListen_ReadsTie1)", "reads selected pad (assert_PadListen_ReadsSelectedPad)", "drives selected output (assert_PadOutput_DrivesSelectedOutput)"]
+          why: '''Run over every input and output of both modules.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_11a
+          desc: '''For a pad allowed for the signal, input select 2 + `p` shall read pad `p`, as on ${top_title} (`REQ_IN_03`).'''
+          source: [
+            '''[Muxing Matrix](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#muxing-matrix)'''
+            '''!!MIO_PERIPH_INSEL.IN'''
+          ]
+          kind: "spec"
+          testpoint: "eg2_matrix"
+          checks: ["reads selected pad (assert_PadListen_ReadsSelectedPad)"]
+          why: '''Run over the allowed pairs, the check compares the input with pad `p` while its input select is 2 + `p`.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_11b
+          desc: '''For a pad allowed for the signal, output select 3 + `k` shall carry output `k`, as on ${top_title} (`REQ_OUT_04a`).'''
+          source: [
+            '''[Muxing Matrix](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#muxing-matrix)'''
+            '''!!MIO_OUTSEL.OUT'''
+          ]
+          kind: "spec"
+          testpoint: "eg2_matrix"
+          checks: ["drives selected output (assert_PadOutput_DrivesSelectedOutput)"]
+          why: '''Run over the allowed pairs, the check compares the pad's `out` with output `k` while its output select is 3 + `k`.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_11c
+          desc: '''For a pad allowed for the signal, output select 3 + `k` shall carry output enable `k`, as on ${top_title} (`REQ_OUT_04b`).'''
+          source: [
+            '''[Muxing Matrix](hw/top_${topname}/ip_autogen/pinmux/doc/theory_of_operation.md#muxing-matrix)'''
+            '''!!MIO_OUTSEL.OUT'''
+          ]
+          kind: "spec"
+          testpoint: "eg2_matrix"
+          checks: ["drives selected output (assert_PadOutput_DrivesSelectedOutput)"]
+          why: '''The same check compares the pad's `oe` with `periph_to_mio_oe_i[k]`.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_12a
+          desc: '''For every input, whatever its list, input select 0 shall make the input read 0, as on ${top_title} (`REQ_IN_01`).'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "eg2_matrix"
+          checks: ["reads tie 0 (assert_PadListen_ReadsTie0)"]
+          why: '''Run on every input, whatever its list, the check compares the input with 0 while its input select is 0.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_12b
+          desc: '''For every input, whatever its list, input select 1 shall make the input read 1, as on ${top_title} (`REQ_IN_02`).'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "eg2_matrix"
+          checks: ["reads tie 1 (assert_PadListen_ReadsTie1)"]
+          why: '''The same with 1 for input select 1, the one-pad signals included.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_12c
+          desc: '''For every pad, whatever its list, output select 0 shall drive the pad 0, as on ${top_title} (`REQ_OUT_01a`, `REQ_OUT_01b`).'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "eg2_matrix"
+          checks: ["tie 0 drives 0 (assert_PadOutput_Tie0Drives0)"]
+          why: '''Run on every MIO pad, whatever its list, the check compares (`out`, `oe`) with (0, 1) while the output select is 0.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_12d
+          desc: '''For every pad, whatever its list, output select 1 shall drive the pad 1, as on ${top_title} (`REQ_OUT_02a`, `REQ_OUT_02b`).'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "eg2_matrix"
+          checks: ["tie 1 drives 1 (assert_PadOutput_Tie1Drives1)"]
+          why: '''The same with (1, 1) for output select 1. A design that applies the pad list to the constants leaves the pad high-Z and fails it.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_12e
+          desc: '''For every pad, whatever its list, output select 2 shall make the pad high-Z, output 0, as on ${top_title} (`REQ_OUT_03a`, `REQ_OUT_03b`).'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "eg2_matrix"
+          checks: ["select 2 is high-Z (assert_PadOutput_Select2IsHighZ)"]
+          why: '''The same with (0, 0) for output select 2. A design that decodes 2 as an output or a constant enables the pad and fails it.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_03a
+          desc: '''From reset until software writes it, each input select shall act at its signal's `default`: the input reads its default pad, 0 or 1, else 0. Replaces REQ_IN_06.'''
+          source: [
+            '''[top_${topname}.hjson${eg(' `pinmux`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
+          ]
+          kind: "spec"
+          testpoint: "eg2_default"
+          checks: ["input starts at default (assert_Eg2Default_InputStartsAtDefault)"]
+          why: '''From reset until its select is written, the check compares the input with the input's default value.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_03b
+          desc: '''Until software writes it after reset, each MIO output select shall give its pad the output whose `default` names that pad, else high-Z. Replaces REQ_OUT_07.'''
+          source: [
+            '''[top_${topname}.hjson${eg(' `pinmux`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
+          ]
+          kind: "spec"
+          testpoint: "eg2_default"
+          checks: ["pad starts at default (assert_Eg2Default_PadStartsAtDefault)"]
+          why: '''From reset until its select is written, the check compares the pad with the pad's default drive.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_15
+          desc: '''After reset, each pad's attribute output shall be its top entry's reset value (all 0 if no `attrs`), 0 in fields its type does not keep. Replaces REQ_ATTR_10.'''
+          source: [
+            '''[top_${topname}.hjson${eg(' `pinout`')}](hw/top_${topname}/data/top_${topname}.hjson)'''
+          ]
+          kind: "spec"
+          testpoint: "eg2_attr_reset"
+          checks: ["reset attributes (assert_PadAttr_ResetAttributes)"]
+          why: '''Until the pad's first attribute write, the check compares its attribute output with its top attribute reset value.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_05
+          desc: '''A detector whose `PADSEL` names a pad that is not wakeup capable shall watch 0.'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "wkup_capable"
+          checks: ["watched value off the list (assert_WkupCapable_WatchedValueOffTheList)"]
+          why: '''The check applies the rule of `wakeup` with 0 watched, so a rise on the pad sets no cause.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_13
+          desc: '''A detector shall watch the wakeup-capable pad it selects, encoded as on ${top_title} (`REQ_WKUP_01`, `REQ_WKUP_02`). With no pad marked, every pad is capable.'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "wkup_capable"
+          checks: ["wakeup rule on capable pads"]
+          why: '''The checks of `wakeup` run on each wakeup-capable pad, every pad on a top that marks none.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_06a
+          desc: '''After Main is off, every Main-section select shall act at its reset value until software writes it.'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "split_reset"
+          checks: ["Main selects on Main reset (check_SplitReset_MainSelectsOnMainReset)", "input starts at default (assert_Eg2Default_InputStartsAtDefault)", "pad starts at default (assert_Eg2Default_PadStartsAtDefault)"]
+          why: '''Main off resets each Main select; eg2_default decides its value.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_06b
+          desc: '''After Main is off, the lock of every Main-section select shall read 1 until software writes it.'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "split_reset"
+          checks: ["Main selects on Main reset (check_SplitReset_MainSelectsOnMainReset)", "the CSR checker"]
+          why: '''Each Main lock takes the Main reset, and the CSR checker expects 1 after reset.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_07a
+          desc: '''Main off shall change no AON-section select.'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "split_reset"
+          checks: ["AON state off Main reset (check_SplitReset_AonStateOffMainReset)", "the CSR checker"]
+          why: '''The Main reset reaches no AON select's reset pin; the CSR checker allows a change only on an accepted write.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_07b
+          desc: '''Main off shall change no AON-section lock.'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "split_reset"
+          checks: ["AON state off Main reset (check_SplitReset_AonStateOffMainReset)", "the CSR checker"]
+          why: '''The Main reset reaches no AON lock's reset pin; the CSR checker allows a change only on an accepted write of 0.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_07c
+          desc: '''Main off shall change no sleep status bit.'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "split_reset"
+          checks: ["AON state off Main reset (check_SplitReset_AonStateOffMainReset)", "bit set only at entry (assert_PadSleep_BitSetOnlyAtEntry)", "bit holds until cleared (assert_PadSleep_BitHoldsUntilCleared)"]
+          why: '''No status bit takes the Main reset; the bit checks forbid other changes.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_08a
+          desc: '''A pad whose status bit is 1 shall keep the sleep value its sleep mode sets (Sleep retention) while Main is off.'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "split_reset"
+          checks: ["held pads through Main off", "status bits through Main off"]
+          why: '''With Main held off, a held pad that changes its drive or loses its status bit fails one.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_08b
+          desc: '''A pad whose status bit is 1 shall keep the sleep value its sleep mode sets (Sleep retention) once Main is back.'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "split_reset"
+          checks: ["AON state off Main reset (check_SplitReset_AonStateOffMainReset)", "tie low in sleep (assert_PadSleep_TieLowInSleep)", "tie high in sleep (assert_PadSleep_TieHighInSleep)", "high-Z in sleep (assert_PadSleep_HighZInSleep)", "keep holds (assert_PadSleep_KeepHolds)"]
+          why: '''No state of a held pad takes the Main reset.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_09a
+          desc: '''While Main is off, the AON input selects shall keep their state, and each input they serve shall still read what its select names (Input selection).'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "split_reset"
+          checks: ["AON inputs in Main off", "AON registers hold in Main off (assert_SplitReset_AonRegistersHoldInMainOff)"]
+          why: '''With Main held off, each AON input still reads what its select names, and the select holds.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_09b
+          desc: '''While Main is off, the AON output selects shall keep their state, and each pad they serve shall still carry what its select names (Output selection).'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "split_reset"
+          checks: ["AON pads in Main off", "AON registers hold in Main off (assert_SplitReset_AonRegistersHoldInMainOff)"]
+          why: '''With Main held off, each AON pad still carries what its select names, and the select holds.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_09c
+          desc: '''While Main is off, the TAP straps shall keep their state and still be sampled from their pads (Strap sampling).'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "split_reset"
+          checks: ["straps in Main off"]
+          why: '''With Main held off, each strap pulse still samples the strap pads, and the straps hold between pulses.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_09d
+          desc: '''While Main is off, the latch shall keep its state, take the life cycle debug enable at each `strap_en_i` pulse and go Off on a clear (Latched debug enable).'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "split_reset"
+          checks: ["latch in Main off"]
+          why: '''With Main held off, the latch still takes the debug enable at each strap pulse, goes Off on a clear and holds.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_09e
+          desc: '''While Main is off, TAP selection shall keep its state, and the TAP the straps name shall still get the JTAG pads (TAP selection and the JTAG pads).'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "split_reset"
+          checks: ["TAPs in Main off"]
+          why: '''With Main held off, the TAP the straps name still gets the JTAG pads, Main pads included, and the others zero.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_09f
+          desc: '''While Main is off, the wakeup detectors shall keep their state; each shall detect in its mode on its watched signal and set its cause bit (Wakeup detectors).'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "split_reset"
+          checks: ["detectors in Main off"]
+          why: '''With Main held off, each detector still watches its pad, detects in its mode and keeps its cause bit until cleared.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
+          state: "${eg('open', 'open: not reviewed for this top')}"
+        }
+        {
+          name: REQ_EG2_14
+          desc: '''While Main is off, a Main pad whose status bit is 0 and which no TAP owns shall carry what its output select gives at its reset value (`REQ_EG2_03b`).'''
+          source: [
+          ]
+          kind: "spec"
+          testpoint: "split_reset"
+          checks: ["Main pad not held at default (assert_SplitReset_MainPadNotHeldAtDefault)"]
+          why: '''With Main held off, the check compares each awake Main pad no TAP owns with the pad's default drive.'''
+          milestone: "V2"
+          priority: "2"
+          security: false
           state: "${eg('open', 'open: not reviewed for this top')}"
         }
       ]

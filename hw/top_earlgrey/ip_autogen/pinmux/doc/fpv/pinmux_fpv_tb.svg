@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="810" height="770" viewBox="-10 -10 810 770" font-family="sans-serif" font-size="14" fill="#1f1f1f">
-<rect x="-10" y="-10" width="810" height="770" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="810" height="746" viewBox="-10 -10 810 746" font-family="sans-serif" font-size="14" fill="#1f1f1f">
+<rect x="-10" y="-10" width="810" height="746" fill="#ffffff"/>
 <rect x="0" y="0" width="250" height="540" rx="6" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
 <rect x="420" y="0" width="370" height="540" rx="6" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
-<rect x="0" y="610" width="299.5" height="140" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
+<rect x="0" y="610" width="307.26" height="116" rx="6" fill="#ffffff" stroke="#c8c8c8" stroke-width="1"/>
 <rect x="20" y="40" width="210" height="50" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
 <text x="125" y="63.02" font-size="14" font-weight="bold" text-anchor="middle">Register block</text>
 <text x="125" y="77.6" font-size="11" fill="#5c5c5c" text-anchor="middle">pinmux_reg_top</text>
@@ -14,35 +14,34 @@
 <rect x="20" y="290" width="210" height="60" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
 <text x="125" y="318.02" font-size="14" font-weight="bold" text-anchor="middle">Wakeup detectors</text>
 <text x="125" y="332.6" font-size="11" fill="#5c5c5c" text-anchor="middle">always-on clock</text>
-<rect x="20" y="370" width="210" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2" stroke-dasharray="4 3"/>
+<rect x="20" y="370" width="210" height="60" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
 <text x="125" y="398.02" font-size="14" font-weight="bold" text-anchor="middle">USB wakeup module</text>
-<text x="125" y="412.6" font-size="11" fill="#5c5c5c" text-anchor="middle">blackboxed: outputs free</text>
+<text x="125" y="412.6" font-size="11" fill="#5c5c5c" text-anchor="middle">usbdev_aon_wake</text>
 <rect x="20" y="450" width="210" height="70" rx="4" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1.2"/>
 <text x="125" y="481.15" font-size="14" text-anchor="middle">Strap sampling,</text>
 <text x="125" y="498.65" font-size="14" text-anchor="middle">TAP selection</text>
 <rect x="440" y="35" width="250" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
-<text x="565" y="56.15" font-size="14" font-family="monospace" font-weight="bold" text-anchor="middle">u_tl</text>
-<text x="565" y="70.72" font-size="11" fill="#5c5c5c" text-anchor="middle">tlul_abvip: host rules on tl_i,</text>
-<text x="565" y="84.47" font-size="11" fill="#5c5c5c" text-anchor="middle">device rules on tl_o</text>
+<text x="565" y="56.15" font-size="14" font-weight="bold" text-anchor="middle">Shared parts</text>
+<text x="565" y="70.72" font-size="11" fill="#5c5c5c" text-anchor="middle">TL-UL ABVIP, CSR checker,</text>
+<text x="565" y="84.47" font-size="11" fill="#5c5c5c" text-anchor="middle">bus monitor</text>
 <rect x="440" y="110" width="250" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
-<text x="565" y="131.15" font-size="14" font-family="monospace" font-weight="bold" text-anchor="middle">u_listen</text>
-<text x="565" y="145.72" font-size="11" fill="#5c5c5c" text-anchor="middle">input selection;</text>
-<text x="565" y="159.47" font-size="11" fill="#5c5c5c" text-anchor="middle">pad_listen_chk x47</text>
+<text x="565" y="138.03" font-size="14" font-weight="bold" text-anchor="middle">Input selection checker</text>
+<text x="565" y="152.6" font-size="11" fill="#5c5c5c" text-anchor="middle">one pad checker per MIO pad (47)</text>
 <rect x="440" y="190" width="250" height="80" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
-<text x="565" y="221.15" font-size="14" font-family="monospace" font-weight="bold" text-anchor="middle">u_output</text>
-<text x="565" y="235.72" font-size="11" fill="#5c5c5c" text-anchor="middle">output mux, sleep, attributes,</text>
-<text x="565" y="249.47" font-size="11" fill="#5c5c5c" text-anchor="middle">bus, alert; regwen_chk x63</text>
+<text x="565" y="219.28" font-size="14" font-weight="bold" text-anchor="middle">Pad output checker; locks,</text>
+<text x="565" y="236.78" font-size="14" font-weight="bold" text-anchor="middle">bus and alert checker</text>
+<text x="565" y="251.35" font-size="11" fill="#5c5c5c" text-anchor="middle">mux, sleep, attributes; locks, bus, alert</text>
 <rect x="440" y="290" width="250" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
-<text x="565" y="311.15" font-size="14" font-family="monospace" font-weight="bold" text-anchor="middle">u_wakeup</text>
-<text x="565" y="325.73" font-size="11" fill="#5c5c5c" text-anchor="middle">detectors, request;</text>
-<text x="565" y="339.48" font-size="11" fill="#5c5c5c" text-anchor="middle">wkup_detector_chk x8</text>
+<text x="565" y="311.15" font-size="14" font-weight="bold" text-anchor="middle">Wakeup checker</text>
+<text x="565" y="325.73" font-size="11" fill="#5c5c5c" text-anchor="middle">one detector checker</text>
+<text x="565" y="339.48" font-size="11" fill="#5c5c5c" text-anchor="middle">per detector (8)</text>
 <rect x="440" y="370" width="250" height="60" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
-<text x="565" y="398.02" font-size="14" font-weight="bold" text-anchor="middle">USB wiring</text>
-<text x="565" y="412.6" font-size="11" fill="#5c5c5c" text-anchor="middle">checks in the top</text>
+<text x="565" y="398.02" font-size="14" font-weight="bold" text-anchor="middle">USB wakeup checker</text>
+<text x="565" y="412.6" font-size="11" fill="#5c5c5c" text-anchor="middle">wiring and module behaviour</text>
 <rect x="440" y="450" width="250" height="70" rx="4" fill="#eef7ea" stroke="#82b366" stroke-width="1.2"/>
-<text x="565" y="476.15" font-size="14" font-family="monospace" font-weight="bold" text-anchor="middle">u_jtag</text>
-<text x="565" y="490.73" font-size="11" fill="#5c5c5c" text-anchor="middle">straps, latch, TAPs;</text>
-<text x="565" y="504.48" font-size="11" fill="#5c5c5c" text-anchor="middle">jtag_tap_chk x4</text>
+<text x="565" y="476.15" font-size="14" font-weight="bold" text-anchor="middle">Straps and TAPs checker</text>
+<text x="565" y="490.73" font-size="11" fill="#5c5c5c" text-anchor="middle">straps, debug enable;</text>
+<text x="565" y="504.48" font-size="11" fill="#5c5c5c" text-anchor="middle">one TAP checker per TAP (4)</text>
 <polygon points="440,65 431,68.5 431,61.5" fill="#7a7a7a"/>
 <polyline points="230,65 432,65" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>
 <polygon points="440,320 431,323.5 431,316.5" fill="#7a7a7a"/>
@@ -62,11 +61,10 @@
 <circle cx="715" cy="230" r="3" fill="#2b2b2b"/>
 <rect x="10" y="624" width="28" height="16" rx="2" fill="#eaf1fb" stroke="#6c8ebf" stroke-width="1"/>
 <rect x="10" y="648" width="28" height="16" rx="2" fill="#eef7ea" stroke="#82b366" stroke-width="1"/>
-<rect x="10" y="672" width="28" height="16" rx="2" fill="#ffffff" stroke="#2b2b2b" stroke-width="1" stroke-dasharray="4 3"/>
-<line x1="10" y1="704" x2="38" y2="704" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3"/>
-<line x1="10" y1="728" x2="38" y2="728" fill="none" stroke="#2b2b2b" stroke-width="1.4"/>
+<line x1="10" y1="680" x2="38" y2="680" fill="none" stroke="#7a7a7a" stroke-width="1.4" stroke-dasharray="4 3"/>
+<line x1="10" y1="704" x2="38" y2="704" fill="none" stroke="#2b2b2b" stroke-width="1.4"/>
 <text x="8" y="20.68" font-size="13" font-family="monospace" font-weight="bold" fill="#3d5f8f">pinmux</text>
-<text x="428" y="20.68" font-size="13" font-family="monospace" font-weight="bold" fill="#5b8f43">u_fpv_env</text>
+<text x="428" y="20.68" font-size="13" font-family="monospace" font-weight="bold" fill="#5b8f43">pinmux_fpv_env</text>
 <text x="335" y="57.7" font-size="12" font-family="monospace" fill="#7a7a7a" text-anchor="middle">tl_i, tl_o</text>
 <text x="335" y="297.7" font-size="12" font-family="monospace" fill="#7a7a7a" text-anchor="middle">reg2hw, hw2reg,</text>
 <text x="335" y="312.7" font-size="12" font-family="monospace" fill="#7a7a7a" text-anchor="middle">WKUP_CAUSE write</text>
@@ -78,11 +76,10 @@
 <text x="335" y="222.7" font-size="12" font-family="monospace" fill="#7a7a7a" text-anchor="middle">locks, alert_tx_o</text>
 <text x="721" y="396.7" font-size="12" fill="#2b2b2b">TAP</text>
 <text x="721" y="411.7" font-size="12" fill="#2b2b2b">ownership</text>
-<text x="395" y="574.2" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">bind pinmux pinmux_fpv_env u_fpv_env (.*, reg2hw, hw2reg, lock values,</text>
+<text x="395" y="574.2" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">bind pinmux pinmux_fpv_env (.*, reg2hw, hw2reg, lock values,</text>
 <text x="395" y="592.2" font-size="12" font-family="monospace" fill="#2b2b2b" text-anchor="middle">WKUP_CAUSE write, sampled straps, USB module ports, clock and reset)</text>
 <text x="48" y="636.55" font-size="13">Design (RTL)</text>
-<text x="48" y="660.55" font-size="13">Testbench: harnesses and checkers</text>
-<text x="48" y="684.55" font-size="13">Blackboxed in its task: outputs free</text>
-<text x="48" y="708.55" font-size="13">Observed through the bind</text>
-<text x="48" y="732.55" font-size="13">TAP ownership, to the pad harnesses</text>
+<text x="48" y="660.55" font-size="13">Testbench: shared parts and checkers</text>
+<text x="48" y="684.55" font-size="13">Watched through the bind</text>
+<text x="48" y="708.55" font-size="13">TAP ownership, to the pad checkers</text>
 </svg>

@@ -3,11 +3,32 @@
 // SPDX-License-Identifier: Apache-2.0
 {
   name: "pinmux_fpv"
-  // The top the plan was written for and checked on. Other tops render it from the
-  // same template with their own parameters; their requirements are not reviewed.
+  // The requirements of the pinmux FPV testplan (doc/fpv/README.md), one entry each:
+  //   name, desc   the requirement ID and its statement
+  //   source      where the rule comes from: !!REGISTER.FIELD names a register field
+  //               (reggen's form), a Markdown link names a document section or a key
+  //   kind        "spec": a specification states the rule; "RTL": none does, and the
+  //               rule follows the design's present behaviour or leaves the outcome
+  //               to a specification question
+  //   testpoint   its testpoint in pinmux_env_fpv_testplan.hjson
+  //   checks      what decides it: "<check name> (<planned assertion>)", the CSR
+  //               checker, another testbench, or a check out of scope or waiting
+  //   why         why those checks prove it
+  //   milestone   the verification stage of its testpoint: V1, V2 or V2S
+  //   priority    the order of work within a stage: "1" before "2"
+  //   security    true when a security property depends on it
+  //   state       "open" until its checks are proven; with a reason where no check
+  //               of this plan decides it
+  // The file holds, besides the entries:
+  //   written_for   the top the plan was written for and read against
+  //   rendered_for  the top of this copy; other tops render it from the same
+  //                 template with their own parameters, and their requirements
+  //                 are not reviewed
+  //   terms         the words the requirements use, each with its meaning
+  //   groups        the requirements by feature; a group's conditions say when
+  //                 its requirements hold and define its own words
   written_for: "earlgrey"
   rendered_for: "darjeeling"
-  spec_commit: "5b8df2b85493add710eb5b8af7d6c263ce9acb87"
   terms: [
     {
       name: '''`n`'''
@@ -33,6 +54,22 @@
       name: '''Forwarded value'''
       desc: '''The watched signal sampled each `clk_aon_i` cycle, through the filter when `FILTER` is 1'''
     }
+    {
+      name: '''Asleep, awake'''
+      desc: '''A pad is asleep while its sleep status bit is 1, awake while it is 0'''
+    }
+    {
+      name: '''AON'''
+      desc: '''The always-on domain: the logic on `clk_aon_i` and `rst_aon_ni`'''
+    }
+    {
+      name: '''Lands'''
+      desc: '''A written or sampled value lands in the cycle the register or flop it is meant for takes it'''
+    }
+    {
+      name: '''Hardware write'''
+      desc: '''A write to a register field made by the pinmux logic, not by software over the bus'''
+    }
   ]
   groups: [
     {
@@ -49,8 +86,8 @@
           ]
           kind: "spec"
           testpoint: "pad_listen"
-          checks: ["CHK_PAD_LISTEN_01 reads tie 0 (assert_PadListen_ReadsTie0)"]
-          why: '''In every cycle the check compares each MIO peripheral input whose select is 0 with 0. An input that reads a pad or 1 under select 0, even for one cycle, fails it.'''
+          checks: ["reads tie 0 (assert_PadListen_ReadsTie0)"]
+          why: '''In every cycle the check compares each MIO peripheral input whose select is 0 with 0.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -64,8 +101,8 @@
           ]
           kind: "spec"
           testpoint: "pad_listen"
-          checks: ["CHK_PAD_LISTEN_02 reads tie 1 (assert_PadListen_ReadsTie1)"]
-          why: '''In every cycle the check compares each MIO peripheral input whose select is 1 with 1. An input that reads a pad or 0 under select 1 fails it.'''
+          checks: ["reads tie 1 (assert_PadListen_ReadsTie1)"]
+          why: '''In every cycle the check compares each MIO peripheral input whose select is 1 with 1.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -80,8 +117,8 @@
           ]
           kind: "spec"
           testpoint: "pad_listen"
-          checks: ["CHK_PAD_LISTEN_03 reads selected pad (assert_PadListen_ReadsSelectedPad)"]
-          why: '''For each select from 2 to 13 the check compares the input with `mio_in_i` of pad select minus 2, in the same cycle. An input that reads another pad, or the right pad a cycle late, differs in some cycle and fails it.'''
+          checks: ["reads selected pad (assert_PadListen_ReadsSelectedPad)"]
+          why: '''For each select from 2 to 13 the check compares the input with `mio_in_i` of pad select minus 2, in the same cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -96,8 +133,8 @@
           ]
           kind: "RTL"
           testpoint: "pad_listen"
-          checks: ["CHK_PAD_LISTEN_04 no pad reads 0 (assert_PadListen_NoPadReads0)"]
-          why: '''For selects 14 to 15, which name no pad, the check compares the input with 0. An input that reads a pad there, for example by wrapping the select around, or reads 1, fails it.'''
+          checks: ["no pad reads 0 (assert_PadListen_NoPadReads0)"]
+          why: '''For selects 14 to 15, which name no pad, the check compares the input with 0.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -111,8 +148,8 @@
           ]
           kind: "spec"
           testpoint: "pad_listen"
-          checks: ["CHK_PAD_LISTEN_05 DIO reads its pad (assert_PadListen_DIOReadsItsPad)"]
-          why: '''The check compares each DIO peripheral input with its own pad's `dio_in_i` in the same cycle, whatever the registers hold. An input that reads another DIO pad, depends on a register or lags by a cycle fails it.'''
+          checks: ["DIO reads its pad (assert_PadListen_DioReadsItsPad)"]
+          why: '''The check compares each DIO peripheral input with its own pad's `dio_in_i` in the same cycle, whatever the registers hold.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -128,8 +165,8 @@
           ]
           kind: "spec"
           testpoint: "reset_state"
-          checks: ["CHK_PAD_LISTEN_01 reads tie 0 (assert_PadListen_ReadsTie0)"]
-          why: '''The generated register checker keeps each input select at its reset value 0 until software writes it, and _reads tie 0_ (CHK_PAD_LISTEN_01) makes an input whose select is 0 read 0 in the same cycle. An input that reads 1 before its select is written fails one of the two.'''
+          checks: ["reads tie 0 (assert_PadListen_ReadsTie0)", "the CSR checker"]
+          why: '''The CSR checker keeps each input select at 0 until written, and _reads tie 0_ makes such an input read 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -151,8 +188,8 @@
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_01 tie 0 drives 0 (assert_PadOutput_Tie0Drives0)"]
-          why: '''While an awake pad's select is 0, the check compares the pad's output with 0 in every cycle. A pad that puts 1 or a peripheral's data on its output there fails it.'''
+          checks: ["tie 0 drives 0 (assert_PadOutput_Tie0Drives0)"]
+          why: '''While an awake pad's select is 0, the check compares the pad's output with 0 in every cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -166,8 +203,8 @@
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_01 tie 0 drives 0 (assert_PadOutput_Tie0Drives0)"]
-          why: '''Under select 0 the check compares the pad's output enable with 1 in every cycle. A pad left high-Z, or following a peripheral's enable, under select 0 fails it.'''
+          checks: ["tie 0 drives 0 (assert_PadOutput_Tie0Drives0)"]
+          why: '''Under select 0 the check compares the pad's output enable with 1 in every cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -181,8 +218,8 @@
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_02 tie 1 drives 1 (assert_PadOutput_Tie1Drives1)"]
-          why: '''While an awake pad's select is 1, the check compares the pad's output with 1 in every cycle. A pad that puts 0 or a peripheral's data on its output there fails it.'''
+          checks: ["tie 1 drives 1 (assert_PadOutput_Tie1Drives1)"]
+          why: '''While an awake pad's select is 1, the check compares the pad's output with 1 in every cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -196,8 +233,8 @@
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_02 tie 1 drives 1 (assert_PadOutput_Tie1Drives1)"]
-          why: '''Under select 1 the check compares the pad's output enable with 1 in every cycle. A pad left high-Z, or following a peripheral's enable, under select 1 fails it.'''
+          checks: ["tie 1 drives 1 (assert_PadOutput_Tie1Drives1)"]
+          why: '''Under select 1 the check compares the pad's output enable with 1 in every cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -211,8 +248,8 @@
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_03 select 2 is high-Z (assert_PadOutput_Select2IsHighZ)"]
-          why: '''While an awake pad's select is 2, the check compares the pad's output enable with 0 in every cycle. A pad that drives under select 2, even for one cycle, fails it.'''
+          checks: ["select 2 is high-Z (assert_PadOutput_Select2IsHighZ)"]
+          why: '''While an awake pad's select is 2, the check compares the pad's output enable with 0 in every cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -226,8 +263,8 @@
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_03 select 2 is high-Z (assert_PadOutput_Select2IsHighZ)"]
-          why: '''Under select 2 the check compares the pad's output with 0 in every cycle. A pad that puts 1 or a peripheral's data on its output while high-Z fails it.'''
+          checks: ["select 2 is high-Z (assert_PadOutput_Select2IsHighZ)"]
+          why: '''Under select 2 the check compares the pad's output with 0 in every cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -243,8 +280,8 @@
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_04 drives selected output (assert_PadOutput_DrivesSelectedOutput)"]
-          why: '''For each select from 3 to 7 the check compares the pad's output with `periph_to_mio_i[k]`, `k` the select minus 3, in the same cycle. A pad that carries another output's data, or the right data a cycle late, fails it.'''
+          checks: ["drives selected output (assert_PadOutput_DrivesSelectedOutput)"]
+          why: '''For each select from 3 to 7 the check compares the pad's output with `periph_to_mio_i[k]`, `k` the select minus 3, in the same cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -260,8 +297,8 @@
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_04 drives selected output (assert_PadOutput_DrivesSelectedOutput)"]
-          why: '''The check compares the pad's output enable with `periph_to_mio_oe_i[k]` in the same cycle, together with the data. A pad that pairs one output's data with another output's enable, or lags the enable by a cycle, fails it.'''
+          checks: ["drives selected output (assert_PadOutput_DrivesSelectedOutput)"]
+          why: '''The check compares the pad's output enable with `periph_to_mio_oe_i[k]`, `k` as for the data, in the same cycle.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -276,8 +313,8 @@
           ]
           kind: "RTL"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_05 no output is high-Z (assert_PadOutput_NoOutputIsHighZ)"]
-          why: '''For selects above 7 (no such value on this top), which name no output, the check compares the pad's output enable with 0. A pad that drives there, for example by wrapping the select onto a real output, fails it.'''
+          checks: ["no output is high-Z (assert_PadOutput_NoOutputIsHighZ)"]
+          why: '''For selects above 7 (no such value on this top), which name no output, the check compares the pad's output enable with 0.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -292,8 +329,8 @@
           ]
           kind: "RTL"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_05 no output is high-Z (assert_PadOutput_NoOutputIsHighZ)"]
-          why: '''For selects above 7 (no such value on this top) the check compares the pad's output with 0. A pad that puts 1 or any output's data on its output there fails it.'''
+          checks: ["no output is high-Z (assert_PadOutput_NoOutputIsHighZ)"]
+          why: '''For selects above 7 (no such value on this top) the check compares the pad's output with 0.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -307,8 +344,8 @@
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_06 DIO drives its peripheral (assert_PadOutput_DIODrivesItsPeripheral)"]
-          why: '''The check compares each awake DIO pad's output with its own peripheral's, `periph_to_dio_i[d]`, in the same cycle, whatever the registers hold. A pad that carries another peripheral, depends on a register or lags by a cycle fails it.'''
+          checks: ["DIO drives its peripheral (assert_PadOutput_DioDrivesItsPeripheral)"]
+          why: '''The check compares each awake DIO pad's output with `periph_to_dio_i[d]` in the same cycle, whatever the registers hold.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -322,8 +359,8 @@
           ]
           kind: "spec"
           testpoint: "pad_output"
-          checks: ["CHK_PAD_OUTPUT_06 DIO drives its peripheral (assert_PadOutput_DIODrivesItsPeripheral)"]
-          why: '''The check compares each awake DIO pad's output enable with `periph_to_dio_oe_i[d]` in the same cycle, whatever the registers hold. A pad that takes another peripheral's enable, or lags by a cycle, fails it.'''
+          checks: ["DIO drives its peripheral (assert_PadOutput_DioDrivesItsPeripheral)"]
+          why: '''The check compares each awake DIO pad's output enable with `periph_to_dio_oe_i[d]` in the same cycle, whatever the registers hold.'''
           milestone: "V1"
           priority: "1"
           security: false
@@ -339,8 +376,8 @@
           ]
           kind: "spec"
           testpoint: "reset_state"
-          checks: ["CHK_PAD_OUTPUT_03 select 2 is high-Z (assert_PadOutput_Select2IsHighZ)"]
-          why: '''The generated register checker keeps each output select at its reset value 2 until software writes it, and _select 2 is high-Z_ (CHK_PAD_OUTPUT_03) makes an awake pad that no TAP owns drive (0, 0) on select 2. A pad that drives before its select is written fails one of the two; an asleep pad and a JTAG pad a TAP owns are decided by the sleep and JTAG pad checks.'''
+          checks: ["select 2 is high-Z (assert_PadOutput_Select2IsHighZ)", "the CSR checker"]
+          why: '''The CSR checker keeps each output select at 2 until written; _select 2 is high-Z_ then makes an awake pad high-Z.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -351,7 +388,7 @@
     {
       name: '''Pad attributes'''
       conditions: [
-        '''every row holds in every cycle, asleep or awake, except on a JTAG pad while a TAP owns it. "Written" means a write the register block accepts, its lock open (Register locks); "reads back" means what a read of the register returns. A pad type "keeps" an attribute bit when its pads implement that bit ([Pad Attributes](hw/top_darjeeling/ip_autogen/pinmux/doc/programmers_guide.md#pad-attributes)); which bits a type keeps is fixed, the same on every pad of the type and for good. A one-bit field is kept when its bit is; each bit of `slew_rate` and `drive_strength` is kept or not on its own, as "certain pads may only support two drive-strength bits, instead of four" ([Pad Attributes](hw/top_darjeeling/ip_autogen/pinmux/doc/programmers_guide.md#pad-attributes)). Every pad keeps `invert` ([Generic Pad Wrapper](hw/top_darjeeling/ip_autogen/pinmux/doc/theory_of_operation.md#generic-pad-wrapper)).'''
+        '''every row holds in every cycle, asleep or awake, except on a JTAG pad while a TAP owns it. "Written" means a write the register block accepts, its lock open (Register locks); "reads back" means what a read of the register returns. A pad type "keeps" an attribute bit when its pads implement that bit ([Pad Attributes](hw/top_darjeeling/ip_autogen/pinmux/doc/programmers_guide.md#pad-attributes)), the same on every pad of the type and for good. A one-bit field is kept when its bit is; each bit of `slew_rate` and `drive_strength` is kept or not on its own ([Pad Attributes](hw/top_darjeeling/ip_autogen/pinmux/doc/programmers_guide.md#pad-attributes)).'''
       ]
       requirements: [
         {
@@ -364,8 +401,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `invert` of `mio_attr_o` for the pad with the same field of what a read of `MIO_PAD_ATTR_p` returns. A pad that inverts while the register reads 0, or the reverse, or takes the bit a cycle late, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `invert` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -381,8 +418,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `virtual_od_en` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`. A pad that gets a virtual open drain the register does not show, or loses one it shows, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `virtual_od_en` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -398,8 +435,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `pull_en` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`. A pad that gets a pull the register does not show, or loses one it shows, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `pull_en` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -415,8 +452,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `pull_select` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`. A pad pulled the other way from what the register shows fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `pull_select` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -432,8 +469,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `keeper_en` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`. A pad whose keeper is on while the register shows it off, or the reverse, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `keeper_en` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -449,8 +486,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `schmitt_en` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`. A pad whose Schmitt trigger differs from what the register shows fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `schmitt_en` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -466,8 +503,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `od_en` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`. A pad set to open drain while the register shows push-pull, or the reverse, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `od_en` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -483,8 +520,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `input_disable` of the pad's `mio_attr_o` with the same field of the read-back of `MIO_PAD_ATTR_p`. A pad whose input is cut off while the register shows it on, or the reverse, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `input_disable` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -500,8 +537,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares both bits of field `slew_rate` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`. A pad that gets another slew rate than the register shows fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares both bits of field `slew_rate` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -517,8 +554,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares the four bits of field `drive_strength` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`. A pad that gets another drive strength than the register shows fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares the four bits of field `drive_strength` of the pad's `mio_attr_o` with the read-back of `MIO_PAD_ATTR_p`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -534,8 +571,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `invert` of `dio_attr_o` for the pad with the same field of what a read of `DIO_PAD_ATTR_d` returns. A pad that inverts while the register reads 0, or the reverse, or takes the bit a cycle late, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `invert` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -551,8 +588,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `virtual_od_en` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`. A pad that gets a virtual open drain the register does not show, or loses one it shows, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `virtual_od_en` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -568,8 +605,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `pull_en` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`. A pad that gets a pull the register does not show, or loses one it shows, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `pull_en` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -585,8 +622,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `pull_select` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`. A pad pulled the other way from what the register shows fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `pull_select` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -602,8 +639,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `keeper_en` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`. A pad whose keeper is on while the register shows it off, or the reverse, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `keeper_en` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -619,8 +656,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `schmitt_en` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`. A pad whose Schmitt trigger differs from what the register shows fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `schmitt_en` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -636,8 +673,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `od_en` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`. A pad set to open drain while the register shows push-pull, or the reverse, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `od_en` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -653,8 +690,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares field `input_disable` of the pad's `dio_attr_o` with the same field of the read-back of `DIO_PAD_ATTR_d`. A pad whose input is cut off while the register shows it on, or the reverse, fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares field `input_disable` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -670,8 +707,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares both bits of field `slew_rate` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`. A pad that gets another slew rate than the register shows fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares both bits of field `slew_rate` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -687,8 +724,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_01 pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
-          why: '''In every cycle the check compares the four bits of field `drive_strength` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`. A pad that gets another drive strength than the register shows fails it.'''
+          checks: ["pad gets read-back (assert_PadAttr_PadGetsReadBack)"]
+          why: '''In every cycle the check compares the four bits of field `drive_strength` of the pad's `dio_attr_o` with the read-back of `DIO_PAD_ATTR_d`.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -702,8 +739,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_02 invert reads back (assert_PadAttr_InvertReadsBack)"]
-          why: '''On every pad type, from the pad's first attribute write on, the check compares the `invert` bit of the read-back with the `invert` bit of the last attribute write. A pad type that drops inversion, reading 0 after a write of 1, fails it; with _pad gets read-back_ (CHK_PAD_ATTR_01) the pad then inverts as written.'''
+          checks: ["invert reads back (assert_PadAttr_InvertReadsBack)"]
+          why: '''On every pad type, the check compares the `invert` bit of the read-back with that of the pad's last attribute write.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -718,8 +755,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_03 open drain reads back (assert_PadAttr_OpenDrainReadsBack)"]
-          why: '''On every BidirOd pad, from the pad's first attribute write on, the check compares the `od_en` bit of the read-back with the `od_en` bit of the pad's last attribute write. A BidirOd pad whose `od_en` reads 0 after a write of 1, or keeps an older value, fails it.'''
+          checks: ["open drain reads back (assert_PadAttr_OpenDrainReadsBack)"]
+          why: '''On every BidirOd pad, the check compares the `od_en` bit of the read-back with that of the pad's last attribute write.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -734,8 +771,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_04 virtual open drain reads back (assert_PadAttr_VirtualOpenDrainReadsBack)"]
-          why: '''On every BidirStd pad, from the pad's first attribute write on, the check compares the `virtual_od_en` bit of the read-back with the `virtual_od_en` bit of the pad's last attribute write. A BidirStd pad whose `virtual_od_en` reads 0 after a write of 1, or keeps an older value, fails it.'''
+          checks: ["virtual open drain reads back (assert_PadAttr_VirtualOpenDrainReadsBack)"]
+          why: '''On every BidirStd pad, the check compares the `virtual_od_en` bit of the read-back with that of the last attribute write.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -751,8 +788,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_05 no open drain elsewhere (assert_PadAttr_NoOpenDrainElsewhere)"]
-          why: '''On every pad not of type BidirOd, the check compares the `od_en` bit of the read-back with 0 in every cycle, whatever software wrote. A pad of another type that stores and returns a written `od_en` bit fails it.'''
+          checks: ["no open drain elsewhere (assert_PadAttr_NoOpenDrainElsewhere)"]
+          why: '''On every pad not of type BidirOd, the check requires the `od_en` bit of the read-back to be 0, whatever software wrote.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -768,8 +805,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_06 no virtual open drain elsewhere (assert_PadAttr_NoVirtualOpenDrainElsewhere)"]
-          why: '''On every pad not of type BidirStd, the check compares the `virtual_od_en` bit of the read-back with 0 in every cycle, whatever software wrote. A pad of another type that stores and returns a written `virtual_od_en` bit fails it.'''
+          checks: ["no virtual open drain elsewhere (assert_PadAttr_NoVirtualOpenDrainElsewhere)"]
+          why: '''On every pad not of type BidirStd, the check requires the `virtual_od_en` bit of the read-back to be 0, whatever software wrote.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -785,8 +822,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_07 supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
-          why: '''Per pad type the check requires the `pull_en` bit of the read-back to read 0 when written 0, and to read 1 for a write of 1 on every pad of the type once one pad of the type has done so. A kept bit that reads 1 after a write of 0, or 0 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
+          why: '''The check requires `pull_en` to read back a written 0, and a written 1 once a pad of its type has read one back.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -802,8 +839,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_07 supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
-          why: '''Per pad type the check requires the `pull_select` bit of the read-back to read 0 when written 0, and to read 1 for a write of 1 on every pad of the type once one pad of the type has done so. A kept bit that reads 1 after a write of 0, or 0 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
+          why: '''The check requires `pull_select` to read back a written 0, and a written 1 once a pad of its type has read one back.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -819,8 +856,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_07 supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
-          why: '''Per pad type the check requires the `keeper_en` bit of the read-back to read 0 when written 0, and to read 1 for a write of 1 on every pad of the type once one pad of the type has done so. A kept bit that reads 1 after a write of 0, or 0 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
+          why: '''The check requires `keeper_en` to read back a written 0, and a written 1 once a pad of its type has read one back.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -836,8 +873,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_07 supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
-          why: '''Per pad type the check requires the `schmitt_en` bit of the read-back to read 0 when written 0, and to read 1 for a write of 1 on every pad of the type once one pad of the type has done so. A kept bit that reads 1 after a write of 0, or 0 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
+          why: '''The check requires `schmitt_en` to read back a written 0, and a written 1 once a pad of its type has read one back.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -853,8 +890,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_07 supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
-          why: '''Per pad type the check requires the `input_disable` bit of the read-back to read 0 when written 0, and to read 1 for a write of 1 on every pad of the type once one pad of the type has done so. A kept bit that reads 1 after a write of 0, or 0 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
+          why: '''The check requires `input_disable` to read back a written 0, and a written 1 once a pad of its type has read one back.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -870,8 +907,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_07 supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
-          why: '''Per pad type and per bit of `slew_rate`, the check requires the bit of the read-back to read 0 when written 0, and to read 1 for a write of 1 on every pad of the type once one pad of the type has done so. A kept bit that reads 1 after a write of 0, or 0 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
+          why: '''The check requires each bit of `slew_rate` to read back a written 0, and a written 1 once a pad of its type has read one back.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -887,8 +924,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_07 supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
-          why: '''Per pad type and per bit of `drive_strength`, the check requires the bit of the read-back to read 0 when written 0, and to read 1 for a write of 1 on every pad of the type once one pad of the type has done so. A kept bit that reads 1 after a write of 0, or 0 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["supported bits read back (assert_PadAttr_SupportedBitsReadBack)"]
+          why: '''The check requires each bit of `drive_strength` to read back a written 0, and a written 1 once a pad of its type has read one back.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -903,8 +940,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_08 unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
-          why: '''Per pad type the check requires the `pull_en` bit of the read-back to read 0 when written 0, and to read 0 on every pad of the type, whatever is written, once a write of 1 has read 0 on one pad of the type. A bit not kept that reads 1 after a write of 0, or 1 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
+          why: '''The check requires `pull_en` to read back a written 0, and 0 on every pad of its type once one read a written 1 as 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -919,8 +956,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_08 unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
-          why: '''Per pad type the check requires the `pull_select` bit of the read-back to read 0 when written 0, and to read 0 on every pad of the type, whatever is written, once a write of 1 has read 0 on one pad of the type. A bit not kept that reads 1 after a write of 0, or 1 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
+          why: '''The check requires `pull_select` to read back a written 0, and 0 on every pad of its type once one read a written 1 as 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -935,8 +972,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_08 unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
-          why: '''Per pad type the check requires the `keeper_en` bit of the read-back to read 0 when written 0, and to read 0 on every pad of the type, whatever is written, once a write of 1 has read 0 on one pad of the type. A bit not kept that reads 1 after a write of 0, or 1 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
+          why: '''The check requires `keeper_en` to read back a written 0, and 0 on every pad of its type once one read a written 1 as 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -951,8 +988,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_08 unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
-          why: '''Per pad type the check requires the `schmitt_en` bit of the read-back to read 0 when written 0, and to read 0 on every pad of the type, whatever is written, once a write of 1 has read 0 on one pad of the type. A bit not kept that reads 1 after a write of 0, or 1 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
+          why: '''The check requires `schmitt_en` to read back a written 0, and 0 on every pad of its type once one read a written 1 as 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -967,8 +1004,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_08 unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
-          why: '''Per pad type the check requires the `input_disable` bit of the read-back to read 0 when written 0, and to read 0 on every pad of the type, whatever is written, once a write of 1 has read 0 on one pad of the type. A bit not kept that reads 1 after a write of 0, or 1 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
+          why: '''The check requires `input_disable` to read back a written 0, and 0 on every pad of its type once one read a written 1 as 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -983,8 +1020,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_08 unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
-          why: '''Per pad type and per bit of `slew_rate`, the check requires the bit of the read-back to read 0 when written 0, and to read 0 on every pad of the type, whatever is written, once a write of 1 has read 0 on one pad of the type. A bit not kept that reads 1 after a write of 0, or 1 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
+          why: '''The check requires each bit of `slew_rate` to read back a written 0, and 0 on every pad of its type once one read a written 1 as 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -999,8 +1036,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_08 unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
-          why: '''Per pad type and per bit of `drive_strength`, the check requires the bit of the read-back to read 0 when written 0, and to read 0 on every pad of the type, whatever is written, once a write of 1 has read 0 on one pad of the type. A bit not kept that reads 1 after a write of 0, or 1 after a write of 1 in a later cycle or on another pad of the type, fails it.'''
+          checks: ["unsupported bits read 0 (assert_PadAttr_UnsupportedBitsRead0)"]
+          why: '''The check requires each bit of `drive_strength` to read back a written 0, and 0 on every pad of its type once one read a written 1 as 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1008,7 +1045,7 @@
         }
         {
           name: REQ_ATTR_10
-          desc: '''After reset, every pad's attribute output shall be its reset value, with the fields its type does not keep at 0. Every field's reset value is 0, except the fields the `attrs` of the pad's entry in the top description set.'''
+          desc: '''After reset, each pad's attribute output shall be its reset value, 0 in fields its type does not keep. All are 0 but the fields the `attrs` of the pad's top entry set.'''
           source: [
             '''!!MIO_PAD_ATTR'''
             '''!!DIO_PAD_ATTR'''
@@ -1018,8 +1055,8 @@
           ]
           kind: "spec"
           testpoint: "pad_attr"
-          checks: ["CHK_PAD_ATTR_09 reset attributes (assert_PadAttr_ResetAttributes)"]
-          why: '''Not written for this top.'''
+          checks: ["reset attributes (assert_PadAttr_ResetAttributes)"]
+          why: '''Until the pad's first attribute write after reset, the check compares the pad's attribute output with the reset attributes.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1030,7 +1067,7 @@
     {
       name: '''Sleep retention'''
       conditions: [
-        '''"pad" is MIO pad `p` or DIO pad `d`; "status bit" is its bit in `MIO_PAD_SLEEP_STATUS` or `DIO_PAD_SLEEP_STATUS`; "sleep entry" is a rise of `sleep_en_i`. The mode rows hold while no TAP owns the pad and the sleep mode is unchanged since sleep entry.'''
+        '''"pad" is MIO pad `p` or DIO pad `d`; "status bit" is its bit in `MIO_PAD_SLEEP_STATUS` or `DIO_PAD_SLEEP_STATUS`. "Sleep entry" is a rise of `sleep_en_i`. The mode rows hold while no TAP owns the pad and the sleep mode is unchanged since sleep entry.'''
       ]
       requirements: [
         {
@@ -1042,8 +1079,8 @@
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_01 bit set at entry (assert_PadSleep_BitSetAtEntry)"]
-          why: '''For every sleep entry with the pad's sleep enable at 1 and no software clear of its status bit, the check requires the bit to be 1 in the next cycle. A bit that stays 0, or rises a cycle late, fails it; a cycle with a clear is decided by _clear wins_ (CHK_PAD_SLEEP_05).'''
+          checks: ["bit set at entry (assert_PadSleep_BitSetAtEntry)"]
+          why: '''For every sleep entry with the sleep enable at 1 and no software clear of the bit, the check requires the status bit to be 1 in the next cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1058,8 +1095,8 @@
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_02 bit set only at entry (assert_PadSleep_BitSetOnlyAtEntry)"]
-          why: '''For every rise of a status bit the check requires a sleep entry with the pad's sleep enable at 1 in the cycle before. A bit that rises with the enable at 0, without a rise of `sleep_en_i`, or while `sleep_en_i` merely stays high, fails it.'''
+          checks: ["bit set only at entry (assert_PadSleep_BitSetOnlyAtEntry)"]
+          why: '''For every rise of a status bit the check requires a sleep entry with the pad's sleep enable at 1 in the cycle before.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1074,8 +1111,8 @@
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_06 tie low in sleep (assert_PadSleep_TieLowInSleep)"]
-          why: '''While the status bit is 1 and the mode taken at the entry is 0, the check compares the output of a pad no TAP owns with 0 in the same cycle. A pad that still carries its peripheral or its select's drive fails it.'''
+          checks: ["tie low in sleep (assert_PadSleep_TieLowInSleep)"]
+          why: '''While the status bit is 1 with mode 0 taken at the entry, the check compares the output of a pad no TAP owns with 0 in the same cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1090,8 +1127,8 @@
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_06 tie low in sleep (assert_PadSleep_TieLowInSleep)"]
-          why: '''While held in mode 0, the check compares the output enable of a pad no TAP owns with 1. A pad left high-Z, or following its peripheral's enable, fails it.'''
+          checks: ["tie low in sleep (assert_PadSleep_TieLowInSleep)"]
+          why: '''While held in mode 0, the check compares the output enable of a pad no TAP owns with 1.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1105,8 +1142,8 @@
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_07 tie high in sleep (assert_PadSleep_TieHighInSleep)"]
-          why: '''While the status bit is 1 and the mode taken at the entry is 1, the check compares the output of a pad no TAP owns with 1 in the same cycle. A pad that still carries its peripheral or its select's drive fails it.'''
+          checks: ["tie high in sleep (assert_PadSleep_TieHighInSleep)"]
+          why: '''While the status bit is 1 with mode 1 taken at the entry, the check compares the output of a pad no TAP owns with 1 in the same cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1120,8 +1157,8 @@
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_07 tie high in sleep (assert_PadSleep_TieHighInSleep)"]
-          why: '''While held in mode 1, the check compares the output enable of a pad no TAP owns with 1. A pad left high-Z, or following its peripheral's enable, fails it.'''
+          checks: ["tie high in sleep (assert_PadSleep_TieHighInSleep)"]
+          why: '''While held in mode 1, the check compares the output enable of a pad no TAP owns with 1.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1135,8 +1172,8 @@
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_08 high-Z in sleep (assert_PadSleep_HighZInSleep)"]
-          why: '''While the status bit is 1 and the mode taken at the entry is 2, the check compares the output enable of a pad no TAP owns with 0 in the same cycle. A pad that keeps driving in sleep fails it.'''
+          checks: ["high-Z in sleep (assert_PadSleep_HighZInSleep)"]
+          why: '''While the status bit is 1 with mode 2 taken at the entry, the check compares the output enable of a pad no TAP owns with 0 in the same cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1150,8 +1187,8 @@
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_08 high-Z in sleep (assert_PadSleep_HighZInSleep)"]
-          why: '''While held in mode 2, the check compares the output of a pad no TAP owns with 0. A pad that leaves its peripheral's data or 1 on its output fails it.'''
+          checks: ["high-Z in sleep (assert_PadSleep_HighZInSleep)"]
+          why: '''While held in mode 2, the check compares the output of a pad no TAP owns with 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1166,8 +1203,8 @@
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_09 keep holds (assert_PadSleep_KeepHolds)"]
-          why: '''While the status bit is 1 and the mode taken at the entry is 3, the check compares the output of a pad no TAP owns with the output it drove in the last cycle before the bit became 1. A pad that follows its peripheral or its select, or keeps the value of another cycle, fails it. No specification states which output a JTAG pad that a TAP owned in that last cycle keeps, so the check claims none for it.'''
+          checks: ["keep holds (assert_PadSleep_KeepHolds)"]
+          why: '''While held in mode 3, the check compares a pad's output with its output at the sleep entry that set the bit, if no TAP owned it then or now.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1182,8 +1219,8 @@
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_09 keep holds (assert_PadSleep_KeepHolds)"]
-          why: '''While held in mode 3, the check compares the output enable of a pad no TAP owns with the one it drove in the last cycle before the bit became 1. A pad that turns high-Z after driving, or starts to drive after being high-Z, fails it. No specification states which enable a JTAG pad that a TAP owned in that last cycle keeps, so the check claims none for it.'''
+          checks: ["keep holds (assert_PadSleep_KeepHolds)"]
+          why: '''While held in mode 3, the check compares a pad's output enable with its enable at the sleep entry that set the bit, if no TAP owned it then or now.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1198,8 +1235,8 @@
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_03 bit holds until cleared (assert_PadSleep_BitHoldsUntilCleared)", "CHK_PAD_SLEEP_04 clear releases (assert_PadSleep_ClearReleases)"]
-          why: '''The check _bit holds until cleared_ (CHK_PAD_SLEEP_03) requires a bit at 1 to be 1 in the next cycle unless software clears it, whatever `sleep_en_i`, the sleep enable and the peripherals do; a bit that falls when sleep ends, or on a write of 1, fails it. The check _clear releases_ (CHK_PAD_SLEEP_04) requires a software clear to give 0 in the next cycle, so the bit ends at the clear and not later.'''
+          checks: ["bit holds until cleared (assert_PadSleep_BitHoldsUntilCleared)", "clear releases (assert_PadSleep_ClearReleases)"]
+          why: '''The first fails a bit at 1 that falls without a software clear; the second requires 0 in the cycle after a clear.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1207,15 +1244,15 @@
         }
         {
           name: REQ_SLP_08
-          desc: '''While its status bit is 0, a pad shall drive what it drives awake: an MIO pad what its output select names, a DIO pad the output and output enable of its own peripheral.'''
+          desc: '''While its status bit is 0, an MIO pad shall drive what its output select names, and a DIO pad the output and output enable of its own peripheral.'''
           source: [
             '''[Retention Logic](hw/top_darjeeling/ip_autogen/pinmux/doc/theory_of_operation.md#retention-logic)'''
             '''[Sleep Features](hw/top_darjeeling/ip_autogen/pinmux/doc/programmers_guide.md#sleep-features)'''
           ]
           kind: "spec"
           testpoint: "sleep_release"
-          checks: ["CHK_PAD_OUTPUT_01 tie 0 drives 0 (assert_PadOutput_Tie0Drives0)", "CHK_PAD_OUTPUT_02 tie 1 drives 1 (assert_PadOutput_Tie1Drives1)", "CHK_PAD_OUTPUT_03 select 2 is high-Z (assert_PadOutput_Select2IsHighZ)", "CHK_PAD_OUTPUT_04 drives selected output (assert_PadOutput_DrivesSelectedOutput)", "CHK_PAD_OUTPUT_05 no output is high-Z (assert_PadOutput_NoOutputIsHighZ)", "CHK_PAD_OUTPUT_06 DIO drives its peripheral (assert_PadOutput_DIODrivesItsPeripheral)"]
-          why: '''Each holds in every cycle the pad is awake, its status bit at 0, whether the bit was never set or was cleared; together they cover every select and every DIO pad. A pad that still drives the value of its sleep mode in a cycle its bit reads 0 fails the check of its select; a JTAG pad a TAP owns is decided by the JTAG pad checks.'''
+          checks: ["tie 0 drives 0 (assert_PadOutput_Tie0Drives0)", "tie 1 drives 1 (assert_PadOutput_Tie1Drives1)", "select 2 is high-Z (assert_PadOutput_Select2IsHighZ)", "drives selected output (assert_PadOutput_DrivesSelectedOutput)", "no output is high-Z (assert_PadOutput_NoOutputIsHighZ)", "DIO drives its peripheral (assert_PadOutput_DioDrivesItsPeripheral)"]
+          why: '''Each holds while the bit is 0.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1231,8 +1268,8 @@
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_05 clear wins (assert_PadSleep_ClearWins)"]
-          why: '''For a cycle with both a sleep entry, the pad's sleep enable at 1, and a software clear of the bit, the check requires the bit to be 0 in the next cycle. A design that lets the hardware set win fails it.'''
+          checks: ["clear wins (assert_PadSleep_ClearWins)"]
+          why: '''For a sleep entry with the sleep enable at 1 in the cycle of a software clear of the bit, the check requires the bit to be 0 in the next cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1247,8 +1284,8 @@
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_10 mode write while held (assert_PadSleep_ModeWriteWhileHeld)"]
-          why: '''After a write to the sleep mode while the bit is 1, the check requires the pad to keep driving the sleep value of the mode taken at the entry. A design that applies the new mode at once changes the pad's drive and fails it.'''
+          checks: ["mode write while held (assert_PadSleep_ModeWriteWhileHeld)"]
+          why: '''After a sleep mode write while the bit is 1, the check requires the pad to keep the sleep value of the mode taken at the entry.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1263,8 +1300,8 @@
           ]
           kind: "spec"
           testpoint: "pad_sleep"
-          checks: ["CHK_PAD_SLEEP_06 tie low in sleep (assert_PadSleep_TieLowInSleep)", "CHK_PAD_SLEEP_07 tie high in sleep (assert_PadSleep_TieHighInSleep)", "CHK_PAD_SLEEP_08 high-Z in sleep (assert_PadSleep_HighZInSleep)", "CHK_PAD_SLEEP_09 keep holds (assert_PadSleep_KeepHolds)"]
-          why: '''Each of the four sleep mode checks compares a held pad's drive with the sleep value of the mode the register held at the sleep entry that set its bit, so after a release the next entry takes the mode written while held. A design that keeps the old mode, or never takes the new one, drives the wrong sleep value and fails one of them. That the register holds the written mode is checked by the generated register checker.'''
+          checks: ["tie low in sleep (assert_PadSleep_TieLowInSleep)", "tie high in sleep (assert_PadSleep_TieHighInSleep)", "high-Z in sleep (assert_PadSleep_HighZInSleep)", "keep holds (assert_PadSleep_KeepHolds)", "the CSR checker"]
+          why: '''Each uses the mode taken at entry; the CSR checker checks the write is kept.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -1275,7 +1312,7 @@
     {
       name: '''Register locks'''
       conditions: [
-        '''"lock" is one bit of a `*_REGWEN` register; it locks the registers of the same index. The rule that a locked pad's attributes do not change (`REQ_LOCK_03a`, `REQ_LOCK_03b`) holds except on a JTAG pad while a TAP owns it.'''
+        '''"lock" is one bit of a `*_REGWEN` register; it locks the registers of the same index, and is open at 1 and closed at 0. The rule that a locked pad's attributes do not change (`REQ_LOCK_03a`, `REQ_LOCK_03b`) holds except on a JTAG pad while a TAP owns it.'''
       ]
       requirements: [
         {
@@ -1287,8 +1324,8 @@
           ]
           kind: "spec"
           testpoint: "fpv_csr_rw"
-          checks: ["the generated CSR checker"]
-          why: '''After reset the generated register checker expects every lock at its reset value 1, bit 31 of `ALERT_TEST` included, and compares each lock's value and read with it; a lock that leaves reset at 0 fails the first compare.'''
+          checks: ["the CSR checker"]
+          why: '''After reset the CSR checker expects every lock, bit 31 of `ALERT_TEST` included, at 1 and compares its value and read with it.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1303,8 +1340,8 @@
           ]
           kind: "spec"
           testpoint: "fpv_csr_rw"
-          checks: ["the generated CSR checker"]
-          why: '''The generated register checker predicts each lock as `rw0c`: an accepted write of 0 clears it and nothing sets it; a lock that returns to 1 before a reset fails the compare.'''
+          checks: ["the CSR checker"]
+          why: '''The CSR checker predicts each lock as `rw0c`: an accepted write of 0 clears it and nothing sets it; a lock that returns to 1 before a reset fails the compare.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1320,8 +1357,8 @@
           ]
           kind: "spec"
           testpoint: "fpv_csr_rw"
-          checks: ["the generated CSR checker"]
-          why: '''The generated register checker predicts each lock as `rw0c`, which keeps a closed lock at 0 over a write of 1; a lock that such a write reopens fails the compare.'''
+          checks: ["the CSR checker"]
+          why: '''The CSR checker predicts each lock as `rw0c`, which keeps a closed lock at 0 over a write of 1; a lock that such a write reopens fails the compare.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1336,8 +1373,8 @@
           ]
           kind: "spec"
           testpoint: "fpv_csr_rw"
-          checks: ["CHK_REGWEN_02 locked read-back holds (assert_Regwen_LockedReadBackHolds)"]
-          why: '''The generated register checker holds each register whose lock reads 0 over every write to it; a register that takes such a write fails it. The attribute registers, whose value the pinmux supplies, are decided by _locked read-back holds_ (CHK_REGWEN_02) on every pad, a JTAG pad a TAP owns included: a locked attribute register whose read-back changes fails it.'''
+          checks: ["locked read-back holds (assert_Regwen_LockedReadBackHolds)", "the CSR checker"]
+          why: '''The CSR checker holds a register whose lock reads 0 over writes; _locked read-back holds_ decides the attribute registers.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1352,8 +1389,8 @@
           ]
           kind: "spec"
           testpoint: "regwen"
-          checks: ["CHK_REGWEN_01 locked attribute holds (assert_Regwen_LockedAttributeHolds)"]
-          why: '''It compares the pad's attribute output in each cycle its lock is 0 with the output in the next cycle, on a pad that is not a JTAG pad a TAP owns. Any change, from a write or from anything else, fails it.'''
+          checks: ["locked attribute holds (assert_Regwen_LockedAttributeHolds)"]
+          why: '''It holds the pad's attribute output over every cycle its lock is closed, on a pad no TAP owns.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1368,8 +1405,8 @@
           ]
           kind: "spec"
           testpoint: "regwen"
-          checks: ["CHK_REGWEN_02 locked read-back holds (assert_Regwen_LockedReadBackHolds)"]
-          why: '''It compares what the pad's attribute register reads back in each cycle its lock is 0 with the read-back in the next cycle, on every pad, a JTAG pad a TAP owns included. A locked register that takes a write, whole or in part, fails it.'''
+          checks: ["locked read-back holds (assert_Regwen_LockedReadBackHolds)"]
+          why: '''It holds each pad's read-back over every cycle its lock is closed, an owned JTAG pad included.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1380,20 +1417,20 @@
     {
       name: '''Register block and bus'''
       conditions: [
-        '''a "failed request" is a request whose command integrity code does not match, or a write whose data integrity code does not match ([Usage of User Bits](hw/ip/tlul/README.md#usage-of-user-bits): the data code covers "the write data"). A read whose only mismatch is in its data code is not a failed request, and no row checks its response or its alert. The "in-band reset" is the alert handler's re-initialization, during which it puts a signal integrity error on its ping and acknowledge pairs on purpose ([Employed Solution](hw/top_earlgrey/ip_autogen/alert_handler/doc/theory_of_operation.md#employed-solution)). The sender's answer to it, a signal integrity error on `alert_tx_o` and then a return to idle ([Employed Solution](hw/top_earlgrey/ip_autogen/alert_handler/doc/theory_of_operation.md#employed-solution)), has no row: the sender is the shared primitive `prim_alert_sender` (`rtl/pinmux.sv`:143-147), whose own upstream FPV drives the in-band reset and checks the return to idle (`hw/ip/prim/fpv/tb/prim_alert_rxtx_*`, `InBandInitFromReceiverToSender_A`). The alert rows read `alert_tx_o`, with an alert handler. An "illegal combination of address, size and mask" is a request whose address, size and mask do not correspond as TileLink requires (TileLink 1.9.3 p. 49-51: "a_size, a_address and a_mask are required to correspond with one another"): an address not aligned to its size (p. 51: "a_address must be aligned to a_size"), a size above 2, a mask bit set on a byte lane outside the access, or a `PutFullData` whose mask leaves a lane of the access 0. [Explicit Error Cases](hw/ip/tlul/README.md#explicit-error-cases) lists the last three "for example"; the unaligned address is verification's reading.'''
+        '''a "failed request" is one whose command integrity code does not match, or a write whose data integrity code does not match ([Usage of User Bits](hw/ip/tlul/README.md#usage-of-user-bits)). No row checks the response or the alert of a read whose only mismatch is in its data code. The "in-band reset" is the alert handler's re-initialization. During it, the handler puts a signal integrity error on its ping and acknowledge pairs on purpose ([Employed Solution](hw/top_earlgrey/ip_autogen/alert_handler/doc/theory_of_operation.md#employed-solution)). An "illegal combination of address, size and mask" is an address not aligned to its size, a size above 2, or a mask bit set outside the access. It is also a `PutFullData` mask with a lane of the access at 0.'''
       ]
       requirements: [
         {
           name: REQ_REG_01a
-          desc: '''Every register field shall take software's reads and writes as the access type of its register description entry says, for every request not answered with an error and, for a write, while the lock of its register reads 1 or it has no lock.'''
+          desc: '''Every register field shall act as its access type says on software reads and writes answered without an error, a write while its lock reads 1 or it has none.'''
           source: [
             '''the register description: each field's `swaccess`, e.g. !!MIO_PAD_SLEEP_STATUS `swaccess: "rw0c"`'''
             '''[Configuration and Register Definition File Format](util/reggen/README.md#configuration-and-register-definition-file-format)'''
           ]
           kind: "spec"
           testpoint: "fpv_csr_rw"
-          checks: ["CHK_PAD_ATTR_10 read-back changes only on a write (assert_PadAttr_ReadBackChangesOnlyOnAWrite)"]
-          why: '''The generated register checker predicts each field from its access type and each request whose integrity codes are correct, and compares the field and every read with it; a field that takes a write its type or a closed lock refuses fails it. The attribute registers keep no value of their own (the pinmux supplies it), so their storage is decided by _read-back changes only on a write_ (CHK_PAD_ATTR_10): a read-back that changes with no accepted write to the pad's attribute register before it fails it. A write refused for its integrity code and the hardware set of a sleep status bit are left to the pinmux's own bus and sleep checks.'''
+          checks: ["read-back changes only on a write (assert_PadAttr_ReadBackChangesOnlyOnAWrite)", "the CSR checker"]
+          why: '''The CSR checker predicts each field from its access type, the pad_attr check the attribute registers.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1408,8 +1445,8 @@
           ]
           kind: "spec"
           testpoint: "fpv_csr_rw"
-          checks: ["the generated CSR checker"]
-          why: '''After reset the generated register checker expects each field at its reset value; a field that leaves reset with another value fails the first compare. The attribute registers, whose value the pinmux supplies, are left to _reset attributes_ (CHK_PAD_ATTR_09).'''
+          checks: ["the CSR checker"]
+          why: '''After reset the CSR checker expects each field at its reset value; _reset attributes_ decides the attribute registers.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1423,8 +1460,8 @@
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_01 device rules (assert_Bus_DeviceRules)"]
-          why: '''The TL-UL VIP's device rules match each response on the pinmux's port to an open request. A request left without a response, or a second response to one request, fails them.'''
+          checks: ["device rules (assert_Bus_DeviceRules)"]
+          why: '''The TL-UL ABVIP's device rules match each response on the pinmux's port to one open request.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1438,8 +1475,8 @@
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_01 device rules (assert_Bus_DeviceRules)"]
-          why: '''The TL-UL VIP's device rules hold every response to the TL-UL handshake and compare its `d_source` with its request's `a_source`. A response that carries another source ID fails them.'''
+          checks: ["device rules (assert_Bus_DeviceRules)"]
+          why: '''The TL-UL ABVIP's device rules compare each response's `d_source` with its request's `a_source`.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1447,15 +1484,15 @@
         }
         {
           name: REQ_BUS_01c
-          desc: '''The pinmux shall answer with an error only a request that fails its integrity check, has an undefined opcode, has an illegal combination of address, size and mask, is a write of 8 or 16 bits not aligned to a word, is a write narrower than its register, or targets an address no register maps; a read whose only mismatch is in its data integrity code may get either answer.'''
+          desc: '''Only a failed request, a case of `REQ_BUS_10a` to `REQ_BUS_10d` or one to an address no register maps shall get an error.'''
           source: [
             '''[Explicit Error Cases](hw/ip/tlul/README.md#explicit-error-cases)'''
             '''[Error responses](util/reggen/README.md#error-responses)'''
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_02 errors as the register checker predicts"]
-          why: '''It requires `d_error` 1 on a request that is not a failed request exactly when one of the listed causes holds, as the generated register checker's error checks predict; a read whose only fault is its data integrity code may get either answer, so the check leaves it out. A good request answered with an error fails it; a failed request is a listed cause, so its error never does.'''
+          checks: ["errors as the register checker predicts", "the CSR checker"]
+          why: '''The CSR checker's error checks require `d_error` 1 on a request not failed exactly for a listed cause.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1470,8 +1507,8 @@
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_03 response codes correct (assert_Bus_ResponseCodesCorrect)"]
-          why: '''It recomputes the response code from each response's opcode, size and error with the encoder both ends of the link share, and compares it with the code sent. A code over other fields, or a stale one, fails it.'''
+          checks: ["response codes correct (assert_Bus_ResponseCodesCorrect)"]
+          why: '''It recomputes the response code from each response's opcode, size and error with the shared encoder and compares it with the code sent.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1486,8 +1523,8 @@
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_03 response codes correct (assert_Bus_ResponseCodesCorrect)"]
-          why: '''It recomputes the data code over each response's data with the encoder both ends of the link share, and compares it with the code sent. A code computed over other data fails it.'''
+          checks: ["response codes correct (assert_Bus_ResponseCodesCorrect)"]
+          why: '''It recomputes the data code over each response's data with the shared encoder and compares it with the code sent.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1502,8 +1539,8 @@
           ]
           kind: "RTL"
           testpoint: "bus"
-          checks: ["CHK_BUS_04 failed request errors (assert_Bus_FailedRequestErrors)"]
-          why: '''It requires `d_error` 1 on the response to every failed request: a bad command code, or a write with a bad data code. A design that answers a tampered request as a good one fails it.'''
+          checks: ["failed request errors (assert_Bus_FailedRequestErrors)"]
+          why: '''It requires `d_error` 1 on the response to every failed request.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1517,8 +1554,8 @@
           ]
           kind: "RTL"
           testpoint: "bus"
-          checks: ["CHK_BUS_05 failed write changes nothing (assert_Bus_FailedWriteChangesNothing)"]
-          why: '''It holds every register over a failed write, the attribute registers by their read-back; a status bit takes only its hardware set. An AON field with an earlier write still crossing is left to _no change without a write_ (CHK_WAKEUP_SYNC_02), which lets it take only that write; a failed write that lands fails one of the two.'''
+          checks: ["failed write changes nothing (assert_Bus_FailedWriteChangesNothing)"]
+          why: '''It holds every register over a failed write, but for an AON field taking an earlier write not yet landed.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1533,8 +1570,8 @@
           ]
           kind: "spec"
           testpoint: "alert"
-          checks: ["CHK_ALERT_01 failed request alerts (assert_Alert_FailedRequestAlerts)"]
-          why: '''It requires an alert event on `alert_tx_o` within 40 cycles of every failed request, the alert handler answering by the alert protocol. A design that ignores a tampered request, or alerts late, fails it.'''
+          checks: ["failed request alerts (assert_Alert_FailedRequestAlerts)"]
+          why: '''It requires an alert event on `alert_tx_o` within 40 cycles of every failed request.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -1549,8 +1586,8 @@
           ]
           kind: "spec"
           testpoint: "alert"
-          checks: ["CHK_ALERT_02 fatal alert repeats (assert_Alert_FatalAlertRepeats)"]
-          why: '''After a failed request it requires an alert event within 40 cycles of every cycle, until reset. A sender that stops after one event, or after the handler's answer, fails it.'''
+          checks: ["fatal alert repeats (assert_Alert_FatalAlertRepeats)"]
+          why: '''After a failed request it requires an alert event within 40 cycles of every cycle, until reset.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -1560,14 +1597,14 @@
           name: REQ_BUS_07
           desc: '''Outside the alert handler's in-band reset, a write of 1 to `ALERT_TEST` bit 0 not answered with an error, while its bit 31 is 1, shall send one alert event.'''
           source: [
-            '''`doc/registers.md`:668: "Write 1 to trigger one alert event of this kind."'''
+            '''The register page says of bit 0: "Write 1 to trigger one alert event of this kind." (!!ALERT_TEST)'''
             '''[Test Alert Register Creation](doc/contributing/hw/comportability/README.md#test-alert-register-creation)'''
             '''[Employed Solution](hw/top_earlgrey/ip_autogen/alert_handler/doc/theory_of_operation.md#employed-solution)'''
           ]
           kind: "spec"
           testpoint: "alert"
-          checks: ["CHK_ALERT_03 test sends an event (assert_Alert_TestSendsAnEvent)", "CHK_ALERT_04 no alert without a cause (assert_Alert_NoAlertWithoutACause)"]
-          why: '''The check _test sends an event_ (CHK_ALERT_03) requires each alert test's credit to be used up by an alert event within 40 cycles; _no alert without a cause_ (CHK_ALERT_04) lets each event use up one credit, so one test gives one event. A lost test fails _test sends an event_, and a second event for one test fails _no alert without a cause_.'''
+          checks: ["test sends an event (assert_Alert_TestSendsAnEvent)", "no alert without a cause (assert_Alert_NoAlertWithoutACause)"]
+          why: '''Each alert test needs an event within 40 cycles, and each event uses up one test credit, so one test gives one event.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -1577,13 +1614,13 @@
           name: REQ_BUS_08
           desc: '''Outside the alert handler's in-band reset, while `ALERT_TEST` bit 31 is 0, a write to its bit 0 that is not a failed request shall send no alert.'''
           source: [
-            '''`doc/registers.md`:666: "Write 0 to disable alert testing until the next reset."'''
+            '''The register page says of bit 31: "Write 0 to disable alert testing until the next reset." (!!ALERT_TEST)'''
             '''[Employed Solution](hw/top_earlgrey/ip_autogen/alert_handler/doc/theory_of_operation.md#employed-solution)'''
           ]
           kind: "spec"
           testpoint: "alert"
-          checks: ["CHK_ALERT_04 no alert without a cause (assert_Alert_NoAlertWithoutACause)"]
-          why: '''A write of bit 0 while bit 31 of `ALERT_TEST` is 0 sets no test credit, so an alert event that follows it with no other cause finds no credit and fails the check. After a read whose only fault is its data integrity code, which may raise the alert or not, the check claims nothing until reset.'''
+          checks: ["no alert without a cause (assert_Alert_NoAlertWithoutACause)"]
+          why: '''A write of bit 0 while bit 31 of `ALERT_TEST` is 0 sets no test credit, so an alert event with no other cause fails it.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -1591,15 +1628,15 @@
         }
         {
           name: REQ_BUS_09
-          desc: '''Outside the alert handler's in-band reset and apart from answering a ping, the fatal alert shall be sent only after a failed request or an alert test; a read whose only mismatch is in its data integrity code may raise it or not.'''
+          desc: '''Outside the in-band reset and apart from ping answers, the fatal alert shall be sent only after a failed request or an alert test.'''
           source: [
             '''[pinmux.hjson `alert_list` fatal_fault](hw/top_darjeeling/ip_autogen/pinmux/data/pinmux.hjson)'''
             '''[Employed Solution](hw/top_earlgrey/ip_autogen/alert_handler/doc/theory_of_operation.md#employed-solution)'''
           ]
           kind: "spec"
           testpoint: "alert"
-          checks: ["CHK_ALERT_04 no alert without a cause (assert_Alert_NoAlertWithoutACause)"]
-          why: '''It allows an alert event only after a failed request since reset, or against a ping or test credit, each event using up one credit and a ping's credit lapsing 40 cycles after its ping. An event with no failed request, test or ping behind it fails the check. After a read whose only fault is its data integrity code, which may raise the alert or not, the check claims nothing until reset.'''
+          checks: ["no alert without a cause (assert_Alert_NoAlertWithoutACause)"]
+          why: '''It allows an alert event only after a failed request or against a ping or test credit, one per event.'''
           milestone: "V2S"
           priority: "2"
           security: true
@@ -1614,8 +1651,8 @@
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_02 errors as the register checker predicts"]
-          why: '''The generated register checker's error checks require `d_error` 1 on a request with an undefined opcode, and an error only for a listed cause. A block that serves such a request, or refuses a good one, fails them; the run leaves opcodes free.'''
+          checks: ["errors as the register checker predicts", "the CSR checker"]
+          why: '''The CSR checker's error checks require `d_error` 1 on an undefined opcode, which the run leaves free.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1623,15 +1660,15 @@
         }
         {
           name: REQ_BUS_10b
-          desc: '''A request with an *illegal combination of address, size and mask*, as the Scope above defines it, shall get an error response.'''
+          desc: '''A request with an *illegal combination of address, size and mask*, as the Conditions above defines it, shall get an error response.'''
           source: [
             '''[Explicit Error Cases](hw/ip/tlul/README.md#explicit-error-cases)'''
             '''TileLink 1.9.3 p. 51: "a_address must be aligned to a_size."'''
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_02 errors as the register checker predicts"]
-          why: '''The generated register checker's error checks require `d_error` 1 on a request with a size above 2, a lane outside the access, a full write with a lane at 0, or an address not aligned to its size. Masks are contiguous in the run, so the checker's either-way rule for a non-contiguous mask never applies; a block that answers such a request without an error fails them.'''
+          checks: ["errors as the register checker predicts", "the CSR checker"]
+          why: '''The CSR checker's error checks require `d_error` 1 on an illegal fit, masks kept contiguous in the run.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1646,8 +1683,8 @@
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_02 errors as the register checker predicts"]
-          why: '''The generated register checker's error checks require `d_error` 1 on an 8 or 16 bit write to an address not aligned to a word. A block that answers such a write without an error fails them.'''
+          checks: ["errors as the register checker predicts", "the CSR checker"]
+          why: '''The CSR checker's error checks require `d_error` 1 on an 8 or 16 bit write not aligned to a word.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1661,8 +1698,8 @@
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_02 errors as the register checker predicts"]
-          why: '''The generated register checker's error checks require `d_error` 1 on a write narrower than its register, the register's width set by its fields in the register description. A block that answers such a write without an error fails them.'''
+          checks: ["errors as the register checker predicts", "the CSR checker"]
+          why: '''The CSR checker's error checks require `d_error` 1 on a write narrower than its register.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1677,8 +1714,8 @@
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_02 errors as the register checker predicts"]
-          why: '''The generated register checker's error checks require `d_error` 1 on a request to an address within the decoded bits that no register maps. A block that answers such a request without an error fails them.'''
+          checks: ["errors as the register checker predicts", "the CSR checker"]
+          why: '''The CSR checker's error checks require `d_error` 1 on an address no register maps.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1693,8 +1730,8 @@
           ]
           kind: "spec"
           testpoint: "bus"
-          checks: ["CHK_BUS_06 error write changes nothing"]
-          why: '''It holds every register over a write answered with an error: the generated register checker the stored fields, _read-back changes only on a write_ (CHK_PAD_ATTR_10) the attribute registers it leaves out (`hwext`), and _no change without a write_ (CHK_WAKEUP_SYNC_02) and _no clear without a write_ (CHK_WAKEUP_SYNC_04) the AON fields and cause bits. A block that lets such a write land fails one of them.'''
+          checks: ["error write changes nothing", "the CSR checker"]
+          why: '''An error write is no accepted write, so the CSR checker and the attribute and AON no-write checks hold every register.'''
           milestone: "V2"
           priority: "2"
           security: true
@@ -1705,14 +1742,10 @@
     {
       name: '''Wakeup detectors'''
       conditions: [
-        '''`w` is a detector (0 to 7); a cycle is a `clk_aon_i` cycle (watched signal, forwarded value: terms).'''
-        '''Register values are those the AON logic holds once a write has crossed.'''
-        '''The rows hold with scan mode not True.'''
-        '''They hold with the mode unchanged while enabled; the other fields may change while enabled.'''
-        '''They hold whatever `sleep_en_i` does.'''
-        '''They hold whatever `clk_i` does, stopped included: in sleep "only the wakeup detector logic will be actively clocked" ([Retention and Wakeup Features](hw/top_darjeeling/ip_autogen/pinmux/doc/theory_of_operation.md#retention-and-wakeup-features)).'''
-        '''They are checked from the filter's fourth sample after `rst_aon_ni`.'''
-        '''The timed rows (`REQ_WKUP_09a` to `REQ_WKUP_10b`) hold for `CNT_TH` 1 and above: no spec says what a timed detector does with 0, the reset value.'''
+        '''`w` is a detector (0 to 7); a cycle is a `clk_aon_i` cycle; the watched signal and the forwarded value are defined in the Terms.'''
+        '''Register values are those the AON logic holds once a write has crossed. The rows hold with the mode unchanged while enabled, the other fields free to change.'''
+        '''They hold whatever `sleep_en_i`, `clk_i` (stopped included) and the scan mode do, except scan mode True while the detector watches a scan clock pad.'''
+        '''They are checked from the filter's fourth sample after `rst_aon_ni`. The timed rows (`REQ_WKUP_09a` to `REQ_WKUP_10b`) hold for `CNT_TH` 1 and above.'''
       ]
       requirements: [
         {
@@ -1728,8 +1761,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_03 edge sets cause (assert_Wakeup_EdgeSetsCause)", "CHK_WAKEUP_04 timed high sets cause (assert_Wakeup_TimedHighSetsCause)", "CHK_WAKEUP_05 timed low sets cause (assert_Wakeup_TimedLowSetsCause)", "CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''The checks read the pattern on the forwarded value of the MIO pad or constant the select names: a detector on another pad misses this pad's edge or fires on the other's, and a constant read at the wrong level misses a timed detection or makes a false one.'''
+          checks: ["edge sets cause (assert_Wakeup_EdgeSetsCause)", "timed high sets cause (assert_Wakeup_TimedHighSetsCause)", "timed low sets cause (assert_Wakeup_TimedLowSetsCause)", "no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''The checks watch the MIO pad or constant the select names.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1746,8 +1779,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_03 edge sets cause (assert_Wakeup_EdgeSetsCause)", "CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''The checks read the pattern on the forwarded value of the DIO pad the select names: a detector on another pad misses an edge of this one or fires on an edge of the other.'''
+          checks: ["edge sets cause (assert_Wakeup_EdgeSetsCause)", "no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''The checks watch the forwarded value of the DIO pad the select names.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1762,8 +1795,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_05 timed low sets cause (assert_Wakeup_TimedLowSetsCause)", "CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''A select that names no pad watches 0: in mode 4 a detector that reads 1 never fires, and one that reads a pad fires on its edges or its level 1, which no pattern of 0 answers.'''
+          checks: ["timed low sets cause (assert_Wakeup_TimedLowSetsCause)", "no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''The checks watch 0 on a select that names no pad, so mode 4 must fire and no edge may set the bit.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1777,8 +1810,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_03 edge sets cause (assert_Wakeup_EdgeSetsCause)", "CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''With `FILTER` 0 the forwarded value is the pad as sampled: a detector that drops a sample misses an edge, and one that sees a level the pad never had fires with no pattern; a delay of up to 4 cycles is allowed.'''
+          checks: ["edge sets cause (assert_Wakeup_EdgeSetsCause)", "no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''With `FILTER` 0 the forwarded value the checks watch is the pad as sampled, up to 4 cycles late.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1792,8 +1825,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_03 edge sets cause (assert_Wakeup_EdgeSetsCause)", "CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''A level held for 4 samples is an edge of the forwarded value and a 3-sample glitch is none: a filter that needs more samples misses the 4-sample level, and one that needs fewer fires on the glitch.'''
+          checks: ["edge sets cause (assert_Wakeup_EdgeSetsCause)", "no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''A level held for 4 samples is an edge of the forwarded value, and a 3-sample glitch is none.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1808,8 +1841,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_01 posedge sets cause (assert_Wakeup_PosedgeSetsCause)"]
-          why: '''It wants a hardware write of 1 to bit `w` of `WKUP_CAUSE` within 8 cycles of each rise of the forwarded value at which `EN` is 1 and stays 1 for 4 more cycles: a detector that misses a rise, a one-sample pulse included, fails it.'''
+          checks: ["posedge sets cause (assert_Wakeup_PosedgeSetsCause)"]
+          why: '''It wants a hardware write of 1 within 8 cycles of each rise of the forwarded value, a one-sample pulse included, with `EN` 1 then and 4 cycles on.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1824,8 +1857,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''In mode 0 it refuses a hardware write of 1 to a cause bit at 0 that no rise of the forwarded value, seen up to 4 cycles late with `EN` 1, answers: a detector that also fires on a fall fails it.'''
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''In mode 0 it refuses a hardware write of 1 to a cause bit at 0 that no rise of the forwarded value, seen up to 4 cycles late with `EN` 1, answers.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1839,8 +1872,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_02 negedge sets cause (assert_Wakeup_NegedgeSetsCause)"]
-          why: '''It wants a hardware write of 1 to bit `w` of `WKUP_CAUSE` within 8 cycles of each fall of the forwarded value at which `EN` is 1 and stays 1 for 4 more cycles: a detector that misses a fall fails it.'''
+          checks: ["negedge sets cause (assert_Wakeup_NegedgeSetsCause)"]
+          why: '''It wants a hardware write of 1 to bit `w` within 8 cycles of each fall of the forwarded value with `EN` 1 then and for 4 more cycles.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1854,7 +1887,7 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)"]
           why: '''In mode 1 it refuses a hardware write of 1 to a cause bit at 0 that no fall of the forwarded value answers: a detector that fires on a rise fails it.'''
           milestone: "V2"
           priority: "1"
@@ -1869,8 +1902,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_03 edge sets cause (assert_Wakeup_EdgeSetsCause)"]
-          why: '''It wants a hardware write of 1 to bit `w` of `WKUP_CAUSE` within 8 cycles of each rise and each fall of the forwarded value at which `EN` is 1 and stays 1 for 4 more cycles: a detector that sees only one direction fails it.'''
+          checks: ["edge sets cause (assert_Wakeup_EdgeSetsCause)"]
+          why: '''It wants a hardware write of 1 to bit `w` within 8 cycles of each rise and each fall of the forwarded value with `EN` 1 then and for 4 more cycles.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1884,8 +1917,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''In mode 2 it refuses a hardware write of 1 to a cause bit at 0 that no rise or fall of the forwarded value answers: a detector that fires on a steady pad fails it.'''
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''In mode 2 it refuses a hardware write of 1 to a cause bit at 0 that no rise or fall of the forwarded value answers.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1902,8 +1935,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_04 timed high sets cause (assert_Wakeup_TimedHighSetsCause)"]
-          why: '''It counts the cycles in a row with `EN` 1 and the forwarded value 1, and asks for a hardware write of 1 to the cause bit within 8 cycles once the count reaches `CNT_TH` + 1, the later of the two counts, `CNT_TH` or `CNT_TH` + 1, that the specification's wording allows: a detector that never fires, or fires later, fails it. It makes no claim on a level that began while `EN` was 0, as no specification says whether those cycles count.'''
+          checks: ["timed high sets cause (assert_Wakeup_TimedHighSetsCause)"]
+          why: '''It wants the cause bit set within 8 cycles of the forwarded value 1 for `CNT_TH` + 1 cycles in a row with `EN` 1, the later count allowed.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1918,8 +1951,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''In mode 3 it refuses a hardware write of 1 to the cause bit while the forwarded value has been 1 for fewer than `CNT_TH` cycles in a row with `EN` 1: a detector that fires early fails it. It makes no claim on a level that began while `EN` was 0, as no specification says whether those cycles count.'''
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''In mode 3 it refuses a set of the cause bit while the forwarded value has been 1 for fewer than `CNT_TH` cycles in a row with `EN` 1.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1936,8 +1969,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_05 timed low sets cause (assert_Wakeup_TimedLowSetsCause)"]
-          why: '''It counts the cycles in a row with `EN` 1 and the forwarded value 0, and asks for a hardware write of 1 to the cause bit within 8 cycles once the count reaches `CNT_TH` + 1, the later of the two counts, `CNT_TH` or `CNT_TH` + 1, that the specification's wording allows: a detector that never fires, or fires later, fails it. It makes no claim on a level that began while `EN` was 0, as no specification says whether those cycles count.'''
+          checks: ["timed low sets cause (assert_Wakeup_TimedLowSetsCause)"]
+          why: '''It wants the cause bit set within 8 cycles of the forwarded value 0 for `CNT_TH` + 1 cycles in a row with `EN` 1, the later count allowed.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1952,8 +1985,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''In mode 4 it refuses a hardware write of 1 to the cause bit while the forwarded value has been 0 for fewer than `CNT_TH` cycles in a row with `EN` 1: a detector that fires early fails it. It makes no claim on a level that began while `EN` was 0, as no specification says whether those cycles count.'''
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''In mode 4 it refuses a set of the cause bit while the forwarded value has been 0 for fewer than `CNT_TH` cycles in a row with `EN` 1.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1967,8 +2000,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_01 posedge sets cause (assert_Wakeup_PosedgeSetsCause)", "CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''Both checks read `MODE` 5, 6 and 7 as mode 0: a detector there that misses a rise fails _posedge sets cause_ (CHK_WAKEUP_01), and one that fires on a fall or a level fails _no false cause_ (CHK_WAKEUP_06).'''
+          checks: ["posedge sets cause (assert_Wakeup_PosedgeSetsCause)", "no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''Both checks read `MODE` 5, 6 and 7 as mode 0.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1982,8 +2015,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)"]
-          why: '''It refuses a hardware write of 1 to a cause bit at 0 that no pattern seen with `EN` 1 answers: a disabled detector that fires on its pattern fails it. An edge within 4 cycles of an enable change may set the bit or not.'''
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)"]
+          why: '''It refuses a hardware write of 1 to a cause bit at 0 that no pattern with `EN` 1 answers; an edge within 4 cycles of an enable change may set it or not.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -1997,8 +2030,8 @@
           ]
           kind: "RTL"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)", "CHK_WAKEUP_01 posedge sets cause (assert_Wakeup_PosedgeSetsCause)"]
-          why: '''The checks sample the pad whatever `EN` is, so a pad steady at 1 before the enable is no rise: a detector whose sampling restarts at the enable sees one and sets the cause bit, which _no false cause_ (CHK_WAKEUP_06) refuses. The check _posedge sets cause_ (CHK_WAKEUP_01) wants a rise that completes just after the enable to be detected.'''
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)", "posedge sets cause (assert_Wakeup_PosedgeSetsCause)"]
+          why: '''The checks sample the pad whatever `EN` is: a pad at 1 before the enable is no rise, a rise just after it is one.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -2012,8 +2045,8 @@
           ]
           kind: "RTL"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)", "CHK_WAKEUP_01 posedge sets cause (assert_Wakeup_PosedgeSetsCause)"]
-          why: '''The checks' filter counts samples whatever `EN` is: a filter that restarts at the enable turns a pad steady at 1 into a new rise and sets the cause bit, which _no false cause_ (CHK_WAKEUP_06) refuses. The check _posedge sets cause_ (CHK_WAKEUP_01) wants a rise whose 4 samples span the enable to be detected.'''
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)", "posedge sets cause (assert_Wakeup_PosedgeSetsCause)"]
+          why: '''The checks' filter runs whatever `EN` is: a rise whose 4 samples span the enable counts, a pad at 1 before it does not.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -2030,8 +2063,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_01 posedge sets cause (assert_Wakeup_PosedgeSetsCause)", "CHK_WAKEUP_02 negedge sets cause (assert_Wakeup_NegedgeSetsCause)", "CHK_WAKEUP_03 edge sets cause (assert_Wakeup_EdgeSetsCause)", "CHK_WAKEUP_04 timed high sets cause (assert_Wakeup_TimedHighSetsCause)", "CHK_WAKEUP_05 timed low sets cause (assert_Wakeup_TimedLowSetsCause)", "CHK_WAKEUP_07 set lands (assert_Wakeup_SetLands)"]
-          why: '''The five mode checks (CHK_WAKEUP_01 to CHK_WAKEUP_05) want a hardware write of 1 to bit `w` within 8 cycles of each detection, and _set lands_ (CHK_WAKEUP_07) wants the bit 1 in the next cycle: a detection that never reaches bit `w`, or reaches another bit, fails them. A set in the cycle software's clear of the bit lands ends 0, as `REQ_WKUP_17` says.'''
+          checks: ["posedge sets cause (assert_Wakeup_PosedgeSetsCause)", "negedge sets cause (assert_Wakeup_NegedgeSetsCause)", "edge sets cause (assert_Wakeup_EdgeSetsCause)", "timed high sets cause (assert_Wakeup_TimedHighSetsCause)", "timed low sets cause (assert_Wakeup_TimedLowSetsCause)", "set lands (assert_Wakeup_SetLands)"]
+          why: '''Set within 8 cycles; bit 1 a cycle later.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -2046,8 +2079,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup"
-          checks: ["CHK_WAKEUP_06 no false cause (assert_Wakeup_NoFalseCause)", "CHK_WAKEUP_08 cause rises only on a set (assert_Wakeup_CauseRisesOnlyOnASet)"]
-          why: '''The check _no false cause_ (CHK_WAKEUP_06) refuses a hardware write of 1 to bit `w` at 0 that no pattern of detector `w` answers, and _cause rises only on a set_ (CHK_WAKEUP_08) refuses a rise of bit `w` with no such write in the cycle before: a set with no detection, a detection wired to another bit, or a bit raised by a software write of 1 fails one of them.'''
+          checks: ["no false cause (assert_Wakeup_NoFalseCause)", "cause rises only on a set (assert_Wakeup_CauseRisesOnlyOnASet)"]
+          why: '''Only a pattern of detector `w` may set bit `w`, and bit `w` rises only on a set.'''
           milestone: "V2"
           priority: "1"
           security: false
@@ -2064,8 +2097,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup_cause"
-          checks: ["CHK_WAKEUP_CAUSE_02 cause holds until cleared (assert_WakeupCause_CauseHoldsUntilCleared)", "CHK_WAKEUP_CAUSE_01 hardware only sets cause (assert_WakeupCause_HardwareOnlySetsCause)"]
-          why: '''The check _cause holds until cleared_ (CHK_WAKEUP_CAUSE_02) allows a fall of the bit only in the cycle after software's clear of it lands or at `rst_aon_ni`, and _hardware only sets cause_ (CHK_WAKEUP_CAUSE_01) refuses a hardware write of 0 to the bit at 1 with no clear landing. A bit dropped when its detector is disabled, changes mode or sees its pad change fails _cause holds until cleared_, and _hardware only sets cause_ too when hardware writes the 0.'''
+          checks: ["cause holds until cleared (assert_WakeupCause_CauseHoldsUntilCleared)", "hardware only sets cause (assert_WakeupCause_HardwareOnlySetsCause)"]
+          why: '''The bit falls only on a landed clear or at `rst_aon_ni`; hardware writes it 0 only as a clear lands.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2081,8 +2114,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup_cause"
-          checks: ["CHK_WAKEUP_CAUSE_03 set and clear together (assert_WakeupCause_SetAndClearTogether)"]
-          why: '''It takes every cycle in which a hardware write of 1 to a cause bit meets software's clear of the same bit landing, and wants the bit 0 in the next cycle: a register that lets the set win keeps the bit at 1 and fails it.'''
+          checks: ["set and clear together (assert_WakeupCause_SetAndClearTogether)"]
+          why: '''When a hardware write of 1 to a cause bit meets a landing clear of that bit, it wants the bit 0 in the next cycle.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2099,8 +2132,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup_cause"
-          checks: ["CHK_WAKEUP_CAUSE_04 request follows cause (assert_WakeupCause_RequestFollowsCause)"]
-          why: '''It wants `pin_wkup_req_o` 1 within 2 cycles of any cause bit rising, and 1 while any cause bit has held 1 for 3 cycles in a row: a request that leaves out one of the eight bits, or drops while a bit is still 1, fails it.'''
+          checks: ["request follows cause (assert_WakeupCause_RequestFollowsCause)"]
+          why: '''It wants `pin_wkup_req_o` 1 within 2 cycles of any cause bit rising, and while any has held 1 for 3 cycles in a row.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2117,8 +2150,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup_cause"
-          checks: ["CHK_WAKEUP_CAUSE_05 no request without cause (assert_WakeupCause_NoRequestWithoutCause)"]
-          why: '''It wants `pin_wkup_req_o` 0 once every cause bit has been 0 for 3 cycles in a row: a request that stays 1 after the last bit is cleared, or rises on a pattern that set no bit, fails it.'''
+          checks: ["no request without cause (assert_WakeupCause_NoRequestWithoutCause)"]
+          why: '''It wants `pin_wkup_req_o` 0 once every cause bit has been 0 for 3 cycles in a row.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2136,8 +2169,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup_sync"
-          checks: ["CHK_WAKEUP_SYNC_01 write lands (assert_WakeupSync_WriteLands)", "CHK_WAKEUP_SYNC_02 no change without a write (assert_WakeupSync_NoChangeWithoutAWrite)"]
-          why: '''For `EN`, _write lands_ (CHK_WAKEUP_SYNC_01) wants the AON copy to hold the written value within 4 cycles of each write accepted with its lock open, until the next one lands, and _no change without a write_ (CHK_WAKEUP_SYNC_02) allows a change only to a written value not yet landed. An enable write lost, late or landing another value fails _write lands_; a change no write explains fails _no change without a write_.'''
+          checks: ["write lands (assert_WakeupSync_WriteLands)", "no change without a write (assert_WakeupSync_NoChangeWithoutAWrite)"]
+          why: '''For `EN`, each accepted write lands within 4 cycles, and only a write not yet landed changes the field.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2155,8 +2188,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup_sync"
-          checks: ["CHK_WAKEUP_SYNC_01 write lands (assert_WakeupSync_WriteLands)", "CHK_WAKEUP_SYNC_02 no change without a write (assert_WakeupSync_NoChangeWithoutAWrite)"]
-          why: '''For `MODE`, `FILTER` and `MIODIO`, each its own field, _write lands_ (CHK_WAKEUP_SYNC_01) wants the AON copy to hold the written value within 4 cycles of each write accepted with its lock open, until the next one lands, and _no change without a write_ (CHK_WAKEUP_SYNC_02) allows a change only to a written value not yet landed. A configuration write lost, late or landing another value fails _write lands_; a field that changes with no write behind it fails _no change without a write_.'''
+          checks: ["write lands (assert_WakeupSync_WriteLands)", "no change without a write (assert_WakeupSync_NoChangeWithoutAWrite)"]
+          why: '''For `MODE`, `FILTER` and `MIODIO`, each accepted write lands within 4 cycles and only a write not yet landed changes one.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2174,8 +2207,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup_sync"
-          checks: ["CHK_WAKEUP_SYNC_01 write lands (assert_WakeupSync_WriteLands)", "CHK_WAKEUP_SYNC_02 no change without a write (assert_WakeupSync_NoChangeWithoutAWrite)"]
-          why: '''For `CNT_TH`, _write lands_ (CHK_WAKEUP_SYNC_01) wants the AON copy to hold the written value within 4 cycles of each write accepted with its lock open, until the next one lands, and _no change without a write_ (CHK_WAKEUP_SYNC_02) allows a change only to a written value not yet landed. A threshold write lost, late or landing another value fails _write lands_; a threshold that changes with no write behind it fails _no change without a write_.'''
+          checks: ["write lands (assert_WakeupSync_WriteLands)", "no change without a write (assert_WakeupSync_NoChangeWithoutAWrite)"]
+          why: '''For `CNT_TH`, each accepted write lands within 4 cycles, and only a write not yet landed changes the field.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2193,8 +2226,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup_sync"
-          checks: ["CHK_WAKEUP_SYNC_03 clear lands (assert_WakeupSync_ClearLands)", "CHK_WAKEUP_SYNC_05 landed clear clears cause (assert_WakeupSync_LandedClearClearsCause)", "CHK_WAKEUP_SYNC_04 no clear without a write (assert_WakeupSync_NoClearWithoutAWrite)"]
-          why: '''The check _clear lands_ (CHK_WAKEUP_SYNC_03) wants each software clear of bit `w` of `WKUP_CAUSE` to land in the AON logic within 10 cycles, _landed clear clears cause_ (CHK_WAKEUP_SYNC_05) wants the bit 0 in the cycle after it lands, and _no clear without a write_ (CHK_WAKEUP_SYNC_04) refuses a clear landing with no software clear behind it. A clear lost, late or landing without effect fails _clear lands_ or _landed clear clears cause_; a write of 1 that clears fails _no clear without a write_.'''
+          checks: ["clear lands (assert_WakeupSync_ClearLands)", "landed clear clears cause (assert_WakeupSync_LandedClearClearsCause)", "no clear without a write (assert_WakeupSync_NoClearWithoutAWrite)"]
+          why: '''A clear lands within 10 cycles, the bit 0 a cycle later; none lands without a write.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2208,8 +2241,8 @@
           ]
           kind: "spec"
           testpoint: "wakeup_sync"
-          checks: ["CHK_WAKEUP_SYNC_06 writes land in order (assert_WakeupSync_WritesLandInOrder)"]
-          why: '''It compares the AON cycles in which a configuration write and a later enable write land: an enable that holds before the configuration fails it.'''
+          checks: ["writes land in order (assert_WakeupSync_WritesLandInOrder)"]
+          why: '''It compares the AON cycles in which a configuration write and a later enable write land: the enable may not land first.'''
           milestone: "V2"
           priority: "2"
           security: false
@@ -2223,7 +2256,7 @@
           ]
           kind: "spec"
           testpoint: "wakeup_sync"
-          checks: ["CHK_WAKEUP_SYNC_06 writes land in order (assert_WakeupSync_WritesLandInOrder)"]
+          checks: ["writes land in order (assert_WakeupSync_WritesLandInOrder)"]
           why: '''It compares the AON cycles in which a threshold write and a later enable write land: an enable that holds before the threshold fails it.'''
           milestone: "V2"
           priority: "2"
