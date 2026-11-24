@@ -321,6 +321,9 @@
     { name: "FIFO.CTR.REDUN",
       desc: "The FIFO pointers of several FIFOs are implemented with duplicate counters."
     }
+    { name: "TLUL_FIFO.MEM.REDUN",
+      desc: "The FIFOs in the host TL-UL adapter are duplicated and their outputs compared."
+    }
     { name: "HOST_TL_LC_GATE.FSM.SPARSE",
       desc: "The control FSM inside the TL-UL gating primitive is sparsely encoded."
     }
@@ -514,7 +517,7 @@
     }
     {
       name: "RRAM_CTRL.MEM_PROTECTION"
-      desc: '''For data partitions, SW can designate a memory region of up to 10 regions.
+      desc: '''For data partitions, SW can designate up to 10 regions.
             Each of these regions can contain more than one page, up to a maximum limit (which is 512 in earlgrey).
             For each region, SW can establish the access policy by programming RRAM_CTRL.MP_REGION_CFG.
             In the case of information partitions, the access policy can be configured on a per page basis.
@@ -538,7 +541,11 @@
     {
       name: "RRAM_CTRL.OP.PROTOCOL_CTRL"
       desc: '''As opposed to the host, the RRAM controller can read and write both data and info partitions.
-            It has lower priority than host requests.
+            Simultaneous host and controller requests are arbitrated round-robin.
+            Only one controller operation can be outstanding at a time.
+            While a controller write is in progress, host reads are held off until it completes.
+            While a controller read is outstanding, host reads can still be issued and are interleaved with it.
+            Read responses are returned in the order the requests were issued.
             While an operation is in progress, other HW-initiated requests, i.e. RMA, are held until the operation is finished.
             '''
     }
@@ -562,8 +569,9 @@
       { name: "DIS",
         desc: '''
               Disable RRAM functionality.
-              Each write is merged into both fields.
+              Note: Each write access to this register affects all fields.
               To leave a field unchanged, write MuBi4False to it.
+              Writing any other value to a field that is still MuBi4False sets it, e.g. writing 0 results in an invalid mubi value, which is treated as set.
               ''',
         swaccess: "rw1s",
         hwaccess: "hro",
@@ -588,6 +596,42 @@
                   Otherwise !!FAULT_STATUS.PHY_RELBL_ERR is excluded from the local escalation, to deal with firmware selection during the boot process.
                   The fatal_err alert is raised regardless of this setting.
                   Since this register is rw1s instead of rw, this configuration cannot be reverted.
+                  '''
+            resval: false,
+          },
+          { bits: "11:8",
+            name: "DIS_ALL_REWRITE",
+            mubi: true,
+            desc: '''
+                  Disables all Rewrite operations (!!CONTROL.OP = Rewrite).
+                  Once this field is set to any value other than MuBi4False, every Rewrite operation is rejected by the memory protection, regardless of the target partition and address.
+                  A rejected Rewrite does not modify the RRAM and completes with !!ERR_CODE.MP_ERR set.
+                  Rewrite bypasses the configurable memory protection regions, so trusted firmware should set this field before handing over control to less trusted firmware.
+                  Since this register is rw1s instead of rw, this configuration cannot be reverted once set.
+                  '''
+            resval: false,
+          },
+          { bits: "15:12",
+            name: "DIS_OTP_REWRITE",
+            mubi: true,
+            desc: '''
+                  Disables Rewrite operations (!!CONTROL.OP = Rewrite) to the OTP region of the data partition, i.e. the last NumOtpPages pages including the OTP integrity page.
+                  Once this field is set to any value other than MuBi4False, every Rewrite operation targeting the OTP region is rejected by the memory protection.
+                  A rejected Rewrite does not modify the RRAM and completes with !!ERR_CODE.MP_ERR set.
+                  Since this register is rw1s instead of rw, this configuration cannot be reverted once set.
+                  '''
+            resval: false,
+          },
+          { bits: "19:16",
+            name: "DIS_INFO_REWRITE",
+            mubi: true,
+            desc: '''
+                  Disables Rewrite operations (!!CONTROL.OP = Rewrite) to the info partition.
+                  Once this field is set to any value other than MuBi4False, every Rewrite operation targeting the info partition is rejected by the memory protection.
+                  Emulated info pages reside in the data partition and are therefore not covered by this field.
+                  Only !!DIS.DIS_ALL_REWRITE rejects Rewrites to them.
+                  A rejected Rewrite does not modify the RRAM and completes with !!ERR_CODE.MP_ERR set.
+                  Since this register is rw1s instead of rw, this configuration cannot be reverted once set.
                   '''
             resval: false,
           },

@@ -281,7 +281,6 @@ module chip_earlgrey_cw340 #(
   logic [pinmux_reg_pkg::NDioPads-1:0] dio_oe;
   logic [pinmux_reg_pkg::NDioPads-1:0] dio_in;
 
-  logic                          [3:0] mux_iob_sel;
   logic [pinmux_reg_pkg::NMioPads-1:0] mio_in_raw;
   logic                         [26:0] dio_in_raw;
 
@@ -336,7 +335,7 @@ module chip_earlgrey_cw340 #(
   /////////////////////////
 
   // Only signals going to non-custom pads need to be tied off.
-  logic [66:0] unused_sig;
+  logic [67:0] unused_sig;
   //////////////////////
   // Padring Instance //
   //////////////////////
@@ -433,7 +432,6 @@ module chip_earlgrey_cw340 #(
     .clk_scan_i(padring_scan_clk),
     .scanmode_i(scanmode),
 
-    .mux_iob_sel_i(mux_iob_sel),
     .dio_in_raw_o (dio_in_raw ),
 
     // Chip IOs
@@ -547,7 +545,7 @@ module chip_earlgrey_cw340 #(
         dio_in[DioSpiDeviceSd2],
         dio_in[DioSpiDeviceSd1],
         dio_in[DioSpiDeviceSd0],
-        dio_in[DioSpiHost0Csb],
+        dio_in[DioSpiHost0Csb0],
         dio_in[DioSpiHost0Sck],
         dio_in[DioSpiHost0Sd3],
         dio_in[DioSpiHost0Sd2],
@@ -576,7 +574,7 @@ module chip_earlgrey_cw340 #(
         dio_out[DioSpiDeviceSd2],
         dio_out[DioSpiDeviceSd1],
         dio_out[DioSpiDeviceSd0],
-        dio_out[DioSpiHost0Csb],
+        dio_out[DioSpiHost0Csb0],
         dio_out[DioSpiHost0Sck],
         dio_out[DioSpiHost0Sd3],
         dio_out[DioSpiHost0Sd2],
@@ -605,7 +603,7 @@ module chip_earlgrey_cw340 #(
         dio_oe[DioSpiDeviceSd2],
         dio_oe[DioSpiDeviceSd1],
         dio_oe[DioSpiDeviceSd0],
-        dio_oe[DioSpiHost0Csb],
+        dio_oe[DioSpiHost0Csb0],
         dio_oe[DioSpiHost0Sck],
         dio_oe[DioSpiHost0Sd3],
         dio_oe[DioSpiHost0Sd2],
@@ -634,7 +632,7 @@ module chip_earlgrey_cw340 #(
         dio_attr[DioSpiDeviceSd2],
         dio_attr[DioSpiDeviceSd1],
         dio_attr[DioSpiDeviceSd0],
-        dio_attr[DioSpiHost0Csb],
+        dio_attr[DioSpiHost0Csb0],
         dio_attr[DioSpiHost0Sck],
         dio_attr[DioSpiHost0Sd3],
         dio_attr[DioSpiHost0Sd2],
@@ -731,7 +729,7 @@ module chip_earlgrey_cw340 #(
     .AddClkBuf(0)
   ) clkgen (
     .clk_i(manual_in_io_clk),
-    .rst_ni(manual_in_por_n),
+    .rst_ni(manual_in_por_n), // FPGA reset is solely based on POR_N
     .clk_main_o(clk_main),
     .clk_io_o(clk_io),
     .clk_48MHz_o(clk_usb_48mhz),
@@ -931,12 +929,12 @@ module chip_earlgrey_cw340 #(
 
     // Regular ports (auto-generated)
     .manual_in_por_n_i            (rst_n           ),
+    .manual_in_pora_n_i           (rst_n           ),
     .scanmode_o                   (scanmode        ),
     .scan_en_o                    (                ),
     .scan_rst_n_o                 (                ),
     .usb_io_pu_cal_o              (                ),
     .padmux2ast_i                 (padmux2ast      ),
-    .mux_iob_sel_o                (mux_iob_sel     ),
     .ast_vx_supp_i                (ast_vx_supp     ),
     .ast_obs_i                    (ast_obs         ),
     .ast_adc_a0_a_i               (ast_adc_a0_a    ),
@@ -1017,7 +1015,7 @@ module chip_earlgrey_cw340 #(
     .Width ($bits(clk_trans_idle) + 4)
   ) u_sync_trigger (
     .clk_i (manual_in_io_clk),
-    .rst_ni(manual_in_por_n),
+    .rst_ni(manual_in_por_n), // FPGA reset is solely based on POR_N
     .d_i   ({clk_trans_idle,
              clk_io_div4_trigger_hw_en,
              clk_io_div4_trigger_hw_oe,

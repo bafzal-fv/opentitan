@@ -130,16 +130,16 @@ class keymgr_dpe_common_vseq extends keymgr_dpe_base_vseq;
           $asserton(0, "tb.dut.u_ctrl.DataEn_A");
           $asserton(0, "tb.dut.u_ctrl.DataEnDis_A");
           $asserton(0, "tb.dut.u_ctrl.CntZero_A");
+          $asserton(0, "tb.dut.u_ctrl.CntInRange_A");
           $asserton(0, "tb.dut.u_kmac_if.LastStrb_A");
-          $asserton(0, "tb.dut.KmacDataKnownO_A");
         end else begin
           $assertoff(0, "tb.kmac_if");
           $assertoff(0, "tb.dut.tlul_assert_device.gen_device.gen_d2h.dDataKnown_A");
           $assertoff(0, "tb.dut.u_ctrl.DataEn_A");
           $assertoff(0, "tb.dut.u_ctrl.DataEnDis_A");
           $assertoff(0, "tb.dut.u_ctrl.CntZero_A");
+          $assertoff(0, "tb.dut.u_ctrl.CntInRange_A");
           $assertoff(0, "tb.dut.u_kmac_if.LastStrb_A");
-          $assertoff(0, "tb.dut.KmacDataKnownO_A");
         end
       end
       SecCmPrimSparseFsmFlop: begin

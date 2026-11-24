@@ -58,6 +58,8 @@ module pinmux
   input  lc_ctrl_pkg::lc_tx_t      lc_check_byp_en_i,
   // SEC_CM: LC_ESCALATE_EN.INTERSIG.MUBI
   input  lc_ctrl_pkg::lc_tx_t      lc_escalate_en_i,
+  // SEC_CM: LC_NVM_DEBUG_EN.INTERSIG.MUBI
+  input  lc_ctrl_pkg::lc_tx_t      lc_nvm_debug_en_i,
   // SEC_CM: PINMUX_HW_DEBUG_EN.INTERSIG.MUBI
   output lc_ctrl_pkg::lc_tx_t      pinmux_hw_debug_en_o,
   // Sampled values for DFT straps
@@ -71,6 +73,8 @@ module pinmux
   input  jtag_pkg::jtag_rsp_t      rv_jtag_i,
   output jtag_pkg::jtag_req_t      dft_jtag_o,
   input  jtag_pkg::jtag_rsp_t      dft_jtag_i,
+  output jtag_pkg::jtag_req_t      rram_jtag_o,
+  input  jtag_pkg::jtag_rsp_t      rram_jtag_i,
   // Direct USB connection
   input                            usbdev_dppullup_en_i,
   input                            usbdev_dnpullup_en_i,
@@ -165,18 +169,8 @@ module pinmux
 
   always_ff @(posedge clk_i or negedge rst_ni) begin : p_regs
     if (!rst_ni) begin
-      dio_pad_attr_q <= '0;
-      for (int kk = 0; kk < NMioPads; kk++) begin
-        if (kk == TargetCfg.tap_strap0_idx) begin
-          // TAP strap 0 is sampled after reset (and only once for life cycle states that are not
-          // TEST_UNLOCKED* or RMA).  To ensure it gets sampled as 0 unless driven to 1 from an
-          // external source (and specifically that it gets sampled as 0 when left floating / not
-          // connected), this enables the pull-down of the pad at reset.
-          mio_pad_attr_q[kk] <= '{pull_en: 1'b1, default: '0};
-        end else begin
-          mio_pad_attr_q[kk] <= '0;
-        end
-      end
+      dio_pad_attr_q <= DioPadAttrResval;
+      mio_pad_attr_q <= MioPadAttrResval;
     end else begin
       // dedicated pads
       for (int kk = 0; kk < NDioPads; kk++) begin
@@ -373,6 +367,8 @@ module pinmux
     .lc_hw_debug_en_i,
     .lc_escalate_en_i,
     .lc_check_byp_en_i,
+    .lc_nvm_debug_en_i,
+    .rram_jtag_sel_i ( prim_mubi_pkg::mubi4_t'(reg2hw.rram_jtag_sel.q) ),
     // This is the latched version of lc_hw_debug_en_i. We use it exclusively to gate the JTAG
     // signals and TAP side of the RV_DM so that RV_DM can remain live during an NDM reset cycle.
     .pinmux_hw_debug_en_o,
@@ -383,7 +379,9 @@ module pinmux
     .rv_jtag_o,
     .rv_jtag_i,
     .dft_jtag_o,
-    .dft_jtag_i
+    .dft_jtag_i,
+    .rram_jtag_o,
+    .rram_jtag_i
   );
 
   ///////////////////////////////////////
@@ -476,8 +474,12 @@ module pinmux
   assign mio_mux = AlignedMuxSize'({mio_in, 1'b1, 1'b0});
 
   for (genvar k = 0; k < NMioPeriphIn; k++) begin : gen_mio_periph_in
-    // index using configured insel
-    assign mio_to_periph_o[k] = mio_mux[reg2hw.mio_periph_insel[k].q];
+    // Illegal selections are masked to constant 0.
+    logic [AlignedMuxSize-1:0] mio_mux_legal;
+    assign mio_mux_legal = mio_mux & AlignedMuxSize'(MioPeriphInselLegal[k]);
+
+    // Index using configured insel.
+    assign mio_to_periph_o[k] = mio_mux_legal[reg2hw.mio_periph_insel[k].q];
   end
 
   //////////////////////
@@ -487,18 +489,23 @@ module pinmux
   // stack output data/enable and default signals for convenient indexing below
   // possible defaults: 0, 1 or 2 (high-Z). make sure mux is aligned to a power of 2 to avoid Xes.
   logic [2**$clog2(NMioPeriphOut+3)-1:0] periph_data_mux, periph_oe_mux;
-  assign periph_data_mux  = $bits(periph_data_mux)'({periph_to_mio_i, 1'b0, 1'b1, 1'b0});
-  assign periph_oe_mux    = $bits(periph_oe_mux)'({periph_to_mio_oe_i,  1'b0, 1'b1, 1'b1});
+  assign periph_data_mux = $bits(periph_data_mux)'({periph_to_mio_i, 1'b0, 1'b1, 1'b0});
+  assign periph_oe_mux   = $bits(periph_oe_mux)'({periph_to_mio_oe_i,  1'b0, 1'b1, 1'b1});
 
   for (genvar k = 0; k < NMioPads; k++) begin : gen_mio_out
+    // Illegal selections are masked to high-Z (data and enable 0)
+    logic [$bits(periph_data_mux)-1:0] periph_data_mux_legal, periph_oe_mux_legal;
+    assign periph_data_mux_legal = periph_data_mux & $bits(periph_data_mux)'(MioOutselLegal[k]);
+    assign periph_oe_mux_legal   = periph_oe_mux & $bits(periph_oe_mux)'(MioOutselLegal[k]);
+
     // Check individual sleep enable status bits
     assign mio_out[k] = reg2hw.mio_pad_sleep_status[k].q ?
                         mio_out_retreg_q[k]              :
-                        periph_data_mux[reg2hw.mio_outsel[k].q];
+                        periph_data_mux_legal[reg2hw.mio_outsel[k].q];
 
     assign mio_oe[k]  = reg2hw.mio_pad_sleep_status[k].q ?
                         mio_oe_retreg_q[k]               :
-                        periph_oe_mux[reg2hw.mio_outsel[k].q];
+                        periph_oe_mux_legal[reg2hw.mio_outsel[k].q];
 
     // latch state when going to sleep
     // 0: drive low
@@ -655,6 +662,10 @@ module pinmux
   `ASSERT_KNOWN(DftJtagTckKnown_A, dft_jtag_o.tck)
   `ASSERT_KNOWN(DftJtagTrstKnown_A, dft_jtag_o.trst_n)
   `ASSERT_KNOWN(DftJtagTmsKnown_A, dft_jtag_o.tms)
+
+  `ASSERT_KNOWN(RramJtagTckKnown_A, rram_jtag_o.tck)
+  `ASSERT_KNOWN(RramJtagTrstKnown_A, rram_jtag_o.trst_n)
+  `ASSERT_KNOWN(RramJtagTmsKnown_A, rram_jtag_o.tms)
 
   `ASSERT_KNOWN(DftStrapsKnown_A, dft_strap_test_o)
 

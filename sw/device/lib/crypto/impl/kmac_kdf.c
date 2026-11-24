@@ -103,7 +103,7 @@ otcrypto_status_t otcrypto_kmac_kdf(
   HARDENED_TRY(keyblob_ensure_xor_masked(output_key_material->config));
 
   // Output key cannot be hardware-backed.
-  if (output_key_material->config.hw_backed != kHardenedBoolFalse) {
+  if (launder32(output_key_material->config.hw_backed) != kHardenedBoolFalse) {
     // COVERAGE (MISSING) Hardware-backed output key in KMAC KDF is not covered.
     return OTCRYPTO_BAD_ARGS;
   }
@@ -143,6 +143,7 @@ otcrypto_status_t otcrypto_kmac_kdf(
     // `key_derivation_key->keyblob_length` is 8 words long.
     HARDENED_TRY(keyblob_to_keymgr_dpe_diversification(key_derivation_key,
                                                        &diversification));
+    HARDENED_TRY(keymgr_dpe_sideload_clear_kmac());
     HARDENED_TRY(keymgr_dpe_generate_key_kmac(diversification));
   } else if (key_derivation_key->config.hw_backed == kHardenedBoolFalse) {
     if (key_derivation_key->keyblob_length !=
@@ -164,9 +165,8 @@ otcrypto_status_t otcrypto_kmac_kdf(
   }
 
   // Randomize the keyblob memory.
-  HARDENED_TRY(
-      hardened_memshred(output_key_material->keyblob,
-                        keyblob_num_words(output_key_material->config)));
+  hardened_memshred(output_key_material->keyblob,
+                    keyblob_num_words(output_key_material->config));
 
   otcrypto_key_mode_t key_mode_used = launder32(0);
   switch (launder32(key_derivation_key->config.key_mode)) {
@@ -202,6 +202,10 @@ otcrypto_status_t otcrypto_kmac_kdf(
   // avoid that multiple cases were executed.
   HARDENED_CHECK_EQ(launder32(key_mode_used),
                     key_derivation_key->config.key_mode);
+
+  if (is_sideloaded == kHardenedBoolTrue) {
+    HARDENED_TRY(keymgr_dpe_sideload_clear_kmac());
+  }
 
   output_key_material->checksum =
       otcrypto_integrity_blinded_checksum(output_key_material);

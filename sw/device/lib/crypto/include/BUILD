@@ -7,13 +7,6 @@ package(default_visibility = ["//visibility:public"])
 load("@rules_pkg//pkg:mappings.bzl", "pkg_files")
 load("//sw/device/lib/crypto/include:api_config.bzl", "cryptolib_api_config_header")
 
-config_setting(
-    name = "disable_buf_integrity_checks",
-    define_values = {
-        "disable_buf_integrity_checks": "true",
-    },
-)
-
 # Export all headers.
 exports_files(glob(["*.h"]))
 
@@ -21,7 +14,7 @@ exports_files(glob(["*.h"]))
 cryptolib_api_config_header(
     name = "api_config.h",
     buffer_integrity_checks = select({
-        ":disable_buf_integrity_checks": False,
+        "//sw/device/lib/crypto/configs:disable_buf_integrity_checks": False,
         "//conditions:default": True,
     }),
 )
@@ -61,6 +54,7 @@ cc_library(
         "entropy_src.h",
         "hkdf.h",
         "hmac.h",
+        "hmac_drbg.h",
         "integrity.h",
         "kdf_ctr.h",
         "key_transport.h",
@@ -105,6 +99,7 @@ cc_library(
         "entropy_src.h",
         "hkdf.h",
         "hmac.h",
+        "hmac_drbg.h",
         "integrity.h",
         "kdf_ctr.h",
         "key_transport.h",

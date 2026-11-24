@@ -32,7 +32,8 @@ module ast (
   input clk_ast_usb_i,                        // Buffered AST USB Clock
   input rst_ast_usb_ni,                       // Buffered AST USB Reset
   input clk_ast_ext_i,                        // Buffered AST External Clock
-  input por_ni,                               // Power ON Reset
+  input por_ni,                               // Power ON Reset based on VCC
+  input pora_ni,                              // Power ON Reset based on VIOA
 
   // sensed clocks / resets
   input clkmgr_pkg::clkmgr_out_t sns_clks_i,  // Sensed Clocks
@@ -120,7 +121,6 @@ module ast (
   // pad mux/pad related
   input [ast_pkg::Pad2AstInWidth-1:0] padmux2ast_i,    // IO_2_DFT Input Signals
   output logic [ast_pkg::Ast2PadOutWidth-1:0] ast2padmux_o,  // DFT_2_IO Output Signals
-  output logic [4-1:0] mux_iob_sel_o, // iob or spi selector
 
   // analog test outputs
   output ast_pkg::awire_t ast2pad_t0_ao,                  // AST_2_PAD Analog T0 Output Signal
@@ -285,6 +285,7 @@ ast_part_secondary #(
   .rst_ast_alert_ni        ( rst_ast_alert_ni ),
   .clk_ast_ext_i           ( clk_ast_ext_i ),
   .por_n_i                 ( por_ni ),
+  .pora_n_i                ( pora_ni ),
   .sns_clks_i              ( sns_clks_i ),
   .sns_rsts_i              ( sns_rsts_i ),
   .vx_supp_i               ( vx_supp ),
@@ -311,7 +312,6 @@ ast_part_secondary #(
   .obs_ctrl_o              ( obs_ctrl_o ),
   .padmux2ast_i            ( padmux2ast_i ),
   .ast2padmux_o            ( ast2padmux_o ),
-  .mux_iob_sel_o           ( mux_iob_sel_o ),
   .ast2pad_t0_a_o          ( ast2pad_t0_ao ),
   .ast2pad_t1_a_o          ( ast2pad_t1_ao ),
   .flash_bist_en_o         ( flash_bist_en_o ),

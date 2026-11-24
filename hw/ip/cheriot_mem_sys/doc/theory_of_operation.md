@@ -14,8 +14,21 @@
 | `regs_tl_d`    | device | `xbar_main`      | CSR interface. |
 | `meta_sram_tl` | host   | `sram_ctrl_meta` | The single port into the unified meta SRAM. |
 
+The host on `cored_tl_d` (`rv_core_ibex` in Earl Grey) must hold a request and its `cored_tag_h2d` stable until `a_ready` accepts it.
+OpenTitan does not require this of TL-UL hosts in general, but the [tag filter](#tag-filter) forks a request into streams that may each take it in a different cycle, and the [revocation engine](#revocation-engine) watches a core write on this port from the moment it is presented.
+
 `cheriot_ena_i` selects the execution mode. It is a `mubi4_t` driven by the write-once mode switch in
 `rv_core_ibex`.
+
+`cored_tag_h2d_i` and `cored_tag_d2h_o` carry the capability validity tag next to `cored_tl_d`: the
+request tag is the tag of a store, or on a load the hint that it loads a capability, and the
+response tag is the tag of the loaded capability. Both are `mubi4_t`, encoded and decoded in
+`rv_core_ibex` right at the data interface of Ibex. The subsystem decodes the request tag at its
+port and encodes the response tag there, without a flop, so the tag stays in the cycle of its TL-UL
+beat. Decoding is strict: only `MuBi4True` reads as tagged, so an invalid encoding reads as
+untagged. A request with an invalid encoding also raises the `fatal_fault` alert. Inside the
+subsystem the tag is a single bit, whose protection relies on the lockstep operation of the subsystem,
+which is not implemented yet.
 
 ## Metadata Encoding
 
@@ -48,6 +61,7 @@ window is the software-visible view of the first region, the RAM interface is on
 In the `revbm` window, bit `b` of word `w` covers the eight heap bytes starting at
 `MainSramBaseAddr + (w * 32 + b) * 8`, setting it marks that granule as revoked. Accesses must be
 full 32-bit words, and the window returns a TL-UL error while the system is in ePMP mode.
+Byte and half-word loads of the core still work, because the core reads full words from the bus, but its byte and half-word stores receive an error and raise a store access fault.
 
 
 ## Datapath
@@ -102,8 +116,8 @@ exception: its tag is only written once the store is verified.
 
 The NVM cannot be written through the interconnect, but a capability held in the NVM must be able to
 carry a valid tag. The core's tag filter is therefore built with `NvmCapStores`, which places
-`cheriot_wtrc` on its host port. A capability store to the NVM - a write in strict CHERIoT mode to
-the NVM with the tag sideband set, is not written: it is turned into a `Get` of the word it targets,
+`cheriot_wtrc` on its host port. A capability store to the NVM (a write in strict CHERIoT mode to
+the NVM with the tag sideband set) is not written: it is turned into a `Get` of the word it targets,
 with recomputed command integrity, and succeeds only if the NVM already holds its data and data
 integrity. It does no lookup. Every other access passes through the WTRC unchanged and with
 unchanged timing; the revocation engine's tag filter has no WTRC.
@@ -262,6 +276,7 @@ The subsystem distinguishes a denied access from a fault:
 | Device error on the tag path | Read-modify-write aborted, `d_error` towards the core, and `fatal_fault` alert |
 | Integrity fault on a meta SRAM response (`rsp_intg` or `data_intg`) | `fatal_fault` alert |
 | Integrity fault on the CSR interface | `fatal_fault` alert |
+| Core data request with an invalid encoding of the capability tag (`cored_tag_h2d_i`) | Tag read as clear (a store clears the tag, a load returns untagged), and `fatal_fault` alert |
 | Capability store to the NVM that does not match the NVM contents, or whose NVM read fails | `d_error` towards the core, tag unchanged |
 | Capability store to the NVM with a bad command or data integrity, a bad NVM response integrity, not a full-word `PutFullData`, or out of the W0-W1 sequence | `d_error` towards the core, tag unchanged, and `fatal_fault` alert |
 | Any other request out of the W0-W1 sequence of a capability store to the NVM | `fatal_fault` alert |

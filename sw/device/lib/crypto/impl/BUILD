@@ -18,20 +18,6 @@ load(
 )
 load("//rules:cross_platform.bzl", "dual_cc_library", "dual_inputs")
 
-config_setting(
-    name = "crypto_status_debug",
-    define_values = {
-        "crypto_status_debug": "true",
-    },
-)
-
-config_setting(
-    name = "disable_null_checks",
-    define_values = {
-        "disable_null_checks": "true",
-    },
-)
-
 cc_library(
     name = "tdes",
     srcs = ["tdes.c"],
@@ -179,6 +165,7 @@ cc_library(
     deps = [
         ":cmvp",
         ":config",
+        ":hash",
         ":hmac",
         ":integrity",
         ":keyblob",
@@ -287,6 +274,28 @@ cc_library(
         ":status",
         "//sw/device/lib/base:hardened_memory",
         "//sw/device/lib/base:math",
+        "//sw/device/lib/crypto/drivers:hmac",
+        "//sw/device/lib/crypto/include:datatypes",
+    ],
+)
+
+cc_library(
+    name = "hmac_drbg",
+    srcs = ["hmac_drbg.c"],
+    hdrs = ["//sw/device/lib/crypto/include:hmac_drbg.h"],
+    deps = [
+        ":cmvp",
+        ":config",
+        ":cryptolib_build_info",
+        ":drbg",
+        ":hmac",
+        ":integrity",
+        ":keyblob",
+        ":state",
+        ":status",
+        "//sw/device/lib/base:hardened_memory",
+        "//sw/device/lib/base:math",
+        "//sw/device/lib/base:memory",
         "//sw/device/lib/crypto/drivers:hmac",
         "//sw/device/lib/crypto/include:datatypes",
     ],
@@ -497,9 +506,11 @@ cc_library(
         ":config",
         ":hash",
         ":integrity",
+        ":keyblob",
         ":state",
         ":status",
         "//sw/device/lib/base:hardened_memory",
+        "//sw/device/lib/base:macros",
         "//sw/device/lib/crypto/drivers:entropy",
         "//sw/device/lib/crypto/drivers:rv_core_ibex",
         "//sw/device/lib/crypto/impl/rsa:rsa_encryption",
@@ -534,6 +545,7 @@ cc_library(
         "//sw/device/lib/crypto/drivers:alert",
         "//sw/device/lib/crypto/drivers:entropy",
         "//sw/device/lib/crypto/drivers:keymgr_dpe",
+        "//sw/device/lib/crypto/drivers:kmac",
         "//sw/device/lib/crypto/drivers:otbn",
         "//sw/device/lib/crypto/drivers:rv_core_ibex",
     ],
@@ -617,11 +629,13 @@ cc_library(
     hdrs = ["hash.h"],
     target_compatible_with = [OPENTITAN_CPU],
     deps = [
-        ":sha1",
+        ":integrity",
         ":sha2",
-        ":sha3",
+        ":state",
         ":status",
         "//sw/device/lib/base:hardened",
+        "//sw/device/lib/base:hardened_memory",
+        "//sw/device/lib/crypto/drivers:hmac",
         "//sw/device/lib/crypto/include:datatypes",
     ],
 )
@@ -658,9 +672,11 @@ cc_library(
         ":cmvp",
         ":config",
         ":integrity",
+        ":sha1",
         ":status",
         "//sw/device/lib/base:hardened",
         "//sw/device/lib/base:hardened_memory",
+        "//sw/device/lib/base:macros",
         "//sw/device/lib/crypto/drivers:hmac",
         "//sw/device/lib/crypto/drivers:rv_core_ibex",
         "//sw/device/lib/crypto/include:datatypes",
@@ -692,19 +708,27 @@ cc_library(
         "status.h",
     ],
     defines = select({
-        # Turn debugging on only if the `crypto_status_debug` command-line option
+        # Turn debugging on only if the `--crypto_status_debug` command-line option
         # is set.
-        ":crypto_status_debug": ["OTCRYPTO_STATUS_DEBUG"],
+        "//sw/device/lib/crypto/configs:crypto_status_debug": ["OTCRYPTO_STATUS_DEBUG"],
         "//conditions:default": [],
     }) + select({
-        # This disables NULL checks on API input to save code size
-        # Activate it by building the library with `--define=disable_null_checks=true`
-        # The status header is used in all API functions to pass a bad status hence it propagates to where the flag is needed
-        ":disable_null_checks": ["OTCRYPTO_DISABLE_NULL_CHECKS"],
+        # This disables NULL checks on API input to save code size.
+        # Activate it by building the library with `--disable_null_checks=true`.
+        # The status header is used in all API functions to pass a bad status hence it propagates to where the flag is needed.
+        "//sw/device/lib/crypto/configs:disable_null_checks": ["OTCRYPTO_DISABLE_NULL_CHECKS"],
+        "//conditions:default": [],
+    }) + select({
+        # This replaces the redundant branch sequences in HARDENED_TRY and
+        # HARDENED_CHECK_* with a single check to save code size.
+        # Activate it by building the library with `--disable_hardening=true`.
+        "//sw/device/lib/crypto/configs:disable_hardening": ["OT_DISABLE_HARDENING"],
         "//conditions:default": [],
     }),
     deps = [
+        "//sw/device/lib/base:macros",
         "//sw/device/lib/base:status",
+        "//sw/device/lib/base:stdasm",
         "//sw/device/lib/crypto/include:datatypes",
     ],
 )
@@ -738,6 +762,7 @@ cc_library(
     deps = [
         ":cmvp",
         ":config",
+        ":hash",
         ":integrity",
         ":keyblob",
         ":sha2",

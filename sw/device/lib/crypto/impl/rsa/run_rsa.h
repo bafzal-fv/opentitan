@@ -54,7 +54,16 @@ status_t rsa_modexp_wait(size_t *num_words);
 status_t rsa_modexp_consttime_start(rsa_size_t size, const uint32_t *base,
                                     const uint32_t *exp0, const uint32_t *exp1,
                                     uint32_t pub_exp, const uint32_t *modulus,
-                                    uint32_t checksum);
+                                    uint32_t checksum, uint32_t key_mode);
+
+/**
+ * Reads the RSA `key_mode` preserved in OTBN's `mode` word after modexp.
+ *
+ * @param[out] key_mode Reconstructed `otcrypto_key_mode_t` value.
+ * @return Status of the operation (OK or error).
+ */
+OT_WARN_UNUSED_RESULT
+status_t rsa_modexp_key_mode(uint32_t *key_mode);
 
 /**
  * Start a variable-time RSA modular exponentiation.
@@ -159,6 +168,28 @@ status_t rsa_create_n_from_primes(rsa_size_t size, const uint32_t *prime_p,
  */
 status_t rsa_keygen_finalize_size(rsa_size_t size, uint32_t *n, uint32_t *d0,
                                   uint32_t *d1, uint32_t *p, uint32_t *q);
+
+/**
+ * Checks that an RSA modulus is composite and not a power of a prime.
+ *
+ * Runs the enhanced Miller-Rabin test of FIPS 186-5, Appendix B.3.2, on OTBN
+ * as required by NIST SP 800-89, Section 5.3.3. Blocks until OTBN is done and
+ * wipes DMEM afterwards.
+ *
+ * The modulus is public; the check is not constant time. The modulus must be
+ * odd and have its most significant bit set.
+ *
+ * Returns an `OTCRYPTO_ASYNC_INCOMPLETE` error if OTBN is busy.
+ *
+ * @param size RSA size parameter (e.g. 2048, 3072, 4096).
+ * @param modulus RSA modulus n.
+ * @param[out] result kHardenedBoolTrue if n is composite and not a prime power,
+ *                    kHardenedBoolFalse otherwise.
+ * @return Result of the operation (OK or error).
+ */
+OT_WARN_UNUSED_RESULT
+status_t rsa_modulus_composite_check(rsa_size_t size, const uint32_t *modulus,
+                                     hardened_bool_t *result);
 
 #ifdef __cplusplus
 }  // extern "C"

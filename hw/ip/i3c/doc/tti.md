@@ -41,6 +41,15 @@ Reducing the configured number of Virtual Targets (`NumTargets`) to be less than
 Each of the configured Virtual Targets has an independent enable bit in the [`TARG_ENABLE`](registers.md#targ_enable) register.
 A Virtual Target that is disabled does not participate on the I3C, i.e., it will ignore address assignment commands and I3C Broadcast CCCs etc.
 
+### Virtual Target Detect
+
+The Specification for I3C Basic describes a 'Virtual Target Detect' bit (4.3.7.3.23.2) and requires that its state be inaccessible to the application level, along with not propagating RSTACT CCCs with a Defining Byte of 0x04 or 0x84.
+This keeps the application level agnostic as to whether it has dedicated peripheral logic or is sharing with other Targets.
+
+This TTI specification chooses to present the [Virtual Target Detect bit](registers.md#targ_status--rstact_virt_targ_det) to system-level software, since it is diagnostically useful.
+Also, granting application level software direct access to the TTI registers makes the other Virtual Targets visible in numerous other ways.
+System-level software shall be responsible for enforcing this isolation requirement.
+
 ### Transmission Descriptors
 
 Transmissions from a Virtual Target are described by adding transmission descriptors into a per-Virtual Target queue.
@@ -401,13 +410,18 @@ These behave in the same manner as the transmission of Private Reads from the Vi
 
 ## Discarding Transmission Data
 
-Whilst transmission is suspended for a Virtual Target, or for In-Band Interrupts, the transmission data buffer and associated descriptor queue may be cleared using the appropriate bit in `TARG_PIO_CONTROL`.
-<!-- link to the register fields when available-->
-There is one such control bit, `TXBUF_CLEAR`, for each Virtual Target; `IBIBUF_CLEAR` provides the same functionality for the IBI transmission path.
+Whilst transmission is suspended for a Virtual Target, or for In-Band Interrupts, the transmission data buffer and associated descriptor queue may be cleared using the appropriate bit in [`TARG_PIO_CONTROL`](registers.md#targ_pio_control).
+There is one such control bit, [`TXBUF_CLEAR`](registers.md#targ_pio_control--txbuf_clear), for each Virtual Target; [`IBIBUF_CLEAR`](registers.md#targ_pio_control--ibibuf_clear) provides the same functionality for the IBI transmission path.
 
 In addition to this buffer clearing operation, which discards all data, there is a 'Data Sink' mechanism that software may use to extract a programmable number of DWORDs from a selected transmission data buffer or descriptor queue.
 This mechanism will rapidly read and discard data, allowing the remainder of a partial transfer to be discarded without impacting subsequent transfers.
 It may also be used to discard transfers that have already been queued for transmission.
+
+## Discarding Received Data
+
+Mirroring the other buffer clearing controls in [`TARG_PIO_CONTROL`](registers.md#targ_pio_control), driver software may use the [`RXBUF_CLEAR`](registers.md#targ_pio_control--rxbuf_clear) control to discard all received data and reception descriptors.
+This control should be used with care, and only as a recovery mechanism for serious errors, because it impacts all Virtual Targets.
+The driver software should, in preference, read and discard all affected data and descriptor(s) in order to recover from localized or transient errors.
 
 ## Hot-Join Feature
 

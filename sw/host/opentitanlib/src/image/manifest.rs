@@ -46,6 +46,7 @@ pub const MANIFEST_EXT_ID_IMAGE_TYPE: u32 = 0x494d4754;
 pub const MANIFEST_EXT_ID_SECVER_WRITE: u32 = 0x3f086a41;
 pub const MANIFEST_EXT_ID_ISFB: u32 = 0x42465349;
 pub const MANIFEST_EXT_ID_ISFB_ERASE: u32 = 0x45465349;
+pub const MANIFEST_EXT_ID_OWNER_TRANSFER_BLOB: u32 = 0x4254574f;
 pub const MANIFEST_EXT_ID_MLDSA87_KEY: u32 = 0xa3e247b8;
 pub const MANIFEST_EXT_ID_MLDSA87_SIGNATURE: u32 = 0x4714ac7d;
 pub const MANIFEST_EXT_NAME_SPX_KEY: u32 = 0x30545845;
@@ -54,6 +55,7 @@ pub const MANIFEST_EXT_NAME_IMAGE_TYPE: u32 = 0x494d4754;
 pub const MANIFEST_EXT_NAME_SECVER_WRITE: u32 = 0x56434553;
 pub const MANIFEST_EXT_NAME_ISFB: u32 = 0x42465349;
 pub const MANIFEST_EXT_NAME_ISFB_ERASE: u32 = 0x45465349;
+pub const MANIFEST_EXT_NAME_OWNER_TRANSFER_BLOB: u32 = 0x4254574f;
 pub const MANIFEST_EXT_NAME_MLDSA87_KEY: u32 = 0x4b384c4d;
 pub const MANIFEST_EXT_NAME_MLDSA87_SIGNATURE: u32 = 0x53384c4d;
 pub const CHIP_ROM_EXT_IDENTIFIER: u32 = 0x4552544f;
@@ -183,7 +185,7 @@ pub const MLDSA87_PUBLIC_KEY_BYTES: usize = 2592;
 pub const MLDSA87_SIGNATURE_BYTES: usize = 4627;
 /// Context string of the ML-DSA-87 image signature (FIPS-204). Must match
 /// `kSigverifyMldsa87ImageContext` in `sw/device/silicon_creator/lib/sigverify/mldsa87_key.c`.
-pub const MLDSA87_IMAGE_CONTEXT: &[u8] = b"OT-MLDSA-IMAGE";
+pub const MLDSA87_IMAGE_CONTEXT: &[u8] = b"";
 
 /// A type that holds an ML-DSA-87 signature, zero-padded to a whole number of 32-bit words.
 #[repr(C)]

@@ -179,6 +179,8 @@ otcrypto_status_t otcrypto_hkdf_extract(const otcrypto_blinded_key_t *ikm,
   HARDENED_TRY(
       digest_num_words_from_key_mode(ikm->config.key_mode, &digest_words));
 
+  HARDENED_TRY(keyblob_ensure_xor_masked(ikm->config));
+
   // Validate the PRK configuration.
   HARDENED_TRY(hkdf_check_prk(digest_words, prk));
 
@@ -245,14 +247,14 @@ otcrypto_status_t otcrypto_hkdf_extract(const otcrypto_blinded_key_t *ikm,
 
   // Mask the PRK
   uint32_t prk_mask[kHmacMaxDigestWords];
-  HARDENED_TRY(hardened_memshred(prk_mask, digest_words));
+  hardened_memshred(prk_mask, digest_words);
 
   HARDENED_TRY(
       keyblob_from_key_and_mask(tag_data, prk_mask, prk->config, prk->keyblob));
 
   // Wipe the sensitive buffers
-  HARDENED_TRY(hardened_memshred(unmasked_ikm_data, unmasked_ikm_wordlen));
-  HARDENED_TRY(hardened_memshred(tag_data, digest_words));
+  hardened_memshred(unmasked_ikm_data, unmasked_ikm_wordlen);
+  hardened_memshred(tag_data, digest_words);
 
   prk->checksum = otcrypto_integrity_blinded_checksum(prk);
   return otcrypto_eval_exit(OTCRYPTO_OK);
@@ -315,8 +317,6 @@ otcrypto_status_t otcrypto_hkdf_expand(const otcrypto_blinded_key_t *prk,
 
   // Repeatedly call HMAC to generate the derived key (see RFC 5869,
   // section 2.3).
-  uint32_t *share0_ptr = okm->keyblob;
-  uint32_t *share1_ptr = okm->keyblob + keyblob_share_num_words(okm->config);
   size_t words_written = 0;
 
   // Array to hold T(i) from the previous loop iteration.
@@ -352,18 +352,19 @@ otcrypto_status_t otcrypto_hkdf_expand(const otcrypto_blinded_key_t *prk,
     }
 
     uint32_t mask_data[kHmacMaxDigestWords];
-    HARDENED_TRY(hardened_memshred(mask_data, words_to_copy));
+    hardened_memshred(mask_data, words_to_copy);
 
     uint32_t share0_data[kHmacMaxDigestWords];
     HARDENED_TRY(hardened_xor(tag_data, mask_data, words_to_copy, share0_data));
 
-    HARDENED_TRY(hardened_memcpy(share0_ptr + words_written, share0_data,
-                                 words_to_copy));
-    HARDENED_TRY(
-        hardened_memcpy(share1_ptr + words_written, mask_data, words_to_copy));
+    HARDENED_TRY(keyblob_write_shares(share0_data, mask_data, words_written,
+                                      words_to_copy, okm->config,
+                                      okm->keyblob));
 
     words_written += words_to_copy;
   }
+  HARDENED_CHECK_EQ(words_written, okm_wordlen);
+  HARDENED_CHECK_GT(words_written, 0);
 
   // Manually compute and assign the checksum
   okm->checksum = otcrypto_integrity_blinded_checksum(okm);

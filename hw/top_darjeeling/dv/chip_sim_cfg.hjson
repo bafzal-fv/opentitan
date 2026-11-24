@@ -646,9 +646,9 @@
       en_run_modes: ["sw_test_mode_test_rom"]
     }
     {
-      name: chip_sw_kmac_entropy
+      name: chip_sw_kmac_entropy_error_conditions_test
       uvm_test_seq: chip_sw_base_vseq
-      sw_images: ["//sw/device/tests:kmac_entropy_test:6:new_rules"]
+      sw_images: ["//sw/device/tests:kmac_entropy_error_conditions_test:6:new_rules"]
       en_run_modes: ["sw_test_mode_test_rom"]
     }
     {
@@ -1022,6 +1022,18 @@
       en_run_modes: ["sw_test_mode_test_rom"]
       run_opts: ["+sw_test_timeout_ns=15_000_000", "+en_scb_tl_err_chk=0",
                  "+bypass_alert_ready_to_end_check=1"]
+    }
+    {
+      name: chip_sw_otbn_mai
+      uvm_test_seq: chip_sw_base_vseq
+      sw_images: ["//sw/device/tests:otbn_mai_test:6:new_rules"]
+      en_run_modes: ["sw_test_mode_test_rom"]
+    }
+    {
+      name: chip_sw_otbn_wfi
+      uvm_test_seq: chip_sw_base_vseq
+      sw_images: ["//sw/device/tests:otbn_wfi_test:6:new_rules"]
+      en_run_modes: ["sw_test_mode_test_rom"]
     }
     {
       name: chip_sw_rv_core_ibex_rnd
@@ -1726,7 +1738,6 @@
               "chip_sw_rstmgr_smoketest",
               "chip_sw_rv_plic_smoketest",
               "chip_sw_rv_timer_smoketest",
-              "chip_sw_spi_device_pass_through",
               "chip_sw_sram_ctrl_smoketest",
               "chip_sw_uart_smoketest",
               "xbar_smoke",

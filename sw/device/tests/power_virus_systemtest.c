@@ -117,8 +117,6 @@ enum {
    */
   kKmacEntropyReseedInterval = 1,
   kKmacEntropyHashThreshold = 1,  // KMAC operations between entropy requests
-  kKmacEntropyWaitTimer = 0xffff,
-  kKmacEntropyPrescaler = 0x3ff,
   kKmacMessageLength = 200,
   kKmacDigestLength = 16,
   /**
@@ -473,8 +471,9 @@ static void configure_pinmux(void) {
     //    SD1 on IOR11
     //    SD2 on IOR12
     //    SD3 on IOR13
-    CHECK_DIF_OK(dif_pinmux_output_select(&pinmux, kTopEarlgreyPinmuxMioOutIob0,
-                                          kTopEarlgreyPinmuxOutselSpiHost1Csb));
+    CHECK_DIF_OK(
+        dif_pinmux_output_select(&pinmux, kTopEarlgreyPinmuxMioOutIob0,
+                                 kTopEarlgreyPinmuxOutselSpiHost1Csb0));
     CHECK_DIF_OK(dif_pinmux_output_select(&pinmux, kTopEarlgreyPinmuxMioOutIob3,
                                           kTopEarlgreyPinmuxOutselSpiHost1Sck));
     CHECK_DIF_OK(dif_pinmux_output_select(&pinmux, kTopEarlgreyPinmuxMioOutIoa2,
@@ -570,7 +569,7 @@ static void configure_pinmux_sim(void) {
   //    SD2 on IOB5
   //    SD3 on IOB6
   CHECK_DIF_OK(dif_pinmux_output_select(&pinmux, kTopEarlgreyPinmuxMioOutIob1,
-                                        kTopEarlgreyPinmuxOutselSpiHost1Csb));
+                                        kTopEarlgreyPinmuxOutselSpiHost1Csb0));
   CHECK_DIF_OK(dif_pinmux_output_select(&pinmux, kTopEarlgreyPinmuxMioOutIob0,
                                         kTopEarlgreyPinmuxOutselSpiHost1Sck));
   CHECK_DIF_OK(dif_pinmux_output_select(&pinmux, kTopEarlgreyPinmuxMioOutIob3,
@@ -861,17 +860,19 @@ static void configure_hmac(void) {
 
 static void configure_kmac(void) {
   dif_kmac_config_t kmac_cfg = (dif_kmac_config_t){
-      .entropy_mode = kDifKmacEntropyModeEdn,
       .entropy_fast_process = kDifToggleDisabled,
-      .entropy_hash_threshold = kKmacEntropyHashThreshold,
-      .entropy_wait_timer = kKmacEntropyWaitTimer,
-      .entropy_prescaler = kKmacEntropyPrescaler,
       .message_big_endian = false,
       .output_big_endian = false,
       .sideload = false,
       .msg_mask = false,
   };
   CHECK_DIF_OK(dif_kmac_configure(&kmac, kmac_cfg));
+  dif_kmac_entropy_config_t entropy_config = (dif_kmac_entropy_config_t){
+      .entropy_mode = kDifKmacEntropyModeEdn,
+      .ignore_cmd_entropy_req = false,
+      .edn_mode_refresh_threshold = kKmacEntropyHashThreshold,
+  };
+  CHECK_DIF_OK(dif_kmac_configure_entropy(&kmac, entropy_config));
 }
 
 static void configure_uart(dif_uart_t *uart) {

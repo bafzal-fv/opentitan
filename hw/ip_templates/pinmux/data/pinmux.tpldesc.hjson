@@ -46,6 +46,63 @@
       default: "8"
     }
     {
+      name: "mio_periph_ins"
+      desc: '''
+            List of dicts, one per MIO peripheral input, ordered ascending by the peripheral input
+            index. Each dict has the keys name and pads and optionally default_pad or
+            default_const. pads lists the indices of the MIO pads the input can be muxed to. An
+            empty list means all MIO pads. default_pad (a pad index of pads) or default_const (0 or
+            1) defines the MIO_PERIPH_INSEL reset value. Without either, the input is tied to 0 at
+            reset.
+            '''
+      type: "object"
+      default: [
+        {name: "periph_in_0", pads: []}
+        {name: "periph_in_1", pads: []}
+        {name: "periph_in_2", pads: []}
+        {name: "periph_in_3", pads: []}
+        {name: "periph_in_4", pads: []}
+        {name: "periph_in_5", pads: []}
+        {name: "periph_in_6", pads: []}
+        {name: "periph_in_7", pads: []}
+      ]
+    }
+    {
+      name: "mio_periph_outs"
+      desc: '''
+            List of dicts, one per MIO peripheral output, ordered ascending by the peripheral
+            output index. Each dict has the keys name and pads and optionally default_pad. pads
+            lists the indices of the MIO pads the output can be muxed to. An empty list means all
+            MIO pads. default_pad (a pad index) selects the output as the MIO_OUTSEL reset value of
+            that pad. Each pad can only be the default of one output. Pads without a default are
+            high-Z at reset.
+            '''
+      type: "object"
+      default: [
+        {name: "periph_out_0", pads: []}
+        {name: "periph_out_1", pads: []}
+        {name: "periph_out_2", pads: []}
+        {name: "periph_out_3", pads: []}
+        {name: "periph_out_4", pads: []}
+        {name: "periph_out_5", pads: []}
+        {name: "periph_out_6", pads: []}
+        {name: "periph_out_7", pads: []}
+      ]
+    }
+    {
+      name: "mio_pad_attr_resvals"
+      desc: '''
+            List of (name, attrs) tuples for each MIO pad, ordered ascending by the MIO pad index.
+            attrs is a dict mapping given MIO_PAD_ATTR fields to non-default reset values. Fields
+            not specified get the default reset value.
+            '''
+      type: "object"
+      default: [
+        ["mio_pad_0", {}], ["mio_pad_1", {}], ["mio_pad_2", {}], ["mio_pad_3", {}],
+        ["mio_pad_4", {}], ["mio_pad_5", {}], ["mio_pad_6", {}], ["mio_pad_7", {}]
+      ]
+    }
+    {
       name: "n_dio_pads"
       desc: "Number of DIO pads"
       type: "int"
@@ -64,6 +121,20 @@
       default: "8"
     }
     {
+      name: "dio_pad_attr_resvals"
+      desc: '''
+            List of (name, attrs) tuples for each DIO, ordered ascending by the DIO index, which
+            is the DIO_PAD_ATTR CSR index. name is the pad name, or the IO name for manual DIOs.
+            attrs is a dict mapping given DIO_PAD_ATTR fields to non-default reset values. Fields
+            not specified get the default reset value.
+            '''
+      type: "object"
+      default: [
+        ["dio_pad_0", {}], ["dio_pad_1", {}], ["dio_pad_2", {}], ["dio_pad_3", {}],
+        ["dio_pad_4", {}], ["dio_pad_5", {}], ["dio_pad_6", {}], ["dio_pad_7", {}]
+      ]
+    }
+    {
       name: "enable_usb_wakeup"
       desc: "Enable USB wakeup"
       type: "bool"
@@ -74,6 +145,16 @@
       desc: "Set to true to instantiate the HW strap sampling and TAP selection submodule wake submodule"
       type: "bool"
       default: "1"
+    }
+    {
+      name: "enable_rram_tap"
+      desc: '''
+            Set to true to add an RRAM TAP to the TAP selection.
+            The RRAM_JTAG_SEL register enables it on the TAP strap value 0, while lc_nvm_debug_en is On.
+            Requires enable_strap_sampling.
+            '''
+      type: "bool"
+      default: "0"
     }
     {
       name: "module_instance_name"

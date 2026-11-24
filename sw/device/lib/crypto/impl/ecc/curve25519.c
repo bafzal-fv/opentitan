@@ -63,7 +63,7 @@ enum {
  */
 #ifdef FIPS_MODE
   kModeX25519KeygenInsCnt = 718617,
-  kModeX25519KeygenSideloadInsCnt = 711347,
+  kModeX25519KeygenSideloadInsCnt = 711343,
 #else
   kModeX25519KeygenInsCnt = 359304,
   kModeX25519KeygenSideloadInsCnt = 355669,
@@ -360,7 +360,8 @@ status_t curve25519_verify_finalize(hardened_bool_t *result) {
   }
   HARDENED_CHECK_NE(rhs_bits_or, 0);
 
-  *result = hardened_memeq(lhs, rhs, kCurve25519PointWords);
+  *result = (hardened_bool_t)0;
+  *result |= hardened_memeq(lhs, rhs, kCurve25519PointWords);
 
   // Wipe DMEM.
   return otbn_dmem_sec_wipe();

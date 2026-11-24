@@ -136,7 +136,8 @@ The OpenTitan Earl Grey 2 architecture supports the following key features:
                 <li>32 data bit + 7 ECC bit per architectural row.</li>
                 <li>In CHERIoT mode, this SRAM is only accessible by software as far as required and permitted by the CHERIoT specification.</li>
                 <li>In non-CHERIoT mode, this SRAM is not accessible by software.</li>
-                <li>Scrambling of data with reduced-round PRINCE cipher; address scrambling is currently disabled.</li>
+                <li>Scrambling of address and data with reduced-round PRINCE cipher.
+                    The size is not a power of 2, so address scrambling is weaker than for the other SRAMs: only 9 of the 14 address bits pass through the S&P network, and the 5 MSBs are rotated by one of 19 chunk offsets.</li>
                 <li>Hardened against FI attacks with a readback mechanism.</li>
               </ul>
             </li>
@@ -235,7 +236,7 @@ The OpenTitan Earl Grey 2 architecture supports the following key features:
                     <li>SCK at 48 MHz max (96 MHz internally)</li>
                     <li>fixed pins</li>
                     <li>3 chip select (1 on fixed pin, 2 on muxed pins)</li>
-                    <li>Passthrough mode from SPI Device</li>
+                    <li>Passthrough mode from SPI Device (on the fixed-pin chip select)</li>
                   </ul>
                 </li>
                 <li>SPI Host 1:
@@ -297,7 +298,6 @@ The OpenTitan Earl Grey 2 architecture supports the following key features:
 - Target frequency for main/fast clock domain: ~150 MHz
 - I/O clock domains frequency:
   - IO: 96 MHz
-  - IO_DIV2: 48 MHz
   - IO_DIV4: 24 MHz
   - USB: 48 MHz
 - Always-on clock domain frequency: 200 kHz

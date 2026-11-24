@@ -331,12 +331,12 @@ Fatal errors can occur at any time, even when an OTBN operation isn't in progres
 
 The following actions are taken when OTBN detects a fatal error:
 
-1. A [secure wipe of the data memory](#data-memory-dmem-secure-wipe) and a [secure wipe of the instruction memory](#instruction-memory-imem-secure-wipe) is initiated.
+1. If OTBN [is not idle](#operational-states), a [secure wipe of the data memory](#data-memory-dmem-secure-wipe) and a [secure wipe of the instruction memory](#instruction-memory-imem-secure-wipe) are initiated.
 2. If OTBN [is not idle](#operational-states), then the currently running operation is terminated, similarly to how an operation ends after an {{#otbn-insn-ref ECALL}} instruction [is executed](#software-execution):
    - No more instructions are fetched or executed.
    - A [secure wipe of internal state](#internal-state-secure-wipe) is performed.
    - The [`ERR_BITS`](registers.md#err_bits) register is set to a non-zero value that describes the error.
-   - The current operation is marked as complete by setting [`INTR_STATE.done`](registers.md#intr_state).
+   - The current operation is marked as complete by setting [`INTR_STATE.done`](registers.md#intr_state), except during the initial secure wipe after reset.
 3. The [`STATUS`](registers.md#status) register is set to `LOCKED`.
 4. A [fatal alert](#alerts) is raised.
 

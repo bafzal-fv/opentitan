@@ -35,6 +35,7 @@ cc_library(
         "//sw/device/lib/crypto/impl:entropy_src",
         "//sw/device/lib/crypto/impl:hkdf",
         "//sw/device/lib/crypto/impl:hmac",
+        "//sw/device/lib/crypto/impl:hmac_drbg",
         "//sw/device/lib/crypto/impl:integrity",
         "//sw/device/lib/crypto/impl:kats",
         "//sw/device/lib/crypto/impl:kdf_ctr",
@@ -86,6 +87,7 @@ opentitan_binary_blob(
 # Top-level cryptolib target.
 ot_static_library(
     name = "otcrypto",
+    transitive_features = ["minsize"],
     deps = select({
         "//sw/device/lib/crypto/configs:type_static": [":otcrypto_api"],
         "//sw/device/lib/crypto/configs:type_binary_blob": [":otcrypto_binary_blob_api"],

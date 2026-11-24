@@ -66,7 +66,7 @@ enum {
   /**
    * Sparse FSM encoding for MainSmIdle in csrng_pkg.sv.
    */
-  kCsrngMainSmStateIdle = 0x37,
+  kCsrngMainSmStateIdle = 0x17,
 };
 
 /**
@@ -371,12 +371,12 @@ static const entropy_complex_config_t
                     .alert_threshold = 4,
                     .repcnt_threshold = 81,
                     .repcnts_threshold = 21,
-                    .adaptp_hi_threshold = 1592,
-                    .adaptp_lo_threshold = 2048 - 1592,  // 456
+                    .adaptp_hi_threshold = 1591,
+                    .adaptp_lo_threshold = 2048 - 1591,  // 457
                     .adaptps_threshold = 201,
-                    .bucket_threshold = 202,
-                    .markov_hi_threshold = 825,
-                    .markov_lo_threshold = 1024 - 825,  // 199
+                    .bucket_threshold = 201,
+                    .markov_hi_threshold = 824,
+                    .markov_lo_threshold = 1024 - 824,  // 200
                     .extht_hi_threshold = 0xffff,
                     .extht_lo_threshold = 0x0,
                 },
@@ -653,6 +653,8 @@ OT_USED static void csrng_configure(void) {
                                kMultiBitBool4True);
   reg = bitfield_field32_write(reg, CSRNG_CTRL_READ_INT_STATE_FIELD,
                                kMultiBitBool4True);
+  reg = bitfield_field32_write(reg, CSRNG_CTRL_WRITE_INT_STATE_FIELD,
+                               kMultiBitBool4False);
   reg = bitfield_field32_write(reg, CSRNG_CTRL_FIPS_FORCE_ENABLE_FIELD,
                                kMultiBitBool4False);
   abs_mmio_write32(csrng_base() + CSRNG_CTRL_REG_OFFSET, reg);
@@ -668,6 +670,8 @@ static void csrng_verify(void) {
                                kMultiBitBool4True);
   reg = bitfield_field32_write(reg, CSRNG_CTRL_READ_INT_STATE_FIELD,
                                kMultiBitBool4True);
+  reg = bitfield_field32_write(reg, CSRNG_CTRL_WRITE_INT_STATE_FIELD,
+                               kMultiBitBool4False);
   reg = bitfield_field32_write(reg, CSRNG_CTRL_FIPS_FORCE_ENABLE_FIELD,
                                kMultiBitBool4False);
   HARDENED_CHECK_EQ(abs_mmio_read32(csrng_base() + CSRNG_CTRL_REG_OFFSET), reg);

@@ -98,11 +98,12 @@ When Ibex fetch is disabled it will cease to execute, but will complete instruct
 Ibex fetch is enabled when all of the following conditions are met:
   - The lifecycle controller has enabled it
   - The power manager has enabled it
-  - A ``fatal_hw_err`` alert hasn't been raised
+  - No fatal internal error has been seen ([`FATAL_CORE_ERR`](registers.md#err_status))
 
 ### Local Escalation Path
 
-When the ``fatal_hw_err`` alert is raised Ibex fetch is disabled and will remain disabled until ``rv_core_ibex`` is reset.
+When a fatal internal error sets [`FATAL_CORE_ERR`](registers.md#err_status), which also raises the ``fatal_hw_err`` alert, Ibex fetch is disabled and will remain disabled until ``rv_core_ibex`` is reset.
+The other causes of the ``fatal_hw_err`` alert, such as integrity errors, do not disable fetch locally; their escalation is left to the alert handler.
 
 ## Execution Mode Switch
 
@@ -125,6 +126,30 @@ Both values are decoded strictly: [`CHERIOT_ENA`](registers.md#cheriot_ena) must
 From then on the mode is fixed until `rv_core_ibex` is reset.
 Further writes to either register have no effect.
 
+### Switching to CHERIoT Mode at Runtime
+
+Switching from RV32I to CHERIoT mode at runtime needs the software sequence described in the [Ibex documentation](https://ibex-core.readthedocs.io/en/latest/03_reference/cheriot.html).
+On Earl Grey, it consists of the following steps, which `sw/device/tests/cheriot_smoketest.S` implements:
+
+1. Disable interrupts until `mtcc` is set up in CHERIoT mode.
+   NMIs cannot be disabled, so until then the `mtvec` handler must work in both modes, including a mode change while it runs.
+   As an NMI is fatal, the handler can raise a fatal alert and stop.
+2. Zero-initialize the meta SRAM, which holds the capability tags and the revocation bitmap.
+3. Save `cpuctrlsts`, clear `cpuctrlsts.dummy_instr_en` and write zero to `x16`-`x31`.
+4. Write `MuBi4True` to [`CHERIOT_ENA`](registers.md#cheriot_ena).
+5. Write `MuBi4True` to [`CHERIOT_LOCK`](registers.md#cheriot_lock) and poll `misa` until `misa.E` is set.
+   In CHERIoT mode, Ibex is set to RV32E, and in ePMP mode on Earl Grey to RV32I, so `misa.E` tells the two modes apart.
+   Until then, only use 32-bit instructions that behave the same in both modes.
+6. Restore `cpuctrlsts`, and set up `mtcc` before any instruction that can trap.
+
+Debug is not supported during the switch.
+
+In CHERIoT mode, a key renewal or initialization of `sram_ctrl_meta`, `sram_ctrl_main` or `sram_ctrl_sec` replaces the data under existing tags, which then loads as valid capabilities.
+Only trusted code should therefore have access to their `CTRL` registers, or their `CTRL_REGWEN` can be cleared before the switch.
+
+CHERIoT mode turns off the ePMP protection, including locked entries.
+The boot stage that configures the ePMP should therefore make the mode decision, or lock ePMP mode, before it hands over to less trusted code.
+
 ### Error State
 
 The switch has a terminal error state.
@@ -136,3 +161,18 @@ Consumers of the mode signal are expected to escalate invalid values. Ibex does 
 
 Both the error status bit and the disabled fetch state are sticky.
 Ibex will not resume execution, and the switch error state cannot be cleared, until `rv_core_ibex` is reset.
+
+## Capability Tag Sideband
+
+Every data access of Ibex carries a capability validity tag next to the TL-UL structs of the data port.
+`cored_tag_h2d_o` goes with the request: it is the tag of a store, or on a load the hint that it loads a capability.
+`cored_tag_d2h_i` comes with the response: it is the tag of the loaded capability.
+Both are `mubi4_t` towards the CHERIoT memory subsystem (`cheriot_mem_sys`).
+The wrapper encodes the request tag right at the data interface of Ibex and decodes the response tag right in front of it, so the tag also stays multi-bit encoded inside the data FIFO.
+The encoder has no flop, so the tag stays in the cycle of its TL-UL beat.
+Between the lockstep comparison of Ibex and the wrapper, the tag is a single bit that the lockstep does not cover: the TRVK filter of Ibex passes it on, and the shadow core receives the same response tag as the main core.
+
+Decoding is strict: only `MuBi4True` reads as tagged.
+An invalid encoding therefore reads as untagged.
+A data response with an invalid encoding also sets [`FATAL_INTG_ERR`](registers.md#err_status) and raises the `fatal_hw_err` alert.
+Like other integrity errors, it does not disable fetch locally (see [Local Escalation Path](#local-escalation-path)); its escalation is left to the alert handler.

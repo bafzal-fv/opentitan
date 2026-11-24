@@ -10,6 +10,7 @@
 module keymgr_dpe_ctrl
   import keymgr_dpe_pkg::*;
   import keymgr_dpe_reg_pkg::*;
+  import prim_mubi_pkg::mubi4_test_true_loose, prim_mubi_pkg::mubi4_t;
 // TODO(#384): Bring back KmacEnMasking parameter
 #(
   // Number of instantiated HW slots
@@ -32,16 +33,17 @@ module keymgr_dpe_ctrl
   input reseed_cnt_err_i,
   input sideload_sel_err_i,
   input sideload_fsm_err_i,
+  input kdf_engine_mubi_err_i,
 
   // Software interface
   input op_start_i,
   input keymgr_dpe_ops_e op_i,
-  input load_root_key_lock_i,
-  input load_secondary_root_key_lock_i,
+  input mubi4_t load_root_key_lock_i,
+  input mubi4_t load_secondary_root_key_lock_i,
   input [NumInstHwSlotWidth-1:0] slot_src_sel_i,
   input [NumInstHwSlotWidth-1:0] slot_dst_sel_i,
   input keymgr_dpe_policy_t slot_policy_i,
-  input prim_mubi_pkg::mubi4_t enforce_sw_binding_err_i,
+  input mubi4_t enforce_sw_binding_err_i,
    // `max_key_version_i` is stored during advance to be compared with `key_version_i` during
    // generate calls
   input [KeyVersionWidth-1:0] max_key_version_i,
@@ -65,26 +67,28 @@ module keymgr_dpe_ctrl
   output logic init_o,
 
   // Data input
-  input hw_key_req_t root_key_i,
-  input hw_key_req_t secondary_root_key_i,
+  input internal_key_t root_key_i,
+  input internal_key_t secondary_root_key_i,
   // `hw_sel_o == 1` indicates whether the generated key output
   // goes to sideload port. The safe default here is software CSR key.
-  output prim_mubi_pkg::mubi4_t hw_sel_o,
+  output mubi4_t hw_sel_o,
 
   // KMAC ctrl interface
   output logic adv_en_o,
   output logic gen_en_o,
-  output hw_key_req_t key_o,
+  output internal_key_t key_o,
   output keymgr_dpe_slot_t active_key_slot_o,
-  output invalid_advance_o,
+  output logic invalid_advance_o,
 
-  input kmac_done_i,
-  input kmac_input_invalid_i, // asserted when selected data fails criteria check
-  input kmac_fsm_err_i, // asserted when kmac fsm reaches unexpected state
-  input kmac_op_err_i,  // asserted when kmac itself reports an error
-  input kmac_done_err_i,// asserted when kmac unexpectedly toggles done
-  input kmac_cmd_err_i, // asserted when more than one command given to kmac
-  input [Shares-1:0][KeyWidth-1:0] kmac_data_i,
+  input logic kmac_done_i,
+  input logic kmac_input_invalid_i, // asserted when selected data fails criteria check
+  input logic kmac_fsm_err_i,       // asserted when kmac fsm reaches unexpected state
+  input logic kmac_op_err_i,        // asserted when kmac itself reports an error
+  input logic kmac_done_err_i,      // asserted when kmac unexpectedly toggles done
+  input logic kmac_cmd_err_i,       // asserted when more than one command given to kmac
+
+  // Digest provided by the kmac
+  input logic [Shares-1:0][InternalKeyWidth-1:0] kmac_data_i,
 
   // prng control interface
   input [Shares-1:0][RandWidth-1:0] entropy_i,
@@ -100,7 +104,7 @@ module keymgr_dpe_ctrl
 );
 
   localparam int EntropyWidth = LfsrWidth / 2;
-  localparam int EntropyRounds = KeyWidth / EntropyWidth;
+  localparam int EntropyRounds = InternalKeyWidth / EntropyWidth;
   localparam int EntropyRndWidth = prim_util_pkg::vbits(EntropyRounds);
 
   keymgr_dpe_working_state_e state_q, state_d;
@@ -192,8 +196,8 @@ module keymgr_dpe_ctrl
   // check incoming kmac data validity
   // Only check during the periods when there is actual kmac output
   assign invalid_kmac_out = (op_update | op_ack) & kmac_done_i &
-                            (~valid_data_chk(kmac_data_i[0]) |
-                            ~valid_data_chk(kmac_data_i[1]));
+                            (~valid_key_chk(kmac_data_i[0]) |
+                            ~valid_key_chk(kmac_data_i[1]));
 
   // async errors have nothing to do with the operation and thus should not
   // impact operation results.
@@ -453,6 +457,7 @@ module keymgr_dpe_ctrl
   logic invalid_gen;
   logic invalid_load;
   logic invalid_secondary_load;
+  logic invalid_kdf_engine;
   // TODO(#384): Make sure that:
   // 1) inv_state is correctly computed
   // 2) inv_state is correctly consumed by FSM
@@ -709,7 +714,7 @@ module keymgr_dpe_ctrl
 
   // Evaluate the mubi input of `enforce_sw_binding_err_i`
   logic enforce_sw_binding_err;
-  assign enforce_sw_binding_err = prim_mubi_pkg::mubi4_test_true_loose(enforce_sw_binding_err_i);
+  assign enforce_sw_binding_err = mubi4_test_true_loose(enforce_sw_binding_err_i);
 
   // key version must be smaller than or equal to max version
   assign key_version_vld_o = key_version_i <= active_key_slot_o.max_key_version;
@@ -735,6 +740,7 @@ module keymgr_dpe_ctrl
   assign invalid_advance = adv_req & (invalid_allow_child    |
                                       invalid_src_slot       |
                                       invalid_retain_parent  |
+                                      invalid_kdf_engine     |
                                       enforce_sw_binding_err |
                                       slot_src_sel_oob_i     |
                                       slot_dst_sel_oob_i);
@@ -742,21 +748,29 @@ module keymgr_dpe_ctrl
   assign invalid_erase = erase_req & (~destination_slot_valid |
                                       slot_dst_sel_oob_i);
 
-  assign invalid_gen = gen_req & (~active_key_slot_o.valid         |
+  assign invalid_gen = gen_req & (invalid_src_slot                 |
+                                  invalid_kdf_engine               |
                                   ~active_slot_policy.allow_keygen |
                                   ~key_version_vld_o               |
                                   dest_sel_oob_i                   |
                                   slot_src_sel_oob_i);
 
-  assign invalid_load = load_req & (~root_key_i.valid      |
-                                    destination_slot_valid |
-                                    load_root_key_lock_i   |
+  // SEC_CM: LOAD_ROOT_KEY_LOCK.CTRL.LOCK_MUBI
+  assign invalid_load = load_req & (~root_key_i.valid                           |
+                                    destination_slot_valid                      |
+                                    mubi4_test_true_loose(load_root_key_lock_i) |
                                     slot_dst_sel_oob_i);
 
-  assign invalid_secondary_load = load_secondary_req & (~secondary_root_key_i.valid    |
-                                                        destination_slot_valid         |
-                                                        load_secondary_root_key_lock_i |
-                                                        slot_dst_sel_oob_i);
+  // SEC_CM: LOAD_SECONDARY_ROOT_KEY_LOCK.CTRL.LOCK_MUBI
+  assign invalid_secondary_load = load_secondary_req & (
+      ~secondary_root_key_i.valid                           |
+      destination_slot_valid                                |
+      mubi4_test_true_loose(load_secondary_root_key_lock_i) |
+      slot_dst_sel_oob_i
+  );
+
+  // Reject advance and generate if SW committed an invalid mubi value to KDF_ENGINE_SHADOWED.
+  assign invalid_kdf_engine = (adv_req | gen_req) & kdf_engine_mubi_err_i;
 
   // This is similar to `invalid_advance` except that it does not depend on a incoming request.
   // The outer module uses `invalid_advance_o` to invalidate KMAC msg payload, when the advance
@@ -765,6 +779,7 @@ module keymgr_dpe_ctrl
   assign invalid_advance_o = invalid_allow_child    |
                              invalid_src_slot       |
                              invalid_retain_parent  |
+                             invalid_kdf_engine     |
                              enforce_sw_binding_err |
                              slot_src_sel_oob_i     |
                              slot_dst_sel_oob_i;
@@ -877,6 +892,12 @@ module keymgr_dpe_ctrl
 
   // The count value should always be 0 when a transaction start
   `ASSERT(CntZero_A, $rose(op_start_i) |-> cnt == '0)
+
+  // The internal key must be an integer multiple of the entropy width
+  `ASSERT_INIT(InternalKeyWidthMultipleOfEntropyWidth_A, InternalKeyWidth % EntropyWidth == 0)
+
+  // The counter indexes the key chunks and must never exceed the number of chunks.
+  `ASSERT(CntInRange_A, int'(cnt) < EntropyRounds)
 
   // Whenever a transaction completes, data_en must return to 0 on the next cycle
   `ASSERT(DataEnDis_A, op_start_i & op_done_o |=> ~data_hw_en_o && ~data_sw_en_o)

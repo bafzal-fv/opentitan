@@ -51,6 +51,12 @@
 .equ MODE_RSA_4096_MODEXP_DE, 0x4d6
 .equ MODE_RSA_4096_MODEXP_E,  0x7e7
 
+# Public-key validation modes (modulus is composite and not a prime power).
+# Chosen to have a Hamming distance of at least 4 to all other modes.
+.equ MODE_RSA_2048_CHECK_N, 0x232
+.equ MODE_RSA_3072_CHECK_N, 0x5fd
+.equ MODE_RSA_4096_CHECK_N, 0x6aa
+
 /**
  * Hardened boolean values.
  *
@@ -82,6 +88,9 @@
 .globl MODE_RSA_4096_MODEXP_F4
 .globl MODE_RSA_4096_MODEXP_DE
 .globl MODE_RSA_4096_MODEXP_E
+.globl MODE_RSA_2048_CHECK_N
+.globl MODE_RSA_3072_CHECK_N
+.globl MODE_RSA_4096_CHECK_N
 
 .section .text.start
 start:
@@ -93,9 +102,11 @@ start:
   addi    x3, x0, HARDENED_BOOL_FALSE
   sw      x3, 0(x2)
 
-  /* Read the mode and tail-call the requested operation. */
+  /* Read the mode (ignoring any upper 16-bit key_mode tag) and tail-call. */
   la      x2, mode
   lw      x2, 0(x2)
+  slli    x2, x2, 16
+  srli    x2, x2, 16
 
   add     x3, x0, MODE_RSA_1024_KEYGEN
   beq     x2, x3, rsa_1024_keygen
@@ -157,6 +168,15 @@ start:
   addi    x3, x0, MODE_RSA_4096_MODEXP_E
   beq     x2, x3, rsa_4096_modexp_e
 
+  addi    x3, x0, MODE_RSA_2048_CHECK_N
+  beq     x2, x3, rsa_2048_check_n
+
+  addi    x3, x0, MODE_RSA_3072_CHECK_N
+  beq     x2, x3, rsa_3072_check_n
+
+  addi    x3, x0, MODE_RSA_4096_CHECK_N
+  beq     x2, x3, rsa_4096_check_n
+
   /* Unsupported mode; fail. */
   unimp
   unimp
@@ -189,6 +209,18 @@ rsa_4096_keygen:
 
   /* Tail-call keygen. */
   jal     x0, do_keygen
+
+rsa_2048_check_n:
+  li      x30, 8
+  jal     x0, do_check_n
+
+rsa_3072_check_n:
+  li      x30, 12
+  jal     x0, do_check_n
+
+rsa_4096_check_n:
+  li      x30, 16
+  jal     x0, do_check_n
 
 rsa_512_modexp:
   /* Enable message blinding. */
@@ -389,6 +421,41 @@ do_keygen:
   ecall
 
 /**
+ * Check that the RSA modulus is composite and not a prime power.
+ *
+ * Calls `ecall` when done; should be tail-called by mode-specific routines
+ * after the number of limbs is set. The `mode` and `ok` words alias r1, which
+ * `rsa_check_modulus` overwrites, so both are rewritten here.
+ *
+ * @param[in]      x30: number of limbs for modulus
+ * @param[in]  dmem[n]: n, modulus (most significant bit set)
+ * @param[out] dmem[ok]: HARDENED_BOOL_TRUE if n is composite and not a prime
+ *                       power, HARDENED_BOOL_FALSE otherwise
+ */
+do_check_n:
+  jal  x1, rsa_check_modulus
+  addi x5, x2, 0
+
+  # Restore the mode indicator based on the limb count x30.
+  li   x16, 8
+  addi x17, x0, MODE_RSA_2048_CHECK_N
+  beq  x30, x16, _do_check_n_done
+  li   x16, 12
+  addi x17, x0, MODE_RSA_3072_CHECK_N
+  beq  x30, x16, _do_check_n_done
+  addi x17, x0, MODE_RSA_4096_CHECK_N
+
+_do_check_n_done:
+  la   x16, mode
+  sw   x17, 0(x16)
+
+  # Write the hardened result.
+  la   x2, ok
+  sw   x5, 0(x2)
+
+  ecall
+
+/**
  * Precompute constants and call modular exponentiation.
  *
  * Calls `ecall` when done; should be tail-called by mode-specific routines
@@ -402,6 +469,15 @@ do_keygen:
  * @param[out] dmem[inout]: result, a^d mod n
  */
 do_modexp:
+  /* Preserve upper 16-bit key_mode tag of `mode` in w21 across modexp. */
+  la     x2, r1
+  lw     x4, 0(x2)
+  li     x3, 31
+  bn.sid x3, 0(x2)
+  sw     x4, 0(x2)
+  li     x3, 21
+  bn.lid x3, 0(x2)
+
   /* Load pointers to modulus and Montgomery constant buffers. */
   la    x16, rsa_n
   la    x17, RR
@@ -440,8 +516,14 @@ _restore_mode_de:
   addi x17, x0, MODE_RSA_4096_MODEXP_DE
 
 _restore_mode:
-  la   x16, mode
-  sw   x17, 0(x16)
+  la     x16, r1
+  li     x3, 21
+  bn.sid x3, 0(x16)
+  lw     x4, 0(x16)
+  srli   x4, x4, 16
+  slli   x4, x4, 16
+  or     x17, x17, x4
+  sw     x17, 0(x16)
 
   /* Write success. */
   la       x2, ok

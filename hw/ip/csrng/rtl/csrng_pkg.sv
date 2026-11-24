@@ -25,14 +25,6 @@ package csrng_pkg;
   // Width of the counter in the command stages to count the amount of generated random bits
   parameter int unsigned GenBitsCtrWidth = 12;
 
-  // Width of the state fields readable via the register interface (up to and including fips)
-  parameter int unsigned StateDbRegStateWidth = RsCtrWidth + BlkLen + KeyLen + 2;
-  // Number of registers per state with synthesis-friendly $ceil(StateDbRegStateWidth / TL_DW)
-  parameter int unsigned StateDbNumRegState =
-      (StateDbRegStateWidth + top_pkg::TL_DW - 1) / top_pkg::TL_DW;
-  // Width of the word pointer used to read out a state via the register interface
-  parameter int unsigned StateDbRegPtrWidth = $clog2(StateDbNumRegState);
-
   // Commonly used internal signal widths
   parameter int unsigned CmdWidth = 3;
   parameter int unsigned InstIdWidth = 4;
@@ -114,7 +106,6 @@ package csrng_pkg;
   typedef struct packed {
     logic                       gen_adata_vld;
     logic         [SeedLen-1:0] gen_adata;
-    logic                       gen_flag;
     logic [GenBitsCtrWidth-1:0] gen_ctr;
     logic                       fips;
     logic      [RsCtrWidth-1:0] rs_ctr;
@@ -138,21 +129,26 @@ package csrng_pkg;
     // GENerate command.
     // TODO(#28153) Find a smaller solution (giving each app interface an unpacker does not help)
     logic                       gen_adata_vld;
-    logic         [SeedLen-1:0] gen_adata;
     logic                       gen_flag;
     logic [GenBitsCtrWidth-1:0] gen_ctr;
     logic                       fips;
     logic                       inst_state;
+    logic         [SeedLen-1:0] gen_adata;
     csrng_key_v_t               key_v;
     logic      [RsCtrWidth-1:0] rs_ctr;
   } csrng_state_t;
 
   parameter int unsigned StateWidth    = $bits(csrng_state_t);
 
+  // Number of registers per state with synthesis-friendly $ceil(StateWidth / TL_DW)
+  parameter int unsigned StateDbNumRegState = (StateWidth + top_pkg::TL_DW - 1) / top_pkg::TL_DW;
+  // Width of the word pointer used to access a state via the register interface
+  parameter int unsigned StateDbRegPtrWidth = $clog2(StateDbNumRegState);
+
   parameter int unsigned MainSmStateWidth = 6;
 
   // Encoding generated with:
-  // $ ./util/design/sparse-fsm-encode.py -d 3 -m 8 -n 6 \
+  // $ ./util/design/sparse-fsm-encode.py -d 3 -m 6 -n 6 \
   //     -s 137328258 --language=sv
   //
   // Hamming distance histogram:
@@ -160,25 +156,23 @@ package csrng_pkg;
   //  0: --
   //  1: --
   //  2: --
-  //  3: |||||||||||||||||||| (57.14%)
-  //  4: ||||||||||||||| (42.86%)
-  //  5: --
+  //  3: |||||||||||||||||||| (53.33%)
+  //  4: ||||||||||||||| (40.00%)
+  //  5: || (6.67%)
   //  6: --
   //
   // Minimum Hamming distance: 3
-  // Maximum Hamming distance: 4
+  // Maximum Hamming distance: 5
   // Minimum Hamming weight: 1
   // Maximum Hamming weight: 5
   //
   typedef enum logic [MainSmStateWidth-1:0] {
-    MainSmIdle        = 6'b110111, // idle
-    MainSmParseCmd    = 6'b011101, // parse the cmd
-    MainSmEntropyReq  = 6'b001110, // request entropy if necessary
-    MainSmCmdPrep     = 6'b000011, // delay cycle for command request (?)
-    MainSmCmdVld      = 6'b010000, // command request to core data path
-    MainSmClrAData    = 6'b111010, // clear out the additional data packer fifo
-    MainSmCmdCompWait = 6'b100100, // wait for command to complete
-    MainSmError       = 6'b101001  // error state, results in fatal alert
+    MainSmIdle        = 6'b010111, // idle
+    MainSmParseCmd    = 6'b100001, // parse the cmd
+    MainSmEntropyReq  = 6'b001000, // request entropy if necessary
+    MainSmCmdPrep     = 6'b111011, // delay cycle for command request (?)
+    MainSmCmdReq      = 6'b110100, // command request to core data path
+    MainSmError       = 6'b101110  // error state, results in fatal alert
   } main_sm_state_e;
 
   parameter int CsKeymgrDivWidth = 384;

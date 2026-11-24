@@ -241,8 +241,7 @@ inline uint32_t launder32(uint32_t val) {
 
   // When we're building for static analysis, reduce false positives by
   // short-circuiting the inline assembly block.
-#if OT_BUILD_FOR_STATIC_ANALYZER || \
-    (defined(OT_DISABLE_HARDENING) && OT_DISABLE_HARDENING)
+#if OT_BUILD_FOR_STATIC_ANALYZER
   return val;
 #endif
 
@@ -264,8 +263,7 @@ inline uint32_t launder32(uint32_t val) {
  */
 OT_WARN_UNUSED_RESULT
 inline ot_word_t launderw(ot_word_t val) {
-#if OT_BUILD_FOR_STATIC_ANALYZER || \
-    (defined(OT_DISABLE_HARDENING) && OT_DISABLE_HARDENING)
+#if OT_BUILD_FOR_STATIC_ANALYZER
   return val;
 #endif
   asm volatile("" : "+r"(val));
@@ -574,12 +572,16 @@ inline ot_word_t ct_cmovw(ct_boolw_t c, ot_word_t a, ot_word_t b) {
 // clang-format off
 #define HARDENED_CHECK_(op_, a_, b_)                                  \
   asm volatile(                                                       \
-      OT_CAT(HARDENED_CHECK_OP_, op_) " %0, %1, .L_HARDENED_OK_%=;"   \
+      ".option push; .option norvc;"                                  \
+      OT_CAT(HARDENED_CHECK_OP_, op_) " %z0, %z1, .L_HARDENED_OK_%=;" \
+      ".option pop;"                                                  \
       ".L_HARDENED_BAD_%=:;"                                          \
       "unimp;"                                                        \
       ".L_HARDENED_OK_%=:;"                                           \
-      OT_CAT(HARDENED_CHECK_INV_, op_) " %0, %1, .L_HARDENED_BAD_%=;" \
-      ::"r"(a_), "r"(b_))
+      ".option push; .option norvc;"                                  \
+      OT_CAT(HARDENED_CHECK_INV_, op_) " %z0, %z1, .L_HARDENED_BAD_%=;" \
+      ".option pop;"                                                  \
+      ::"rJ"(a_), "rJ"(b_))
 // clang-format on
 
 #define HARDENED_TRAP_()                      \
@@ -590,16 +592,26 @@ inline ot_word_t ct_cmovw(ct_boolw_t c, ot_word_t a, ot_word_t b) {
 // are only reached due to fault injections.
 
 #else  // OT_DISABLE_HARDENING
-// We allow disabling hardening to measure the impact of the hardened sequences
-// on code size.
-#define HARDENED_CHECK_(op_, a_, b_) \
-  do {                               \
-    (void)(a_);                      \
-    (void)(b_);                      \
-  } while (0)
-#define HARDENED_TRAP_() \
-  do {                   \
-  } while (0)
+// Non-redundant check to save code size while preserving a single runtime
+// check.
+#define HARDENED_CHECK_C_OP_EQ_ ==
+#define HARDENED_CHECK_C_OP_NE_ !=
+#define HARDENED_CHECK_C_OP_LT_ <
+#define HARDENED_CHECK_C_OP_GT_ >
+#define HARDENED_CHECK_C_OP_LE_ <=
+#define HARDENED_CHECK_C_OP_GE_ >=
+
+#define HARDENED_CHECK_(op_, a_, b_)                                          \
+  do {                                                                        \
+    if (!((uintptr_t)(a_)OT_CAT(HARDENED_CHECK_C_OP_, op_)(uintptr_t)(b_))) { \
+      asm volatile("unimp");                                                  \
+    }                                                                         \
+  } while (false)
+
+#define HARDENED_TRAP_()   \
+  do {                     \
+    asm volatile("unimp"); \
+  } while (false)
 #endif  // OT_DISABLE_HARDENING
 #else   // OT_PLATFORM_RV32
 #include <assert.h>

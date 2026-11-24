@@ -9,6 +9,7 @@
 
 #include "gtest/gtest.h"
 #include "sw/device/lib/base/mock_abs_mmio.h"
+#include "sw/device/lib/base/multibits.h"
 #include "sw/device/silicon_creator/lib/base/mock_sec_mmio.h"
 #include "sw/device/silicon_creator/lib/drivers/keymgr_dpe.h"
 #include "sw/device/silicon_creator/lib/error.h"
@@ -233,6 +234,25 @@ TEST_F(KeymgrDpeTest, EntropyReseedIntervalSet) {
   EXPECT_SEC_WRITE32_SHADOWED(
       base_ + KEYMGR_DPE_RESEED_INTERVAL_SHADOWED_REG_OFFSET, 0x1234u);
   sc_keymgr_dpe_entropy_reseed_interval_set(0x1234u);
+}
+
+TEST_F(KeymgrDpeTest, KdfEngineSetKmac) {
+  EXPECT_SEC_WRITE32_SHADOWED(
+      base_ + KEYMGR_DPE_KDF_ENGINE_SHADOWED_REG_OFFSET,
+      {{KEYMGR_DPE_KDF_ENGINE_SHADOWED_SEL_OFFSET, kMultiBitBool4False}});
+  sc_keymgr_dpe_kdf_engine_set(kScKeymgrDPEKdfEngineKmac);
+}
+
+TEST_F(KeymgrDpeTest, KdfEngineSetOtbn) {
+  EXPECT_SEC_WRITE32_SHADOWED(
+      base_ + KEYMGR_DPE_KDF_ENGINE_SHADOWED_REG_OFFSET,
+      {{KEYMGR_DPE_KDF_ENGINE_SHADOWED_SEL_OFFSET, kMultiBitBool4True}});
+  sc_keymgr_dpe_kdf_engine_set(kScKeymgrDPEKdfEngineOtbn);
+}
+
+TEST_F(KeymgrDpeTest, KdfEngineLock) {
+  EXPECT_SEC_WRITE32(base_ + KEYMGR_DPE_KDF_ENGINE_REGWEN_REG_OFFSET, 0);
+  sc_keymgr_dpe_kdf_engine_lock();
 }
 
 TEST_F(KeymgrDpeTest, SwBindingValueSet) {
@@ -516,10 +536,51 @@ TEST_F(KeymgrDpeTest, AdvanceDpeContext) {
 
 TEST_F(KeymgrDpeTest, LockUds) {
   EXPECT_ABS_WRITE32(base_ + KEYMGR_DPE_LOAD_ROOT_KEY_LOCK_REG_OFFSET,
-                     {
-                         {KEYMGR_DPE_LOAD_ROOT_KEY_LOCK_LOCK_BIT, true},
-                     });
+                     kMultiBitBool4True);
   sc_keymgr_dpe_lock_uds();
+}
+
+TEST_F(KeymgrDpeTest, EnforceSwBinding) {
+  EXPECT_ABS_WRITE32(
+      base_ + KEYMGR_DPE_ENFORCE_SW_BINDING_REG_OFFSET,
+      {
+          {KEYMGR_DPE_ENFORCE_SW_BINDING_ENFORCE_OFFSET, kMultiBitBool4True},
+      });
+  EXPECT_ABS_READ32(
+      base_ + KEYMGR_DPE_ENFORCE_SW_BINDING_REG_OFFSET,
+      {
+          {KEYMGR_DPE_ENFORCE_SW_BINDING_ENFORCE_OFFSET, kMultiBitBool4True},
+      });
+  EXPECT_EQ(sc_keymgr_dpe_enforce_sw_binding(), kErrorOk);
+}
+
+TEST_F(KeymgrDpeTest, EnforceSwBindingInvalidEncoding) {
+  EXPECT_ABS_WRITE32(
+      base_ + KEYMGR_DPE_ENFORCE_SW_BINDING_REG_OFFSET,
+      {
+          {KEYMGR_DPE_ENFORCE_SW_BINDING_ENFORCE_OFFSET, kMultiBitBool4True},
+      });
+  // Writing True must always read back as True, anything else is a fault.
+  EXPECT_ABS_READ32(base_ + KEYMGR_DPE_ENFORCE_SW_BINDING_REG_OFFSET,
+                    {
+                        {KEYMGR_DPE_ENFORCE_SW_BINDING_ENFORCE_OFFSET, 0x1},
+                    });
+  EXPECT_EQ(sc_keymgr_dpe_enforce_sw_binding(), kErrorKeymgrInternal);
+}
+
+TEST_F(KeymgrDpeTest, EnforceSwBindingReadbackMismatch) {
+  EXPECT_ABS_WRITE32(
+      base_ + KEYMGR_DPE_ENFORCE_SW_BINDING_REG_OFFSET,
+      {
+          {KEYMGR_DPE_ENFORCE_SW_BINDING_ENFORCE_OFFSET, kMultiBitBool4True},
+      });
+  // The write did not take effect and the lock is still open.
+  EXPECT_ABS_READ32(
+      base_ + KEYMGR_DPE_ENFORCE_SW_BINDING_REG_OFFSET,
+      {
+          {KEYMGR_DPE_ENFORCE_SW_BINDING_ENFORCE_OFFSET, kMultiBitBool4False},
+      });
+  EXPECT_EQ(sc_keymgr_dpe_enforce_sw_binding(), kErrorKeymgrInternal);
 }
 
 TEST_F(KeymgrDpeTest, LoadUds) {

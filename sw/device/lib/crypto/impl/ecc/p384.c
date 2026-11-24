@@ -87,8 +87,8 @@ enum {
    */
   kModeKeygenInsCnt = 1961345,
   kModeKeygenSideloadInsCnt = 1961249,
-  kModeEcdhInsCnt = 1983989,
-  kModeEcdhSideloadInsCnt = 1984142,
+  kModeEcdhInsCnt = 1985521,
+  kModeEcdhSideloadInsCnt = 1985674,
   kModeEcdsaSignConfigKInsCnt = 1600494,
   kModeEcdsaSignInsCnt = 1600721,
   kModeEcdsaSignSideloadInsCnt = 1600874,
@@ -404,7 +404,8 @@ status_t p384_ecdsa_verify_finalize(const p384_ecdsa_signature_t *signature,
   const otbn_addr_t kOtbnVarXr = OTBN_ADDR_T_INIT(run_p384, x_r);
   HARDENED_TRY(otbn_dmem_read(kP384ScalarWords, kOtbnVarXr, x_r));
 
-  *result = hardened_memeq(x_r, signature->r, kP384ScalarWords);
+  *result = (hardened_bool_t)0;
+  *result |= hardened_memeq(x_r, signature->r, kP384ScalarWords);
 
   // Wipe DMEM.
   return otbn_dmem_sec_wipe();

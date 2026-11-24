@@ -575,10 +575,10 @@ For each peripheral input, this selects the muxable pad input.
 {"reg": [{"name": "IN", "bits": 4, "attr": ["rw"], "rotate": 0}, {"bits": 28}], "config": {"lanes": 1, "fontsize": 10, "vspace": 80}}
 ```
 
-|  Bits  |  Type  |  Reset  | Name   | Description                                                                                                 |
-|:------:|:------:|:-------:|:-------|:------------------------------------------------------------------------------------------------------------|
-|  31:4  |        |         |        | Reserved                                                                                                    |
-|  3:0   |   rw   |   0x0   | IN     | 0: tie constantly to zero, 1: tie constantly to 1, >=2: MIO pads (i.e., add 2 to the native MIO pad index). |
+|  Bits  |  Type  |  Reset  | Name   | Description                                                                                                                                                                                         |
+|:------:|:------:|:-------:|:-------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|  31:4  |        |         |        | Reserved                                                                                                                                                                                            |
+|  3:0   |   rw   |   0x0   | IN     | 0: tie constantly to zero, 1: tie constantly to 1, >=2: MIO pads (i.e., add 2 to the native MIO pad index). Selecting a pad that is not legal for this peripheral input ties it constantly to zero. |
 
 ## MIO_OUTSEL_REGWEN
 Register write enable for MIO output selects.
@@ -644,10 +644,10 @@ For each muxable pad, this selects the peripheral output.
 {"reg": [{"name": "OUT", "bits": 3, "attr": ["rw"], "rotate": 0}, {"bits": 29}], "config": {"lanes": 1, "fontsize": 10, "vspace": 80}}
 ```
 
-|  Bits  |  Type  |  Reset  | Name   | Description                                                                                                                             |
-|:------:|:------:|:-------:|:-------|:----------------------------------------------------------------------------------------------------------------------------------------|
-|  31:3  |        |         |        | Reserved                                                                                                                                |
-|  2:0   |   rw   |   0x2   | OUT    | 0: tie constantly to zero, 1: tie constantly to 1, 2: high-Z, >=3: peripheral outputs (i.e., add 3 to the native peripheral pad index). |
+|  Bits  |  Type  |  Reset  | Name   | Description                                                                                                                                                                                                                    |
+|:------:|:------:|:-------:|:-------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|  31:3  |        |         |        | Reserved                                                                                                                                                                                                                       |
+|  2:0   |   rw   |   0x2   | OUT    | 0: tie constantly to zero, 1: tie constantly to 1, 2: high-Z, >=3: peripheral outputs (i.e., add 3 to the native peripheral pad index). Selecting a peripheral output that is not legal for this pad puts the pad into high-Z. |
 
 ## MIO_PAD_ATTR_REGWEN
 Register write enable for MIO PAD attributes.
@@ -685,9 +685,7 @@ Register write enable for MIO PAD attributes.
 
 ## MIO_PAD_ATTR
 Muxed pad attributes.
-This register has WARL behavior since not each pad type may support
-all attributes.
-The muxed pad that is used for TAP strap 0 has a different reset value, with `pull_en` set to 1.
+This register has WARL behavior since not each pad type may support all attributes.
 - Reset default: `0x0`
 - Reset mask: `0xf300ff`
 - Register enable: [`MIO_PAD_ATTR_REGWEN`](#mio_pad_attr_regwen)

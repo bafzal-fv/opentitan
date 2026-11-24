@@ -32,16 +32,18 @@ static status_t digest_info_length_get(
   *len = 0;
   hash_info_t info;
   HARDENED_TRY(hash_info_get(message_digest.mode, &info));
-  if (info.der_oid == NULL || message_digest.len == 0) {
+  if (info.der_oid == NULL ||
+      (info.digest_wordlen != 0 && message_digest.len == 0)) {
     // Unsupported or unrecognized hash function.
     return OTCRYPTO_BAD_ARGS;
   }
-  *len = info.der_oid_len + message_digest.len * sizeof(uint32_t);
+  if (info.digest_wordlen == 0) {
+    *len = message_digest.len;
+  } else {
+    *len = info.der_oid_len + message_digest.len * sizeof(uint32_t);
+    HARDENED_CHECK_NE(*len, 0);
+  }
 
-  // Check if the length was set in the switch case statements.
-  HARDENED_CHECK_NE(*len, 0);
-
-  // Unreachable.
   return OTCRYPTO_OK;
 }
 
@@ -69,24 +71,25 @@ static status_t digest_info_write(const otcrypto_hash_digest_t message_digest,
     // Unsupported or unrecognized hash function.
     return OTCRYPTO_BAD_ARGS;
   }
+  size_t digest_bytelen = message_digest.len;
   if (info.digest_wordlen != 0) {
-    if (launder32(message_digest.len) != info.digest_wordlen) {
+    if (launderw(message_digest.len) != launderw(info.digest_wordlen)) {
       return OTCRYPTO_BAD_ARGS;
     }
     HARDENED_CHECK_EQ(message_digest.len, info.digest_wordlen);
+    digest_bytelen = message_digest.len * sizeof(uint32_t);
   }
 
-  memcpy(encoding + message_digest.len, info.der_oid, info.der_oid_len);
+  uint8_t *encoding_bytes = (uint8_t *)encoding;
+  memcpy(encoding_bytes + digest_bytelen, info.der_oid, info.der_oid_len);
 
   // Copy the digest into the encoding, reversing the order of bytes.
+  const uint8_t *digest_bytes = (const uint8_t *)message_digest.data;
   size_t i;
-  for (i = 0; launder32(i) < ceil_div(message_digest.len, 2); i++) {
-    encoding[i] =
-        __builtin_bswap32(message_digest.data[message_digest.len - 1 - i]);
-    encoding[message_digest.len - 1 - i] =
-        __builtin_bswap32(message_digest.data[i]);
+  for (i = 0; launder32(i) < digest_bytelen; i++) {
+    encoding_bytes[i] = digest_bytes[digest_bytelen - 1 - i];
   }
-  HARDENED_CHECK_EQ(i, ceil_div(message_digest.len, 2));
+  HARDENED_CHECK_EQ(i, digest_bytelen);
 
   return OTCRYPTO_OK;
 }
@@ -109,7 +112,7 @@ status_t rsa_padding_pkcs1v15_encode(
   size_t tlen;
   HARDENED_TRY(digest_info_length_get(message_digest, &tlen));
 
-  if (tlen + 3 + 8 >= encoded_message_bytelen) {
+  if (encoded_message_bytelen < 11 || tlen > encoded_message_bytelen - 11) {
     // Invalid encoded message length/hash function combination; the RFC
     // specifies that the 0xff padding must be at least 8 octets.
     return OTCRYPTO_BAD_ARGS;
@@ -167,9 +170,9 @@ static status_t digest_wordlen_get(otcrypto_hash_mode_t hash_mode,
 }
 
 /**
- * Run an iteration of a hash function using the HMAC or KMAC driver.
+ * Run an iteration of a hash function using the streaming hash interface.
  *
- * Only supports fixed-length hash functions (SHA2 or SHA3), not XOFs.
+ * Only supports SHA-1 and SHA-2 hash functions, not SHA-3 or XOFs.
  *
  * It is the caller's responsibility to ensure there is enough space allocated
  * at `digest` to hold the result.
@@ -215,7 +218,7 @@ static status_t mgf1(otcrypto_hash_mode_t hash_mode, const uint8_t *seed,
   uint8_t hash_input[seed_len + sizeof(uint32_t)];
   memcpy(hash_input, seed, seed_len);
   uint32_t i = 0;
-  while (0 < mask_len) {
+  while (0 < launderw(mask_len)) {
     uint32_t ctr = __builtin_bswap32(i);
     memcpy(hash_input + seed_len, &ctr, sizeof(uint32_t));
     if (mask_len < digest_bytelen) {
@@ -550,6 +553,7 @@ status_t rsa_padding_oaep_max_message_bytelen(
 }
 
 status_t rsa_padding_oaep_encode(const otcrypto_hash_mode_t hash_mode,
+                                 const otcrypto_hash_mode_t mgf_hash_mode,
                                  const uint8_t *message, size_t message_bytelen,
                                  const uint8_t *label, size_t label_bytelen,
                                  size_t encoded_message_len,
@@ -586,7 +590,7 @@ status_t rsa_padding_oaep_encode(const otcrypto_hash_mode_t hash_mode,
   size_t db_wordlen = ceil_div(db_bytelen, sizeof(uint32_t));
   uint32_t db[db_wordlen];
   HARDENED_TRY(
-      mgf1(hash_mode, (unsigned char *)seed, sizeof(seed), db_bytelen, db));
+      mgf1(mgf_hash_mode, (unsigned char *)seed, sizeof(seed), db_bytelen, db));
 
   // Construct maskedDB = dbMask XOR (lhash || PS || 0x01 || M), where PS is
   // all-zero (step 2f). By computing the mask first, we can simply XOR with
@@ -602,8 +606,8 @@ status_t rsa_padding_oaep_encode(const otcrypto_hash_mode_t hash_mode,
 
   // Compute seedMask = MGF(maskedDB, hLen) (step 2g).
   uint32_t seed_mask[digest_wordlen];
-  HARDENED_TRY(mgf1(hash_mode, (unsigned char *)db, db_bytelen, digest_bytelen,
-                    seed_mask));
+  HARDENED_TRY(mgf1(mgf_hash_mode, (unsigned char *)db, db_bytelen,
+                    digest_bytelen, seed_mask));
 
   // Construct maskedSeed = seed XOR seedMask (step 2h).
   HARDENED_TRY(hardened_xor_in_place(seed, seed_mask, ARRAYSIZE(seed)));
@@ -631,6 +635,7 @@ status_t rsa_padding_oaep_encode(const otcrypto_hash_mode_t hash_mode,
 }
 
 status_t rsa_padding_oaep_decode(const otcrypto_hash_mode_t hash_mode,
+                                 const otcrypto_hash_mode_t mgf_hash_mode,
                                  const uint8_t *label, size_t label_bytelen,
                                  uint32_t *encoded_message,
                                  size_t encoded_message_len, uint8_t *message,
@@ -672,16 +677,16 @@ status_t rsa_padding_oaep_decode(const otcrypto_hash_mode_t hash_mode,
 
   // Compute seedMask = MGF(maskedDB, hLen) (step 3c).
   uint32_t seed_mask[digest_wordlen];
-  HARDENED_TRY(mgf1(hash_mode, (unsigned char *)db, db_bytelen, digest_bytelen,
-                    seed_mask));
+  HARDENED_TRY(mgf1(mgf_hash_mode, (unsigned char *)db, db_bytelen,
+                    digest_bytelen, seed_mask));
 
   // Construct seed = maskedSeed XOR seedMask (step 3d).
   HARDENED_TRY(hardened_xor_in_place(seed, seed_mask, ARRAYSIZE(seed)));
 
   // Generate dbMask = MGF(seed, k - hLen - 1) (step 3e).
   uint32_t db_mask[db_wordlen];
-  HARDENED_TRY(mgf1(hash_mode, (unsigned char *)seed, sizeof(seed), db_bytelen,
-                    db_mask));
+  HARDENED_TRY(mgf1(mgf_hash_mode, (unsigned char *)seed, sizeof(seed),
+                    db_bytelen, db_mask));
 
   // Zero trailing bytes of DB and dbMask if needed.
   size_t num_trailing_bytes = sizeof(db) - db_bytelen;
@@ -733,7 +738,7 @@ status_t rsa_padding_oaep_decode(const otcrypto_hash_mode_t hash_mode,
                       kHardenedBoolTrue);
   }
   // Shred the stale memory after copying out the plaintext.
-  HARDENED_TRY(hardened_memshred(db, db_wordlen));
+  hardened_memshred(db, db_wordlen);
   return OTCRYPTO_OK;
 }
 
@@ -806,6 +811,7 @@ static status_t pkcs1v15_check_padding_and_find_message_start(
 
 status_t rsa_padding_pkcs1v15_decrypt_decode(uint32_t *encoded_message,
                                              size_t encoded_message_len,
+                                             size_t max_message_bytelen,
                                              uint8_t *message,
                                              size_t *message_bytelen) {
   HARDENED_TRY(reverse_bytes(encoded_message_len, encoded_message));
@@ -827,11 +833,16 @@ status_t rsa_padding_pkcs1v15_decrypt_decode(uint32_t *encoded_message,
   HARDENED_CHECK_EQ(message_start_idx0, message_start_idx1);
 
   *message_bytelen = encoded_message_bytelen - message_start_idx0;
+  if (*message_bytelen > max_message_bytelen) {
+    hardened_memshred(encoded_message, encoded_message_len);
+    return OTCRYPTO_BAD_ARGS;
+  }
   HARDENED_TRY(randomized_bytecopy(
       message, encoded_message_bytes + message_start_idx0, *message_bytelen));
   HARDENED_CHECK_EQ(
       consttime_memeq_byte(encoded_message_bytes + message_start_idx0, message,
                            *message_bytelen),
       kHardenedBoolTrue);
-  return hardened_memshred(encoded_message, encoded_message_len);
+  hardened_memshred(encoded_message, encoded_message_len);
+  return OTCRYPTO_OK;
 }

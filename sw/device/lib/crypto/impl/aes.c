@@ -174,8 +174,12 @@ static status_t aes_padding_apply(otcrypto_aes_padding_t padding_mode,
           launder32(padding_written) | kOtcryptoAesPaddingIso9797M2;
       break;
     case kOtcryptoAesPaddingNull:
-      // This routine should not be called if padding is not needed.
-      return OTCRYPTO_RECOV_ERR;
+      // Zero-pad the remaining bytes (used for partial final blocks in CTR
+      // mode).
+      HARDENED_CHECK_NE(launder32(partial_data_len), 0);
+      memset(padding, 0x0, padding_len);
+      padding_written = launder32(padding_written) | kOtcryptoAesPaddingNull;
+      break;
     default:
       // Unrecognized padding mode.
       return OTCRYPTO_BAD_ARGS;
@@ -251,19 +255,21 @@ static status_t num_padded_blocks_get(size_t plaintext_len,
  * @param padding Padding mode.
  * @returns Number of AES blocks required.
  */
+OT_ALWAYS_INLINE
 static status_t get_block(const otcrypto_const_byte_buf_t *input,
                           otcrypto_aes_padding_t padding, size_t index,
                           aes_block_t *block) {
   size_t num_full_blocks = input->len / kAesBlockNumBytes;
+  HARDENED_CHECK_EQ(num_full_blocks, launderw(input->len) / kAesBlockNumBytes);
 
   // The index should never be more than `num_full_blocks` + 1, even including
   // padding.
   HARDENED_CHECK_LE(index, num_full_blocks + 1);
 
   // Randomize the destination buffer.
-  HARDENED_TRY(hardened_memshred(block->data, ARRAYSIZE(block->data)));
+  hardened_memshred(block->data, ARRAYSIZE(block->data));
 
-  if (index < num_full_blocks) {
+  if (launderw(index) < launderw(num_full_blocks)) {
     HARDENED_CHECK_LT(index, num_full_blocks);
     // No need to worry about padding, just copy the data into the output
     // block.
@@ -275,22 +281,28 @@ static status_t get_block(const otcrypto_const_byte_buf_t *input,
                                      kAesBlockNumBytes));
 
     // Verify that the plaintext block was copied correctly.
-    HARDENED_CHECK_EQ(consttime_memeq_byte(
-                          block->data, &input->data[index * kAesBlockNumBytes],
-                          kAesBlockNumBytes),
-                      kHardenedBoolTrue);
+    HARDENED_CHECK_EQ(
+        consttime_memeq_byte(block->data,
+                             &input->data[launderw(index) * kAesBlockNumBytes],
+                             kAesBlockNumBytes),
+        kHardenedBoolTrue);
 
     // Verify input buffer
     HARDENED_CHECK_EQ(kHardenedBoolTrue, OTCRYPTO_CHECK_BUF(input));
     return OTCRYPTO_OK;
   }
-  HARDENED_CHECK_GE(launder32(index), num_full_blocks);
+  HARDENED_CHECK_GE(index, num_full_blocks);
 
   // If we get here, this block is the one with padding. It may be a partial
   // block or an empty block that will be entirely filled with padded bytes.
   size_t partial_data_len = input->len % kAesBlockNumBytes;
   HARDENED_TRY(randomized_bytecopy(
       block->data, &input->data[index * kAesBlockNumBytes], partial_data_len));
+  HARDENED_CHECK_EQ(
+      consttime_memeq_byte(block->data,
+                           &input->data[launderw(index) * kAesBlockNumBytes],
+                           partial_data_len),
+      kHardenedBoolTrue);
 
   // Apply padding.
   HARDENED_TRY(aes_padding_apply(padding, partial_data_len, block));
@@ -372,11 +384,28 @@ static otcrypto_status_t otcrypto_aes_impl(
 
   // Calculate the number of blocks for the input, including the padding for
   // encryption.
+  if (aes_operation != kOtcryptoAesOperationEncrypt &&
+      aes_operation != kOtcryptoAesOperationDecrypt) {
+    return OTCRYPTO_BAD_ARGS;
+  }
+
+  bool ctr_stream = (launder32(aes_mode) == kOtcryptoAesModeCtr &&
+                     launder32(aes_padding) == kOtcryptoAesPaddingNull);
   size_t input_nblocks = 0;
-  if (aes_operation == kOtcryptoAesOperationEncrypt) {
+  if (ctr_stream) {
+    if (cipher_input->len > UINT32_MAX - (kAesBlockNumBytes - 1)) {
+      return OTCRYPTO_BAD_ARGS;
+    }
+    input_nblocks = ceil_div(cipher_input->len, kAesBlockNumBytes);
+  } else if (aes_operation == kOtcryptoAesOperationEncrypt) {
     HARDENED_TRY(
         num_padded_blocks_get(cipher_input->len, aes_padding, &input_nblocks));
   } else if (aes_operation == kOtcryptoAesOperationDecrypt) {
+    if (launder32(aes_padding) != kOtcryptoAesPaddingPkcs7 &&
+        launder32(aes_padding) != kOtcryptoAesPaddingIso9797M2 &&
+        launder32(aes_padding) != kOtcryptoAesPaddingNull) {
+      return OTCRYPTO_BAD_ARGS;
+    }
     // If the operation is decryption, the input length must be divisible by
     // the block size.
     if (launder32(cipher_input->len) % kAesBlockNumBytes != 0) {
@@ -387,19 +416,13 @@ static otcrypto_status_t otcrypto_aes_impl(
   }
 
   // Check input/output lengths.
+  size_t exp_output_len =
+      ctr_stream ? cipher_input->len : input_nblocks * kAesBlockNumBytes;
   if (cipher_output != NULL) {
-    if (input_nblocks == 0 ||
-        launder32(cipher_output->len) != input_nblocks * kAesBlockNumBytes) {
+    if (launderw(cipher_output->len) != launderw(exp_output_len)) {
       return OTCRYPTO_BAD_ARGS;
     }
-    HARDENED_CHECK_EQ(cipher_output->len, input_nblocks * kAesBlockNumBytes);
-  } else {
-    if (input_nblocks == 0) {
-      // COVERAGE (FI CM) Redundant check when cipher_output is NULL during
-      // redundant execution; input_nblocks was already checked in the
-      // primary execution.
-      return OTCRYPTO_BAD_ARGS;
-    }
+    HARDENED_CHECK_EQ(cipher_output->len, exp_output_len);
   }
 
   // Construct the IV and check its length. ECB mode will ignore the IV, so in
@@ -421,6 +444,11 @@ static otcrypto_status_t otcrypto_aes_impl(
   // Parse the AES key.
   aes_key_t aes_key;
   HARDENED_TRY(aes_key_construct(key, aes_mode, &aes_key));
+
+  if (launder32(input_nblocks) == 0) {
+    HARDENED_CHECK_EQ(input_nblocks, 0);
+    return OTCRYPTO_OK;
+  }
 
   // Start the operation (encryption or decryption).
   otcrypto_aes_operation_t aes_operation_started = launder32(0);
@@ -489,10 +517,10 @@ static otcrypto_status_t otcrypto_aes_impl(
   for (i = block_offset; launder32(i) < input_nblocks; ++i) {
     HARDENED_TRY(get_block(cipher_input, aes_padding, i, &block_in));
     block_words_add(&local_checksum, &block_in);
-    HARDENED_TRY(hardened_memshred(block_out.data, ARRAYSIZE(block_out.data)));
+    hardened_memshred(block_out.data, ARRAYSIZE(block_out.data));
     HARDENED_TRY(aes_update(&block_out, &block_in));
     block_words_add(&local_checksum, &block_out);
-    if (cipher_output != NULL) {
+    if (launderw((ot_word_t)cipher_output) != 0) {
       // Byte buffers passed as input may not be word-aligned, so we cannot
       // use `hardened_memcpy`.
       // Hence, use `randomized_bytecopy` instead.
@@ -510,22 +538,30 @@ static otcrypto_status_t otcrypto_aes_impl(
 
   // Retrieve the output from the final `block_offset` blocks (providing no
   // input).
-  for (i = block_offset; i > 0; --i) {
+  for (i = block_offset; launderw(i) > 0; --i) {
     HARDENED_TRY(aes_update(&block_out, /*src=*/NULL));
+    size_t out_blk_idx = input_nblocks - i;
+    size_t out_blk_bytelen = kAesBlockNumBytes;
+    if (ctr_stream &&
+        (out_blk_idx + 1) * kAesBlockNumBytes > cipher_input->len) {
+      out_blk_bytelen = cipher_input->len - out_blk_idx * kAesBlockNumBytes;
+      memset(((uint8_t *)block_out.data) + out_blk_bytelen, 0,
+             kAesBlockNumBytes - out_blk_bytelen);
+    }
     block_words_add(&local_checksum, &block_out);
-    if (cipher_output != NULL) {
+    if (launderw((ot_word_t)cipher_output) != 0) {
       // Byte buffers passed as input may not be word-aligned, so we cannot
       // use `hardened_memcpy`.
       // Hence, use `randomized_bytecopy` instead.
       HARDENED_TRY(randomized_bytecopy(
-          &cipher_output->data[(input_nblocks - i) * kAesBlockNumBytes],
-          block_out.data, kAesBlockNumBytes));
+          &cipher_output->data[out_blk_idx * kAesBlockNumBytes], block_out.data,
+          out_blk_bytelen));
     } else {
       HARDENED_CHECK_EQ(cipher_output, NULL);
     }
   }
   // Check that the loop ran for the correct number of iterations.
-  HARDENED_CHECK_EQ(launder32(i), 0);
+  HARDENED_CHECK_EQ(i, 0);
 
   *checksum = local_checksum;
 

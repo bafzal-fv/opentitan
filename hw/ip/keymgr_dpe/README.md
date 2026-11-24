@@ -18,12 +18,25 @@ This document specifies the functionality of the OpenTitan key manager DPE which
 
 - Multiple key slots, each holding one DICE context whose secret is hidden from software.
 - One-way key derivation, computed by KMAC over hardware- and software-supplied inputs.
+- Optional HKDF-based key derivation executed by software on OTBN as an alternative to KMAC.
+  The key derivation engine is selected at design time (`KdfEngineSel`) and, if both engines are present, at run time (`KDF_ENGINE_SHADOWED`).
 - Software-controlled DICE hierarchy: any valid slot can act as the parent of a newly derived child slot.
 - Per-slot policies that constrain whether children may be derived and whether the parent is retained.
 - Version controlled key generation, bounded by a per-slot maximum key version.
 - Key generation for both software consumption and hardware sideload (AES, KMAC, OTBN and HMAC).
 - Support for DICE open profile and for the DICE Protection Environment (DPE).
 - Two independent root secrets (_creator root key_ and _secondary root key_), each loadable into an empty slot by software and lockable until reset, so separate DICE hierarchies can be derived.
+
+## Supported Parameter Sets
+
+This design supports two different parameter sets.
+
+| Parameter          | Type                             | Earlgrey        | Darjeeling      |
+|:-------------------|:---------------------------------|:----------------|:----------------|
+| NumInstHwSlot      | unsigned int                     | 4               | 8               |
+| NumBootStages      | unsigned int                     | 4               | 2               |
+| NumRomDigestInputs | unsigned int                     | 1               | 2               |
+| KdfEngineSel       | keymgr_dpe_pkg::kdf_engine_sel_e | `KdfEngineBoth` | `KdfEngineBoth` |
 
 ## Description
 

@@ -443,17 +443,17 @@ class TopHelper:
             if 'width' in pad and pad['width'] > 1:
                 name += str(pad['idx'])
             self._pad_map[name] = pad
-            # Direct pads usually do not have a description, instead the "pad" attribute
+            # Direct pads usually do not have a description, instead the "pads" attribute
             # points to the actual pad in top.pinout.pads which contains the details.
             if pad["connection"] == "direct":
                 desc = None
                 for io_pad in self.top["pinout"]["pads"]:
-                    if io_pad["name"] == pad["pad"]:
+                    if io_pad["name"] == pad["pads"][0]:
                         desc = io_pad["desc"]
                         break
                 if desc is None:
                     logging.warning(f"could not find description of pad {name}:" +
-                                    " could not find {} in pinout.pads".format(pad["pad"]))
+                                    " could not find {} in pinout.pads".format(pad["pads"][0]))
                     desc = ""
             else:
                 desc = pad["desc"]
@@ -886,10 +886,17 @@ class IpHelper:
 
     def _init_periph_io(self):
         inouts, inputs, outputs = self.ip.xputs
+        instances = [m for m in self.top["module"] if m["type"] == self.ip.name]
         self._device_signals = OrderedDict()
+        self._periph_io_sigs = {}
         for sig in inputs + outputs + inouts:
-            if sig.bits.width() > 1:
-                for bit in range(sig.bits.width()):
+            self._periph_io_sigs[sig.name] = sig
+            # The width of a signal can depend on a parameter of each instance, so use the
+            # largest width among all instances.
+            width = max((sig.width(m.get("param_decl")) for m in instances),
+                        default=sig.bits.width())
+            if width > 1:
+                for bit in range(width):
                     self._device_signals[sig.name + str(bit)] = (sig.name, bit)
             else:
                 self._device_signals[sig.name] = (sig.name, -1)
@@ -1207,9 +1214,16 @@ This value is undefined if the block is not connected to the Alert Handler."""
         if self.has_periph_io():
             periph_ios = OrderedDict()
             for (sig, (port, idx)) in self._device_signals.items():
+                # The signal of this instance can be narrower than the widest instance.  Bits
+                # beyond its width do not exist, and topgen connects a 1-bit signal with index -1.
+                inst_width = self._periph_io_sigs[port].width(m.get("param_decl"))
+                if idx >= inst_width:
+                    periph_ios[Name.from_snake_case(sig)] = self._create_periph_io_missing_desc()
+                    continue
+                conn_idx = -1 if inst_width == 1 else idx
                 found = False
                 for conn in self.top.get("pinmux", {}).get("ios", []):
-                    if conn["name"] != m["name"] + "_" + port or idx != conn["idx"]:
+                    if conn["name"] != m["name"] + "_" + port or conn_idx != conn["idx"]:
                         continue
                     if found:
                         logging.warning(
@@ -1262,12 +1276,13 @@ This value is undefined if the block is not connected to the Alert Handler."""
             # in top.pinmux.pads and the ones in top.pinmux.ios. Since the pad list uses
             # names from top.pinmux.ios for DIOs, but that the connections use the names
             # from top.pinmux.pads, we need to map between the two.
+            conn_pad = conn["pads"][0]
             padname = None
             for io in self.top_helper._pad_map.values():
-                if io["connection"] == "direct" and io["pad"] == conn["pad"]:
+                if io["connection"] == "direct" and io["pads"][0] == conn_pad:
                     if padname is not None:
                         raise RuntimeError(
-                            "found at least two IOs that maps to pad {}".format(conn["pad"]) +
+                            "found at least two IOs that maps to pad {}".format(conn_pad) +
                             ": {} and {}".format(padname, io["name"])
                         )
                     padname = Name.from_snake_case(io["name"])
@@ -1275,7 +1290,7 @@ This value is undefined if the block is not connected to the Alert Handler."""
                     if int(io["width"]) > 1:
                         padname += Name([str(io["idx"])])
             if padname is None:
-                raise RuntimeError("could not find IO that maps to pad {}".format(conn["pad"]))
+                raise RuntimeError("could not find IO that maps to pad {}".format(conn_pad))
             pad_index = self.top_helper.pad_enum.name + padname
             pin_outsel = pad_index.as_c_enum()
         else:

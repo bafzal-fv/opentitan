@@ -83,7 +83,7 @@ enum {
  * @return OK if the lengths match, BAD_ARGS otherwise.
  */
 static status_t check_length(size_t len, size_t expected_len) {
-  if (launder32(len) != expected_len) {
+  if (launderw(len) != launderw(expected_len)) {
     return OTCRYPTO_BAD_ARGS;
   }
   HARDENED_CHECK_EQ(len, expected_len);
@@ -101,7 +101,7 @@ static status_t check_length(size_t len, size_t expected_len) {
  */
 static status_t check_shared_secret_length(
     const otcrypto_blinded_key_t *shared_secret) {
-  if (launder32(shared_secret->keyblob_length) < kMlkem1024SharedSecretBytes) {
+  if (launderw(shared_secret->keyblob_length) < kMlkem1024SharedSecretBytes) {
     return OTCRYPTO_BAD_ARGS;
   }
   HARDENED_CHECK_GE(shared_secret->keyblob_length, kMlkem1024SharedSecretBytes);
@@ -124,6 +124,10 @@ status_t mlkem1024_keygen_internal_start(void) {
 
 status_t mlkem1024_det_keygen_internal_start(
     const otcrypto_blinded_key_t *d, const otcrypto_const_word32_buf_t *z) {
+  HARDENED_TRY(check_length(d->keyblob_length,
+                            2 * kMlkem1024SeedWords * sizeof(uint32_t)));
+  HARDENED_TRY(check_length(z->len, kMlkem1024SeedWords));
+
   // Load the ML-KEM-1024 keygen app.
   const otbn_app_t kOtbnAppMlkem1024Keygen = OTBN_APP_T_INIT(mlkem1024_keygen);
   HARDENED_TRY(otbn_load_app(kOtbnAppMlkem1024Keygen));
@@ -134,12 +138,14 @@ status_t mlkem1024_det_keygen_internal_start(
       OTBN_ADDR_T_INIT(mlkem1024_keygen, mlkem1024_keygen_mode);
   HARDENED_TRY(otbn_dmem_write_public(1, &mode, kOtbnMode));
 
-  // Write seed d shares
+  // Write seed d shares (each 32 bytes = kMlkem1024SeedWords words, zero-padded
+  // to 64 bytes in DMEM so OTBN can append the 1-byte domain separator).
   uint32_t d_share0[16] = {0};
   uint32_t d_share1[16] = {0};
-  HARDENED_TRY(hardened_memcpy(d_share0, d->keyblob, 32));
+  HARDENED_TRY(hardened_memcpy(d_share0, d->keyblob, kMlkem1024SeedWords));
   HARDENED_TRY(hardened_memcpy(
-      d_share1, (const uint32_t *)d->keyblob + kMlkem1024SeedWords, 32));
+      d_share1, (const uint32_t *)d->keyblob + kMlkem1024SeedWords,
+      kMlkem1024SeedWords));
 
   const otbn_addr_t kOtbnDShare0 =
       OTBN_ADDR_T_INIT(mlkem1024_keygen, mlkem1024_keygen_seed_d_share0);

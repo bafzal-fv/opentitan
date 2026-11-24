@@ -38,7 +38,7 @@ For more details, see later sections (links in the "category" column).
 | [**RSA**](#rsa) | RSA-{2048,3072,4096} |
 | [**Elliptic curve cryptography**](#elliptic-curve-cryptography) | ECDSA-{P256,P384}<br>ECDH-{P256,P384}<br>Ed25519<br>X25519 |
 | [**ML-KEM**](#ml-kem) | ML-KEM-1024 |
-| [**Deterministic random bit generation**](#deterministic-random-bit-generation) | AES-CTR-DRBG |
+| [**Deterministic random bit generation**](#deterministic-random-bit-generation) | AES-CTR-DRBG<br>HMAC-DRBG *(not FI/SCA protected)* |
 | [**Key derivation**](#key-derivation) | HKDF-SHA{256,384,512}<br>HMAC-KDF-CTR<br>KMAC-KDF-CTR<br>AES-CMAC-KDF-CTR |
 
 ## Cryptolib Initialization
@@ -76,16 +76,18 @@ Moreover, the function also checks the entropy complex health test and alert con
 The OpenTitan cryptography library provides several compile-time configuration settings via Bazel.
 These flags allow you to optimize code size or enable deep debugging.
 
-You can activate these settings during the build process by passing `--define=<setting>=true` to Bazel.
+Each setting is defined as a Bazel `bool_flag` (`//sw/device/lib/crypto/configs:<setting>_flag`) with a `.bazelrc` alias (`--<setting>`).
+You can activate these settings during the build process by passing `--<setting>=true` (or `--//sw/device/lib/crypto/configs:<setting>_flag=true` when building from an external workspace or transition) to Bazel.
 
 Additionally, building with the Bazel `--stamp` option is required to include the actual Git commit hash in the build info.
 Building with `--stamp` also automatically marks the build as a release build (setting `released` to `true`).
 
-| Configuration Setting | Internal Define | Description |
-|---|---|---|
-| `crypto_status_debug` | `OTCRYPTO_STATUS_DEBUG` | Embeds the module ID and line number directly into `otcrypto_status_t` error codes. This significantly aids debugging but increases the footprint and alters standard error structures. |
-| `disable_null_checks` | `OTCRYPTO_DISABLE_NULL_CHECKS` | Removes `NULL` pointer checks on API inputs throughout the library (e.g., AES-GCM operations). This saves code size, but strictly requires the caller to guarantee no `NULL` pointers are passed. |
-| `disable_buf_integrity_checks` | `OTCRYPTO_DISABLE_BUF_INTEGRITY_CHECKS` | Disables runtime integrity verification for data buffers. This bypasses `verify_buf_integrity`, removing the check that compares `ptr_checksum` against the data's calculated checksum. |
+| Flag Alias | Build Setting | Internal Define | Description |
+|---|---|---|---|
+| `--crypto_status_debug` | `//sw/device/lib/crypto/configs:crypto_status_debug_flag` | `OTCRYPTO_STATUS_DEBUG` | Embeds the module ID and line number directly into `otcrypto_status_t` error codes. This significantly aids debugging but increases the footprint and alters standard error structures. |
+| `--disable_null_checks` | `//sw/device/lib/crypto/configs:disable_null_checks_flag` | `OTCRYPTO_DISABLE_NULL_CHECKS` | Removes `NULL` pointer checks on API inputs throughout the library (e.g., AES-GCM operations). This saves code size, but strictly requires the caller to guarantee no `NULL` pointers are passed. |
+| `--disable_buf_integrity_checks` | `//sw/device/lib/crypto/configs:disable_buf_integrity_checks_flag` | `OTCRYPTO_DISABLE_BUF_INTEGRITY_CHECKS` | Disables runtime integrity verification for data buffers. This bypasses `verify_buf_integrity`, removing the check that compares `ptr_checksum` against the data's calculated checksum. |
+| `--disable_hardening` | `//sw/device/lib/crypto/configs:disable_hardening_flag` | `OT_DISABLE_HARDENING` | Replaces the fault-hardened double-branch assembly sequences in `HARDENED_TRY` and `HARDENED_CHECK_*` with a single non-redundant check in the cryptolib to reduce code size. When enabled, `otcrypto_security_config_check` only permits `kOtcryptoKeySecurityLevelLow`. |
 
 ## Build Information and Versioning
 
@@ -351,6 +353,7 @@ However, they are essentially scratchpad space for the underlying implementation
 {{#header-snippet sw/device/lib/crypto/include/hmac.h otcrypto_hmac_context }}
 {{#header-snippet sw/device/lib/crypto/include/sha1.h otcrypto_hmac_sha1_context }}
 {{#header-snippet sw/device/lib/crypto/include/cmac.h otcrypto_cmac_context }}
+{{#header-snippet sw/device/lib/crypto/include/hmac_drbg.h otcrypto_hmac_drbg_context }}
 
 ## AES
 
@@ -611,6 +614,9 @@ Streaming is supported for **SHA-1** (in plain software; not FI/SCA protected) a
 {{#header-snippet sw/device/lib/crypto/include/sha2.h otcrypto_sha2_init }}
 {{#header-snippet sw/device/lib/crypto/include/sha2.h otcrypto_sha2_update }}
 {{#header-snippet sw/device/lib/crypto/include/sha2.h otcrypto_sha2_final }}
+{{#header-snippet sw/device/lib/crypto/include/sha2.h otcrypto_hash_init }}
+{{#header-snippet sw/device/lib/crypto/include/sha2.h otcrypto_hash_update }}
+{{#header-snippet sw/device/lib/crypto/include/sha2.h otcrypto_hash_final }}
 
 ### Masked SHA-2 on OTBN
 
@@ -703,8 +709,8 @@ Always ensure that you fully understand the security implications of the padding
 {{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_private_key_from_exponents }}
 {{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_sign }}
 {{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_verify }}
-{{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_hash_sign_verify }}
-{{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_hash_verify }}
+{{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_hash_sign_verify_final }}
+{{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_hash_verify_final }}
 {{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_encrypt }}
 {{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_decrypt }}
 {{#header-snippet sw/device/lib/crypto/include/rsa.h otcrypto_rsa_keypair_from_cofactor }}
@@ -779,16 +785,16 @@ For ECDSA, the cryptography library supports keypair generation, signing, and si
 {{#header-snippet sw/device/lib/crypto/include/ecc_p256.h otcrypto_ecdsa_p256_sign }}
 {{#header-snippet sw/device/lib/crypto/include/ecc_p256.h otcrypto_ecdsa_p256_sign_verify }}
 {{#header-snippet sw/device/lib/crypto/include/ecc_p256.h otcrypto_ecdsa_p256_verify }}
-{{#header-snippet sw/device/lib/crypto/include/ecc_p256.h otcrypto_ecdsa_p256_hash_sign_verify }}
-{{#header-snippet sw/device/lib/crypto/include/ecc_p256.h otcrypto_ecdsa_p256_hash_verify }}
+{{#header-snippet sw/device/lib/crypto/include/ecc_p256.h otcrypto_ecdsa_p256_hash_sign_verify_final }}
+{{#header-snippet sw/device/lib/crypto/include/ecc_p256.h otcrypto_ecdsa_p256_hash_verify_final }}
 
 {{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_keygen }}
 {{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_sign_config_k }}
 {{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_sign }}
 {{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_sign_verify }}
 {{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_verify }}
-{{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_hash_sign_verify }}
-{{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_hash_verify }}
+{{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_hash_sign_verify_final }}
+{{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecdsa_p384_hash_verify_final }}
 
 #### ECDH
 
@@ -908,6 +914,9 @@ The following key import, export, and sharing functions are available.
 {{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecc_p384_public_key_export }}
 {{#header-snippet sw/device/lib/crypto/include/ecc_p384.h otcrypto_ecc_p384_arith_share_private_key }}
 
+{{#header-snippet sw/device/lib/crypto/include/ecc_curve25519.h otcrypto_curve25519_private_key_import }}
+{{#header-snippet sw/device/lib/crypto/include/ecc_curve25519.h otcrypto_curve25519_private_key_export }}
+
 Cryptolib also offers helper functions to check a given point as well as perform a base point multiplication.
 
 {{#header-snippet sw/device/lib/crypto/include/ecc_p256.h otcrypto_ecc_p256_point_on_curve }}
@@ -958,6 +967,8 @@ OpenTitan's random bit generator, [CSRNG][csrng] (Cryptographically Secure Rando
 OpenTitan's RNG targets compliance with both [BSI AIS31 recommendations for Common Criteria][bsi-ais31], as well as [NIST SP800-90A][nist-drbg-spec] and [NIST SP800-90C (second draft)][nist-rng-spec].
 The CSRNG operates at a 256-bit security strength.
 
+> **Note:** CSRNG (AES-CTR-DRBG) operations (`otcrypto_drbg_*`) are not claimed to be protected against fault injection (FI) attacks.
+
 ### Seeding the DRBG
 
 The DRBG can be seeded with new entropy from OpenTitan's hardware [entropy source][entropy-src], mixed with additional caller-provided entropy if desired.
@@ -987,6 +998,18 @@ To learn more about DRBG details such as entropy requirements, seed construction
 {{#header-snippet sw/device/lib/crypto/include/drbg.h otcrypto_drbg_manual_instantiate }}
 {{#header-snippet sw/device/lib/crypto/include/drbg.h otcrypto_drbg_manual_reseed }}
 {{#header-snippet sw/device/lib/crypto/include/drbg.h otcrypto_drbg_manual_generate }}
+
+### HMAC-DRBG
+
+In addition to the hardware-backed AES-CTR-DRBG, the cryptolib provides a stateful **HMAC-DRBG** implementation as specified in [NIST SP800-90A][nist-drbg-spec] Section 10.1.2 over SHA2-256, SHA2-384, and SHA2-512 (which can also be used for deterministic ECDSA nonce generation per RFC 6979).
+
+> **Security warning:** The HMAC-DRBG implementation is **not** protected against fault injection (FI) or side-channel analysis (SCA) attacks, and is not a FIPS-approved service (`kOtcryptoCmvpNotApprovedService`).
+
+{{#header-snippet sw/device/lib/crypto/include/hmac_drbg.h otcrypto_hmac_drbg_init }}
+{{#header-snippet sw/device/lib/crypto/include/hmac_drbg.h otcrypto_hmac_drbg_deinit }}
+{{#header-snippet sw/device/lib/crypto/include/hmac_drbg.h otcrypto_hmac_drbg_reseed }}
+{{#header-snippet sw/device/lib/crypto/include/hmac_drbg.h otcrypto_hmac_drbg_set_auto_reseed }}
+{{#header-snippet sw/device/lib/crypto/include/hmac_drbg.h otcrypto_hmac_drbg_generate }}
 
 ## Key derivation
 
@@ -1061,11 +1084,11 @@ To use hardware-backed keys, the caller first sets up an `otcrypto_blinded_key_t
 
 ### Generate hardware-backed keys for software
 
-To generate a hardware-backed key whose shares are retrieved into Ibex software memory, use `ot_crypto_hw_backed_keygen`.
+To generate a hardware-backed key whose shares are retrieved into Ibex software memory, use `otcrypto_hw_backed_keygen`.
 The key struct must first be initialized with `otcrypto_hw_backed_key` or `otcrypto_hw_backed_attestation_key`.
-When `ot_crypto_hw_backed_keygen` runs, it calls Key Manager to derive the software shares, writes the shares into the keyblob, and morphs the key configuration `hw_backed` flag to `kHardenedBoolFalse`.
+When `otcrypto_hw_backed_keygen` runs, it calls Key Manager to derive the software shares, writes the shares into the keyblob, and morphs the key configuration `hw_backed` flag to `kHardenedBoolFalse`.
 
-{{#header-snippet sw/device/lib/crypto/include/key_transport.h ot_crypto_hw_backed_keygen }}
+{{#header-snippet sw/device/lib/crypto/include/key_transport.h otcrypto_hw_backed_keygen }}
 
 ### Wrap and unwrap keys
 
@@ -1102,7 +1125,7 @@ Consequently:
 
 ### Context and State Zeroization and Randomization
 
-- **DRBG Uninstantiation:** To destroy and zeroize the internal state of the Deterministic Random Bit Generator, callers can invoke `otcrypto_drbg_uninstantiate()`, which clears the internal DRBG context.
+- **DRBG Uninstantiation:** To destroy and zeroize the internal state of the Deterministic Random Bit Generator, callers can invoke `otcrypto_drbg_uninstantiate()`, which clears the internal DRBG context. For software HMAC-DRBG contexts (`otcrypto_hmac_drbg_context_t`), callers can invoke `otcrypto_hmac_drbg_deinit()` to shred the context.
 - **Streaming Contexts:** Intermediate states and keys held in streaming operation contexts (such as `otcrypto_hmac_context_t`, `otcrypto_cmac_context_t`, and `otcrypto_aes_gcm_context_t`) are randomized automatically when finalization routines (`*_final`) finish.
 
 ## Asynchronous operations
@@ -1241,6 +1264,7 @@ The table below summarizes the security strength for the supported [cryptographi
 | ECC            | X25519/Ed25519 | 128                              |                                                       |
 | KEM            | ML-KEM-1024    | 256                              | NIST Security Category 5 (FIPS 203); not hardened against SCA/FI |
 | DRBG           | CTR_DRBG       | 256                              | Based on AES-CTR-256                                  |
+| DRBG           | HMAC_DRBG      | 256                              | Based on HMAC-SHA2 (not FI/SCA protected)             |
 | KDF            | KDF_CTR        | 128                              | With HMAC, KMAC, or AES-CMAC as PRF                   |
 
 Over time the cryptographic algorithms may become more vulnerable to successful attacks, requiring a transition to stronger algorithms or longer key lengths over time.

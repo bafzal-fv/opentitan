@@ -28,15 +28,6 @@ create_generated_clock -name clk_io -divide_by 1 \
     -source [get_pins ${u_ast_primary}/u_ast_clks_byp_primary/u_no_scan_clk_src_io_d1ord2/gen_div_bufg.u_bufg_div_stepdown/I] \
     [get_pins ${u_ast_primary}/u_ast_clks_byp_primary/u_no_scan_clk_src_io_d1ord2/gen_div_bufg.u_bufg_div_stepdown/O]
 
-set u_div2 ${u_clkmgr}/u_no_scan_io_div2_div
-create_generated_clock -name clk_io_div2 -divide_by 2 \
-    -add -master_clock clk_io \
-    -source [get_pins ${u_ast_primary}/u_ast_clks_byp_primary/u_no_scan_clk_src_io_d1ord2/gen_div_bufg.u_bufg_div_mux/O] \
-    [get_pins ${u_div2}/gen_div_bufg.u_bufg_div_full/O]
-set_clock_sense -stop_propagation -clocks clk_io \
-    [get_pins ${u_div2}/gen_div_bufg.u_bufg_div_stepdown/I]
-
-
 set u_div4 ${u_clkmgr}/u_no_scan_io_div4_div
 create_generated_clock -name clk_io_div4 -divide_by 4 \
     -add -master_clock clk_io \
@@ -50,14 +41,6 @@ create_generated_clock -name clk_io_ext_lc -divide_by 2 \
     -source [get_pins ${u_ast_primary}/u_ast_clks_byp_primary/u_no_scan_clk_src_io_d1ord2/gen_div_bufg.u_bufg_div_full/I] \
     [get_pins ${u_ast_primary}/u_ast_clks_byp_primary/u_no_scan_clk_src_io_d1ord2/gen_div_bufg.u_bufg_div_full/O]
 
-create_generated_clock -name clk_io_div2_ext_lc -divide_by 1 \
-    -add -master_clock clk_io_ext_lc \
-    -source [get_pins ${u_ast_primary}/u_ast_clks_byp_primary/u_no_scan_clk_src_io_d1ord2/gen_div_bufg.u_bufg_div_mux/O] \
-    [get_pins ${u_div2}/gen_div_bufg.u_bufg_div_stepdown/O]
-
-set_clock_sense -stop_propagation -clocks clk_io_ext_lc \
-    [get_pins ${u_div2}/gen_div_bufg.u_bufg_div_full/I]
-
 create_generated_clock -name clk_io_div4_ext_lc -divide_by 2 \
     -add -master_clock clk_io_ext_lc \
     -source [get_pins ${u_ast_primary}/u_ast_clks_byp_primary/u_no_scan_clk_src_io_d1ord2/gen_div_bufg.u_bufg_div_mux/O] \
@@ -67,8 +50,8 @@ set_clock_sense -stop_propagation -clocks clk_io_ext_lc \
     [get_pin ${u_div4}/gen_div_bufg.u_bufg_div_full/I]
 
 set_clock_groups -physically_exclusive \
-    -group [get_clocks [list clk_io clk_io_div2 clk_io_div4]] \
-    -group [get_clocks [list clk_io_ext_lc clk_io_div2_ext_lc clk_io_div4_ext_lc]]
+    -group [get_clocks [list clk_io clk_io_div4]] \
+    -group [get_clocks [list clk_io_ext_lc clk_io_div4_ext_lc]]
 
 
 ## USB
@@ -103,6 +86,8 @@ create_generated_clock -name lc_jtag_tck -source [get_ports IOR3] -divide_by 1 \
     [get_pins ${u_pinmux}/u_pinmux_strap_sampling/u_pinmux_jtag_buf_lc/prim_clock_buf_tck/gen_fpga_buf.bufg_i/O]
 create_generated_clock -name rv_jtag_tck -source [get_ports IOR3] -divide_by 1 \
     [get_pins ${u_pinmux}/u_pinmux_strap_sampling/u_pinmux_jtag_buf_rv/prim_clock_buf_tck/gen_fpga_buf.bufg_i/O]
+create_generated_clock -name rram_jtag_tck -source [get_ports IOR3] -divide_by 1 \
+    [get_pins ${u_pinmux}/u_pinmux_strap_sampling/u_pinmux_jtag_buf_rram/prim_clock_buf_tck/gen_fpga_buf.bufg_i/O]
 
 # Assign input and output delays.
 set_output_delay -add_delay -clock jtag_tck -max 10.0 [get_ports IOR1]
@@ -435,7 +420,6 @@ set_clock_groups -asynchronous \
     -group clk_main \
     -group {clk_usb_48 usb_embed_out_clk} \
     -group clk_aon \
-    -group {clk_io_div2 clk_io_div2_ext_lc} \
     -group {clk_io_div4 clk_io_div4_ext_lc} \
     -group {clk_io_pre clk_io clk_io_ext_lc clk_spi_host0} \
     -group [get_clocks -include_generated_clocks jtag_tck] \

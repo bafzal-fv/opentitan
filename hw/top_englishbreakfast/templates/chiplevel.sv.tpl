@@ -25,7 +25,7 @@ ast = lib.get_module_by_name(top, "ast")
 def get_dio_sig(pinmux: {}, pad: {}):
   '''Get DIO signal associated with this pad or return None'''
   for sig in pinmux["ios"]:
-    if sig["connection"] == "direct" and pad["name"] == sig["pad"]:
+    if sig["connection"] == "direct" and pad["name"] in sig["pads"]:
       return sig
   else:
     return None
@@ -182,8 +182,8 @@ module chip_${top["name"]}_${target["name"]} #(
   scan_roles = []
   for sig in list(reversed(top["pinmux"]["ios"])):
     if sig["connection"] != "muxed":
-      if (len(sig['pad']) > 0) and (target["name"] != "cw305"):
-        scan_string = lib.Name.from_snake_case('dio_pad_' + sig['pad'] + '_scan_role')
+      if (len(sig['pads']) > 0) and (target["name"] != "cw305"):
+        scan_string = lib.Name.from_snake_case('dio_pad_' + sig['pads'][0] + '_scan_role')
         scan_roles.append((f'scan_role_pkg::{scan_string.as_camel_case()}', sig['name']))
       else:
         scan_roles.append(('NoScan', sig['name']))
@@ -231,7 +231,6 @@ module chip_${top["name"]}_${target["name"]} #(
   logic [pinmux_reg_pkg::NDioPads-1:0] dio_in;
 
 % if target["name"] != "verilator":
-  logic                          [3:0] mux_iob_sel;
   logic [pinmux_reg_pkg::NMioPads-1:0] mio_in_raw;
   logic                         [${len(dedicated_pads)-1}:0] dio_in_raw;
 
@@ -390,7 +389,6 @@ module chip_${top["name"]}_${target["name"]} #(
     .clk_scan_i(ast_base_clks.clk_sys),
     .scanmode_i(scanmode),
 
-    .mux_iob_sel_i(mux_iob_sel),
     .dio_in_raw_o (dio_in_raw ),
 
     // Chip IOs
@@ -960,11 +958,6 @@ module chip_${top["name"]}_${target["name"]} #(
     // pinmux related
     .padmux2ast_i          ( pad2ast    ),
     .ast2padmux_o          ( ast2pinmux ),
-% if target["name"] != "verilator":
-    .mux_iob_sel_o         ( mux_iob_sel ),
-% else:
-    .mux_iob_sel_o         (  ),
-% endif
     .ext_freq_is_96m_i     ( hi_speed_sel ),
     .all_clk_byp_req_i     ( all_clk_byp_req  ),
     .all_clk_byp_ack_o     ( all_clk_byp_ack  ),

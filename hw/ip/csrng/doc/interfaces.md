@@ -28,10 +28,10 @@ Referring to the [Comportable guideline for peripheral device functionality](htt
 
 ## Security Alerts
 
-| Alert Name   | Description                                                                                                                                                                               |
-|:-------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| recov_alert  | This alert is triggered when a recoverable alert occurs.  Check the [`RECOV_ALERT_STS`](registers.md#recov_alert_sts) register to get more information.                                   |
-| fatal_alert  | This alert triggers (i) if an illegal state machine state is reached, or (ii) if an AES fatal alert condition occurs, or (iii) if a fatal integrity failure is detected on the TL-UL bus. |
+| Alert Name   | Description                                                                                                                                                                                                                                           |
+|:-------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| recov_alert  | This alert is triggered when a recoverable alert occurs.  Check the [`RECOV_ALERT_STS`](registers.md#recov_alert_sts) register to get more information.                                                                                               |
+| fatal_alert  | This alert triggers (i) if an illegal state machine state is reached, or (ii) if an AES fatal alert condition occurs, or (iii) if a fatal integrity failure is detected on the TL-UL bus, or (iv) if a FIFO error is detected while CSRNG is enabled. |
 
 ## Security Countermeasures
 
@@ -66,5 +66,5 @@ Signal                       | Direction        | Type                        | 
 `lc_hw_debug_en_i`           | `input`          | `lc_tx_t `                  | A life-cycle that will select which diversification value is used for xoring with the seed from ENTROPY_SRC.
 `entropy_src_hw_if_o`        | `output`         | `entropy_src_hw_if_req_t`   | Seed request made to the ENTROPY_SRC module.
 `entropy_src_hw_if_i`        | `input`          | `entropy_src_hw_if_rsp_t`   | Seed response from the ENTROPY_SRC module.
-`csrng_cmd_i`                | `input`          | `csrng_req_t`               | Application interface request to CSRNG from an EDN block.
-`csrng_cmd_o`                | `output`         | `csrng_rsp_t`               | Application interface response from CSRNG to an EDN block.
+`csrng_cmd_i`                | `input`          | `csrng_req_t`               | Application interface request to CSRNG from a hardware instance, e.g., an EDN block.
+`csrng_cmd_o`                | `output`         | `csrng_rsp_t`               | Application interface response from CSRNG to a hardware instance, e.g., an EDN block.

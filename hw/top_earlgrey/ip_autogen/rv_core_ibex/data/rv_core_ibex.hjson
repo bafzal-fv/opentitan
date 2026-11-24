@@ -65,6 +65,7 @@
           - Ibex raises `alert_major_bus_o`
           - A double fault is seen (Ibex raises `double_fault_seen_o`)
           - A bus integrity error is seen
+          - A data response carries an invalid encoding of the capability tag
           - The ePMP/CHERIoT execution mode switch enters its error state
       '''
     },
@@ -98,23 +99,21 @@
       desc:    "Core data host port to the CHERIoT memory subsystem."
     },
 
-    { struct:  "logic",
+    { struct:  "mubi4",
       type:    "uni",
       name:    "cored_tag_h2d",
       act:     "req",
-      width:   "1",
-      package: "",
-      default: "1'b0",
+      package: "prim_mubi_pkg",
+      default: "prim_mubi_pkg::MuBi4False",
       desc:    "CHERIoT capability tag carried with the A-channel of cored_tl_h."
     },
 
-    { struct:  "logic",
+    { struct:  "mubi4",
       type:    "uni",
       name:    "cored_tag_d2h",
       act:     "rcv",
-      width:   "1",
-      package: "",
-      default: "1'b0",
+      package: "prim_mubi_pkg",
+      default: "prim_mubi_pkg::MuBi4False",
       desc:    "Capability tag returned on the D-channel of cored_tl_h."
     },
 
@@ -594,8 +593,27 @@
     {
       name: "RV_CORE_IBEX.CPU.ISA",
       desc: '''
-        Implements a RISC-V core capable of executing RV32ICMB instructions (a subset of bitmanip is
-        implemented, see the Ibex core documentation for details).
+        Implements a RISC-V core capable of executing RV32IMC instructions, including the Zca, Zcb
+        and Zcmp compressed extensions. With `RV32B` set to `RV32BFull`, the core also implements
+        the ratified bitmanip extensions Zba, Zbb, Zbc and Zbs, plus Zbkb and Zbkx. The core
+        supports machine and user mode.
+      '''
+    },
+    {
+      name: "RV_CORE_IBEX.CPU.CHERIOT",
+      desc: '''
+        The RISC-V core implements the CHERIoT capability extension. A write-once execution mode
+        switch in the core wrapper selects between ePMP mode and CHERIoT mode at runtime. In
+        CHERIoT mode, the core has 16 general-purpose registers that each hold a capability,
+        capability tags are carried with the data bus transactions, and Zcmp is not supported.
+      '''
+    },
+    {
+      name: "RV_CORE_IBEX.CPU.TRVK",
+      desc: '''
+        In CHERIoT mode, the RISC-V core checks capability loads against a revocation bitmap
+        (TRVK). The core wrapper exposes the revocation bitmap interface as a TL-UL host port. The
+        heap base address for these checks is set by the `CheriotTrvkHeapBaseAddr` parameter.
       '''
     },
     {
@@ -630,6 +648,16 @@
       '''
     }
     {
+      name: "RV_CORE_IBEX.CPU.PERF_COUNTERS"
+      desc: '''
+        The RISC-V core implements the `mcycle` and `minstret` counters and `MHPMCounterNum`
+        hardware performance counters with hardwired events. User mode can read them through the
+        Zicntr and Zihpm aliases if `mcounteren` allows it. The core wrapper controls through
+        `MCOUNTEREN_WRITABLE` whether software can change `mcounteren`, and this setting can be
+        locked until reset.
+      '''
+    }
+    {
       name: "RV_CORE_IBEX.RND"
       desc: '''
         The core wrapper has a connection to the EDN that provides 32-bit random numbers via a
@@ -652,12 +680,18 @@
         well as the crash dump at reset.
       '''
     }
+    {
+      name: "RV_CORE_IBEX.ALERTS"
+      desc: '''
+        The core wrapper raises fatal and recoverable alerts for errors of the RISC-V core, bus
+        integrity errors and configuration register errors, and records them in `ERR_STATUS`.
+        Software can trigger a fatal or a recoverable alert through `SW_FATAL_ERR` and
+        `SW_RECOV_ERR`.
+      '''
+    }
   ],
 
   countermeasures: [
-    { name: "CHERIOT_SWITCH.FSM.SPARSE",
-      desc: "The write-once ePMP/CHERIoT execution mode switch FSM is sparsely encoded."
-    }
     { name: "BUS.INTEGRITY",
       desc: "End-to-end bus integrity scheme."
     }
@@ -738,9 +772,19 @@
         Use MuBI signals for critical control signals such as `mcounteren_writable`.
       '''
     }
+    { name: "CHERIOT_SWITCH.FSM.SPARSE",
+      desc: "The write-once ePMP/CHERIoT execution mode switch FSM is sparsely encoded."
+    }
     { name: "CHERIOT_ENABLE.CTRL.MUBI"
       desc: '''
         The cheriot_enable input is MuBi and checked for a valid MuBi encoding in Ibex.
+      '''
+    }
+    { name: "CORED_TAG.INTERSIG.MUBI"
+      desc: '''
+        The capability tags of the data interface are multi-bit encoded between Ibex and the
+        CHERIoT memory subsystem, including inside the data FIFO. Only MuBi4True reads as tagged,
+        and a data response with an invalid encoding raises the fatal_hw_err alert.
       '''
     }
   ]
@@ -1083,7 +1127,8 @@
             name: "FATAL_INTG_ERR",
             resval: "0x0"
             desc: '''
-              rv_core_ibex detected a response integrity error
+              rv_core_ibex detected a response integrity error, or a data response with an invalid
+              encoding of the capability tag
             '''
           },
           { bits: "9",

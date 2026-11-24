@@ -27,9 +27,11 @@ otcrypto_status_t otcrypto_symmetric_keygen(
     otcrypto_blinded_key_t *key) {
   OTCRYPTO_SET_CMVP_INDICATOR(OTCRYPTO_FUNCTION_SYMMETRIC_KEYGEN);
   OTCRYPTO_LOCKED_STATE_CHECK();
+#ifndef OTCRYPTO_DISABLE_NULL_CHECKS
   if (key == NULL || key->keyblob == NULL) {
     return OTCRYPTO_BAD_ARGS;
   }
+#endif
 
   // Ensure that the key lengths are >= 112 bits.
   if (key->config.key_length < 14) {
@@ -53,8 +55,8 @@ otcrypto_status_t otcrypto_symmetric_keygen(
       otcrypto_word32_buf_t, share1, keyblob_share_num_words(key->config));
 
   // Randomize the memory before writing the shares.
-  HARDENED_TRY(hardened_memshred(share0_buf.data, share0_buf.len));
-  HARDENED_TRY(hardened_memshred(share1_buf.data, share1_buf.len));
+  hardened_memshred(share0_buf.data, share0_buf.len);
+  hardened_memshred(share1_buf.data, share1_buf.len);
 
   // Construct an empty buffer for the "additional input" to the DRBG generate
   // function.
@@ -140,8 +142,8 @@ otcrypto_status_t otcrypto_hw_backed_attestation_key(
   return otcrypto_eval_exit(OTCRYPTO_OK);
 }
 
-otcrypto_status_t ot_crypto_hw_backed_keygen(hardened_bool_t attestation,
-                                             otcrypto_blinded_key_t *key) {
+otcrypto_status_t otcrypto_hw_backed_keygen(hardened_bool_t attestation,
+                                            otcrypto_blinded_key_t *key) {
   OTCRYPTO_SET_CMVP_INDICATOR(OTCRYPTO_FUNCTION_HW_BACKED_KEYGEN);
   OTCRYPTO_LOCKED_STATE_CHECK();
 #ifndef OTCRYPTO_DISABLE_NULL_CHECKS
@@ -186,15 +188,15 @@ otcrypto_status_t ot_crypto_hw_backed_keygen(hardened_bool_t attestation,
   HARDENED_TRY(keyblob_to_shares(key, &share0, &share1));
 
   // Preload the target key shares with randomness.
-  HARDENED_TRY(hardened_memshred(share0, share_words));
-  HARDENED_TRY(hardened_memshred(share1, share_words));
+  hardened_memshred(share0, share_words);
+  hardened_memshred(share1, share_words);
 
   HARDENED_TRY(hardened_memcpy(share0, output.share0, share_words));
   HARDENED_TRY(hardened_memcpy(share1, output.share1, share_words));
 
   // Wipe the sensitive key material.
-  HARDENED_TRY(hardened_memshred(output.share0, share_words));
-  HARDENED_TRY(hardened_memshred(output.share1, share_words));
+  hardened_memshred(output.share0, share_words);
+  hardened_memshred(output.share1, share_words);
 
   key->checksum = otcrypto_integrity_blinded_checksum(key);
 
@@ -212,9 +214,9 @@ otcrypto_status_t otcrypto_wrapped_key_len(const otcrypto_key_config_t config,
 #endif
   // Check that the total wrapped key length will fit in 32 bits.
   size_t config_num_words = sizeof(otcrypto_key_config_t) / sizeof(uint32_t);
-  if (keyblob_num_words(config) > UINT32_MAX - config_num_words - 2) {
+  if (keyblob_num_words(config) > UINT32_MAX - config_num_words - 5) {
     // COVERAGE (SW ERR) Since config.key_length is a uint32_t,
-    // keyblob_num_words(config) is at most 0x80000004 and cannot exceed this
+    // keyblob_num_words(config) is at most 0xc0000001 and cannot exceed this
     // bound.
     return OTCRYPTO_BAD_ARGS;
   }
@@ -231,8 +233,6 @@ otcrypto_status_t otcrypto_wrapped_key_len(const otcrypto_key_config_t config,
 
   // The number of words needs to be rounded up to the next multiple of 64 bits.
   if (*wrapped_num_words % 2 == 1) {
-    // COVERAGE (SW ERR) Currently all keyblob word lengths are even, and
-    // config_num_words + 4 is even, so *wrapped_num_words is always even.
     *wrapped_num_words += 1;
   }
 
@@ -307,6 +307,20 @@ OT_USED static void hw_wipe_guard(uint32_t *dummy) {
   OT_DISCARD(keymgr_dpe_sideload_clear_aes().value);
 }
 
+/**
+ * Checks that `hw_backed` is a valid hardened boolean and software-backed keys
+ * have a non-zero share word count.
+ */
+static bool is_valid_keyblob_config(const otcrypto_key_config_t config) {
+  if (config.hw_backed == kHardenedBoolTrue) {
+    return true;
+  }
+  if (config.hw_backed == kHardenedBoolFalse) {
+    return keyblob_share_num_words(config) != 0;
+  }
+  return false;
+}
+
 otcrypto_status_t otcrypto_key_wrap(const otcrypto_blinded_key_t *key_to_wrap,
                                     const otcrypto_blinded_key_t *key_kek,
                                     otcrypto_word32_buf_t *wrapped_key) {
@@ -314,11 +328,13 @@ otcrypto_status_t otcrypto_key_wrap(const otcrypto_blinded_key_t *key_to_wrap,
   OTCRYPTO_HEALTH_CHECK(kTestAesEcb256DecryptBit);
   OTCRYPTO_HEALTH_CHECK(kTestAesGcm256EncryptBit);
   OTCRYPTO_HEALTH_CHECK(kTestAesGcm256DecryptBit);
+#ifndef OTCRYPTO_DISABLE_NULL_CHECKS
   if (key_to_wrap == NULL || key_to_wrap->keyblob == NULL || key_kek == NULL ||
       key_kek->keyblob == NULL || wrapped_key == NULL ||
       wrapped_key->data == NULL) {
     return OTCRYPTO_BAD_ARGS;
   }
+#endif
 
   // Guarantees hw_wipe_guard() is called on exit.
   uint32_t hw_cleanup_guard __attribute__((cleanup(hw_wipe_guard))) = 1;
@@ -332,10 +348,11 @@ otcrypto_status_t otcrypto_key_wrap(const otcrypto_blinded_key_t *key_to_wrap,
   HARDENED_CHECK_EQ(otcrypto_integrity_blinded_key_check(key_to_wrap),
                     kHardenedBoolTrue);
 
-  // Check the length of the output buffer.
+  // Check the output buffer length and key configuration bounds.
   size_t exp_len;
   HARDENED_TRY(otcrypto_wrapped_key_len(key_to_wrap->config, &exp_len));
-  if (wrapped_key->len != exp_len) {
+  if (exp_len > kOtcryptoWrappedKeyMaxWords || wrapped_key->len != exp_len ||
+      !is_valid_keyblob_config(key_to_wrap->config)) {
     return OTCRYPTO_BAD_ARGS;
   }
 
@@ -362,7 +379,7 @@ otcrypto_status_t otcrypto_key_wrap(const otcrypto_blinded_key_t *key_to_wrap,
   uint32_t config_words = sizeof(otcrypto_key_config_t) / sizeof(uint32_t);
   size_t plaintext_num_words = config_words + 2 + keyblob_words;
   uint32_t plaintext[plaintext_num_words];
-  HARDENED_TRY(hardened_memshred(plaintext, ARRAYSIZE(plaintext)));
+  hardened_memshred(plaintext, ARRAYSIZE(plaintext));
   HARDENED_TRY(hardened_memcpy(plaintext, (uint32_t *)&key_to_wrap->config,
                                config_words));
   plaintext[config_words] = key_to_wrap->checksum;
@@ -373,7 +390,7 @@ otcrypto_status_t otcrypto_key_wrap(const otcrypto_blinded_key_t *key_to_wrap,
   // Wrap the key.
   HARDENED_TRY(
       aes_kwp_wrap(kek, plaintext, sizeof(plaintext), wrapped_key->data));
-  HARDENED_TRY(hardened_memshred(plaintext, ARRAYSIZE(plaintext)));
+  hardened_memshred(plaintext, ARRAYSIZE(plaintext));
   return otcrypto_eval_exit(OTCRYPTO_OK);
 }
 
@@ -385,11 +402,13 @@ otcrypto_status_t otcrypto_key_unwrap(
   OTCRYPTO_HEALTH_CHECK(kTestAesEcb256DecryptBit);
   OTCRYPTO_HEALTH_CHECK(kTestAesGcm256EncryptBit);
   OTCRYPTO_HEALTH_CHECK(kTestAesGcm256DecryptBit);
+#ifndef OTCRYPTO_DISABLE_NULL_CHECKS
   if (wrapped_key == NULL || wrapped_key->data == NULL || key_kek == NULL ||
       key_kek->keyblob == NULL || success == NULL || unwrapped_key == NULL ||
       unwrapped_key->keyblob == NULL) {
     return OTCRYPTO_BAD_ARGS;
   }
+#endif
 
   *success = kHardenedBoolFalse;
 
@@ -420,7 +439,7 @@ otcrypto_status_t otcrypto_key_unwrap(
 
   // Unwrap the key.
   uint32_t plaintext[wrapped_key->len];
-  HARDENED_TRY(hardened_memshred(plaintext, ARRAYSIZE(plaintext)));
+  hardened_memshred(plaintext, ARRAYSIZE(plaintext));
   size_t plaintext_len;
   HARDENED_TRY(aes_kwp_unwrap(kek, wrapped_key->data,
                               wrapped_key->len * sizeof(uint32_t), success,
@@ -428,7 +447,7 @@ otcrypto_status_t otcrypto_key_unwrap(
 
   if (launder32(*success) != kHardenedBoolTrue) {
     *success = kHardenedBoolFalse;
-    HARDENED_TRY(hardened_memshred(plaintext, ARRAYSIZE(plaintext)));
+    hardened_memshred(plaintext, ARRAYSIZE(plaintext));
     return otcrypto_eval_exit(OTCRYPTO_OK);
   }
   HARDENED_CHECK_EQ(*success, kHardenedBoolTrue);
@@ -436,37 +455,51 @@ otcrypto_status_t otcrypto_key_unwrap(
   // Set back to false while we check other conditions.
   *success = kHardenedBoolFalse;
 
-  // Extract the key configuration.
-  HARDENED_TRY(hardened_memcpy((uint32_t *)&unwrapped_key->config, plaintext,
-                               config_words));
+  // Extract and validate the unwrapped key on a temporary struct before
+  // mutating `unwrapped_key`.
+  otcrypto_blinded_key_t candidate = {
+      .keyblob = plaintext + config_words + 2,
+      .checksum = plaintext[config_words],
+  };
+  HARDENED_TRY(
+      hardened_memcpy((uint32_t *)&candidate.config, plaintext, config_words));
 
-  // Extract the checksum and keyblob length.
-  unwrapped_key->checksum = plaintext[config_words];
   uint32_t keyblob_words = plaintext[config_words + 1];
   size_t exp_wrapped_len;
-  HARDENED_TRY(
-      otcrypto_wrapped_key_len(unwrapped_key->config, &exp_wrapped_len));
-  if (keyblob_words != keyblob_num_words(unwrapped_key->config) ||
-      wrapped_key->len != exp_wrapped_len ||
+  HARDENED_TRY(otcrypto_wrapped_key_len(candidate.config, &exp_wrapped_len));
+  if (wrapped_key->len != exp_wrapped_len ||
+      !is_valid_keyblob_config(candidate.config) ||
+      keyblob_words != keyblob_num_words(candidate.config) ||
       plaintext_len != (config_words + 2 + keyblob_words) * sizeof(uint32_t)) {
     // COVERAGE (SW ERR) A valid wrapped key generated by otcrypto_key_wrap
     // always has a matching keyblob_words field, wrapped length, and
     // authenticated plaintext length.
-    HARDENED_TRY(hardened_memshred(plaintext, ARRAYSIZE(plaintext)));
+    hardened_memshred(plaintext, ARRAYSIZE(plaintext));
     return otcrypto_eval_exit(OTCRYPTO_OK);
   }
 
-  // Extract the keyblob.
   if (unwrapped_key->keyblob_length < keyblob_words * sizeof(uint32_t)) {
-    HARDENED_TRY(hardened_memshred(plaintext, ARRAYSIZE(plaintext)));
+    hardened_memshred(plaintext, ARRAYSIZE(plaintext));
     return OTCRYPTO_BAD_ARGS;
   }
-  unwrapped_key->keyblob_length = keyblob_words * sizeof(uint32_t);
-  HARDENED_TRY(hardened_memcpy(unwrapped_key->keyblob,
-                               plaintext + config_words + 2, keyblob_words));
-  HARDENED_TRY(hardened_memshred(plaintext, ARRAYSIZE(plaintext)));
+  candidate.keyblob_length = keyblob_words * sizeof(uint32_t);
 
-  // Finally, check the integrity of the key material we unwrapped.
+  // Check the integrity of the key material before copying to `unwrapped_key`.
+  if (launder32(otcrypto_integrity_blinded_key_check(&candidate)) !=
+      kHardenedBoolTrue) {
+    hardened_memshred(plaintext, ARRAYSIZE(plaintext));
+    return otcrypto_eval_exit(OTCRYPTO_OK);
+  }
+
+  HARDENED_TRY(hardened_memcpy((uint32_t *)&unwrapped_key->config,
+                               (uint32_t *)&candidate.config, config_words));
+  unwrapped_key->checksum = candidate.checksum;
+  unwrapped_key->keyblob_length = candidate.keyblob_length;
+  HARDENED_TRY(hardened_memcpy(unwrapped_key->keyblob, candidate.keyblob,
+                               keyblob_words));
+  hardened_memshred(plaintext, ARRAYSIZE(plaintext));
+
+  // Re-verify the integrity of the key material copied into `unwrapped_key`.
   *success = otcrypto_integrity_blinded_key_check(unwrapped_key);
   return otcrypto_eval_exit(OTCRYPTO_OK);
 }
@@ -556,8 +589,8 @@ otcrypto_status_t otcrypto_export_blinded_key(
                     keyblob_share_num_words(blinded_key->config));
 
   // Randomize the destination buffers.
-  HARDENED_TRY(hardened_memshred(key_share0->data, key_share0->len));
-  HARDENED_TRY(hardened_memshred(key_share1->data, key_share1->len));
+  hardened_memshred(key_share0->data, key_share0->len);
+  hardened_memshred(key_share1->data, key_share1->len);
 
   // Check the length of the keyblob.
   size_t keyblob_words = launder32(keyblob_num_words(blinded_key->config));
@@ -584,6 +617,12 @@ otcrypto_status_t otcrypto_blinded_key_migrate(
     const otcrypto_blinded_key_t *old_key, otcrypto_blinded_key_t *new_key) {
   (void)new_key;
   OTCRYPTO_LOCKED_STATE_CHECK();
+#ifndef OTCRYPTO_DISABLE_NULL_CHECKS
+  if (old_key == NULL || old_key->keyblob == NULL || new_key == NULL ||
+      new_key->keyblob == NULL) {
+    return OTCRYPTO_BAD_ARGS;
+  }
+#endif
   if (launder32((uint32_t)old_key->config.version) !=
       (uint32_t)kCryptoLibVersion) {
     return OTCRYPTO_BAD_ARGS;

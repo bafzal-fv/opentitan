@@ -199,7 +199,7 @@ module top_earlgrey #(
   parameter int SramCtrlMetaNumRamInst = 1,
   parameter bit SramCtrlMetaInstrExec = 0,
   parameter int SramCtrlMetaNumPrinceRoundsHalf = 2,
-  parameter int SramCtrlMetaNumAddrScrRounds = 0,
+  parameter int SramCtrlMetaNumAddrScrRounds = 2,
   parameter bit SramCtrlMetaEccCorrection = 0,
   parameter bit SecSramCtrlMetaZeroInit = 1
 ) (
@@ -227,12 +227,12 @@ module top_earlgrey #(
 
   // Inter-module Signal External type
   input  logic       manual_in_por_n_i,
+  input  logic       manual_in_pora_n_i,
   output prim_mubi_pkg::mubi4_t       scanmode_o,
   output logic       scan_en_o,
   output logic       scan_rst_n_o,
   output logic [AstUsbCalibWidth-1:0] usb_io_pu_cal_o,
   input  logic [AstPad2AstInWidth-1:0] padmux2ast_i,
-  output logic [3:0] mux_iob_sel_o,
   input  ast_pkg::ast_vx_supp_t       ast_vx_supp_i,
   input  ast_pkg::ast_obs_bus_t       ast_obs_i,
   input  ast_pkg::awire_t       ast_adc_a0_a_i,
@@ -296,9 +296,12 @@ module top_earlgrey #(
   jtag_pkg::jtag_rsp_t       pinmux_lc_jtag_rsp;
   jtag_pkg::jtag_req_t       pinmux_rv_jtag_req;
   jtag_pkg::jtag_rsp_t       pinmux_rv_jtag_rsp;
+  jtag_pkg::jtag_req_t       pinmux_rram_jtag_req;
+  jtag_pkg::jtag_rsp_t       pinmux_rram_jtag_rsp;
   lc_ctrl_pkg::lc_tx_t       pinmux_pinmux_hw_debug_en;
   logic       lc_ctrl_strap_en_override;
   lc_ctrl_pkg::lc_tx_t       lc_ctrl_lc_dft_en;
+  lc_ctrl_pkg::lc_tx_t       lc_ctrl_lc_nvm_debug_en;
   lc_ctrl_pkg::lc_tx_t       lc_ctrl_lc_hw_debug_clr;
   lc_ctrl_pkg::lc_tx_t       lc_ctrl_lc_hw_debug_en;
   lc_ctrl_pkg::lc_tx_t       lc_ctrl_lc_escalate_en;
@@ -399,15 +402,15 @@ module top_earlgrey #(
   logic [3:0] cio_spi_host0_sd_p2d;
   logic       cio_spi_host0_sck_d2p;
   logic       cio_spi_host0_sck_en_d2p;
-  logic       cio_spi_host0_csb_d2p;
-  logic       cio_spi_host0_csb_en_d2p;
+  logic [2:0] cio_spi_host0_csb_d2p;
+  logic [2:0] cio_spi_host0_csb_en_d2p;
   logic [3:0] cio_spi_host1_sd_d2p;
   logic [3:0] cio_spi_host1_sd_en_d2p;
   logic [3:0] cio_spi_host1_sd_p2d;
   logic       cio_spi_host1_sck_d2p;
   logic       cio_spi_host1_sck_en_d2p;
-  logic       cio_spi_host1_csb_d2p;
-  logic       cio_spi_host1_csb_en_d2p;
+  logic [2:0] cio_spi_host1_csb_d2p;
+  logic [2:0] cio_spi_host1_csb_en_d2p;
   logic       cio_usbdev_usb_dp_d2p;
   logic       cio_usbdev_usb_dp_en_d2p;
   logic       cio_usbdev_usb_dp_p2d;
@@ -415,11 +418,6 @@ module top_earlgrey #(
   logic       cio_usbdev_usb_dn_en_d2p;
   logic       cio_usbdev_usb_dn_p2d;
   logic       cio_usbdev_sense_p2d;
-  logic       cio_rram_macro_tck_p2d;
-  logic       cio_rram_macro_tms_p2d;
-  logic       cio_rram_macro_tdi_p2d;
-  logic       cio_rram_macro_tdo_d2p;
-  logic       cio_rram_macro_tdo_en_d2p;
   logic       ast_clk_src_sys;
   logic       ast_clk_src_io;
   logic       ast_clk_src_usb;
@@ -637,9 +635,12 @@ module top_earlgrey #(
     .pinmux_lc_jtag_rsp_o              (pinmux_lc_jtag_rsp       ),
     .pinmux_rv_jtag_req_i              (pinmux_rv_jtag_req       ),
     .pinmux_rv_jtag_rsp_o              (pinmux_rv_jtag_rsp       ),
+    .pinmux_rram_jtag_req_i            (pinmux_rram_jtag_req     ),
+    .pinmux_rram_jtag_rsp_o            (pinmux_rram_jtag_rsp     ),
     .pinmux_pinmux_hw_debug_en_i       (pinmux_pinmux_hw_debug_en),
     .lc_ctrl_strap_en_override_o       (lc_ctrl_strap_en_override),
     .lc_ctrl_lc_dft_en_o               (lc_ctrl_lc_dft_en        ),
+    .lc_ctrl_lc_nvm_debug_en_o         (lc_ctrl_lc_nvm_debug_en  ),
     .lc_ctrl_lc_hw_debug_clr_o         (lc_ctrl_lc_hw_debug_clr  ),
     .lc_ctrl_lc_hw_debug_en_o          (lc_ctrl_lc_hw_debug_en   ),
     .lc_ctrl_lc_escalate_en_o          (lc_ctrl_lc_escalate_en   ),
@@ -756,11 +757,6 @@ module top_earlgrey #(
     .cio_usbdev_usb_dn_en_d2p_o        (cio_usbdev_usb_dn_en_d2p ),
     .cio_usbdev_usb_dn_p2d_i           (cio_usbdev_usb_dn_p2d    ),
     .cio_usbdev_sense_p2d_i            (cio_usbdev_sense_p2d     ),
-    .cio_rram_macro_tck_p2d_i          (cio_rram_macro_tck_p2d   ),
-    .cio_rram_macro_tms_p2d_i          (cio_rram_macro_tms_p2d   ),
-    .cio_rram_macro_tdi_p2d_i          (cio_rram_macro_tdi_p2d   ),
-    .cio_rram_macro_tdo_d2p_o          (cio_rram_macro_tdo_d2p   ),
-    .cio_rram_macro_tdo_en_d2p_o       (cio_rram_macro_tdo_en_d2p),
     .ast_clk_src_sys_o                 (ast_clk_src_sys          ),
     .ast_clk_src_io_o                  (ast_clk_src_io           ),
     .ast_clk_src_usb_o                 (ast_clk_src_usb          ),
@@ -862,9 +858,12 @@ module top_earlgrey #(
     .pinmux_lc_jtag_rsp_i              (pinmux_lc_jtag_rsp       ),
     .pinmux_rv_jtag_req_o              (pinmux_rv_jtag_req       ),
     .pinmux_rv_jtag_rsp_i              (pinmux_rv_jtag_rsp       ),
+    .pinmux_rram_jtag_req_o            (pinmux_rram_jtag_req     ),
+    .pinmux_rram_jtag_rsp_i            (pinmux_rram_jtag_rsp     ),
     .pinmux_pinmux_hw_debug_en_o       (pinmux_pinmux_hw_debug_en),
     .lc_ctrl_strap_en_override_i       (lc_ctrl_strap_en_override),
     .lc_ctrl_lc_dft_en_i               (lc_ctrl_lc_dft_en        ),
+    .lc_ctrl_lc_nvm_debug_en_i         (lc_ctrl_lc_nvm_debug_en  ),
     .lc_ctrl_lc_hw_debug_clr_i         (lc_ctrl_lc_hw_debug_clr  ),
     .lc_ctrl_lc_hw_debug_en_i          (lc_ctrl_lc_hw_debug_en   ),
     .lc_ctrl_lc_escalate_en_i          (lc_ctrl_lc_escalate_en   ),
@@ -981,23 +980,18 @@ module top_earlgrey #(
     .cio_usbdev_usb_dn_en_d2p_i        (cio_usbdev_usb_dn_en_d2p ),
     .cio_usbdev_usb_dn_p2d_o           (cio_usbdev_usb_dn_p2d    ),
     .cio_usbdev_sense_p2d_o            (cio_usbdev_sense_p2d     ),
-    .cio_rram_macro_tck_p2d_o          (cio_rram_macro_tck_p2d   ),
-    .cio_rram_macro_tms_p2d_o          (cio_rram_macro_tms_p2d   ),
-    .cio_rram_macro_tdi_p2d_o          (cio_rram_macro_tdi_p2d   ),
-    .cio_rram_macro_tdo_d2p_i          (cio_rram_macro_tdo_d2p   ),
-    .cio_rram_macro_tdo_en_d2p_i       (cio_rram_macro_tdo_en_d2p),
     .ast_clk_src_sys_i                 (ast_clk_src_sys          ),
     .ast_clk_src_io_i                  (ast_clk_src_io           ),
     .ast_clk_src_usb_i                 (ast_clk_src_usb          ),
 
     // Regular ports (auto-generated)
     .manual_in_por_n_i,
+    .manual_in_pora_n_i,
     .scanmode_o,
     .scan_en_o,
     .scan_rst_n_o,
     .usb_io_pu_cal_o,
     .padmux2ast_i,
-    .mux_iob_sel_o,
     .ast_vx_supp_i,
     .ast_obs_i,
     .ast_adc_a0_a_i,

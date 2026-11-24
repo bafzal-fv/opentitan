@@ -1,7 +1,15 @@
 # Programmer's Guide
 
-This section details how software drives the background revocation engine (TBRE) of the CHERIoT memory subsystem, and how capabilities are stored in the NVM.
-The tag store and the rest of the meta SRAM are not software-visible; software only writes the revocation bitmap through the `revbm` window and controls the engine through its [registers](registers.md).
+This section details how software initializes the CHERIoT memory subsystem, how it drives the background revocation engine (TBRE), and how capabilities are stored in the NVM.
+The tag store and the rest of the meta SRAM are not software-visible; software only writes the revocation bitmap through the `revbm` window in CHERIoT mode and controls the engine through its [registers](registers.md).
+
+## Initialization
+
+The CHERIoT ISA does not require capability tags and the revocation bitmap to read as zero at reset, so CHERIoT software must clear them unless the hardware does.
+In Earl Grey, the hardware clears all tags and the revocation bitmap by zero-initializing the meta SRAM before the switch to CHERIoT mode: software writes 1 to [`CTRL.INIT`](../../sram_ctrl/doc/registers.md#ctrl) of `sram_ctrl_meta` and waits until [`STATUS.INIT_DONE`](../../sram_ctrl/doc/registers.md#status) is set.
+This writes zeros because Earl Grey instantiates `sram_ctrl_meta` with `SecZeroInit` set.
+The known zero data can leak the scrambling key, so `sram_ctrl_meta` must use a unique key at this point.
+The [`rv_core_ibex` documentation](../../../top_earlgrey/ip_autogen/rv_core_ibex/doc/theory_of_operation.md#switching-to-cheriot-mode-at-runtime) describes the whole switch sequence.
 
 ## Revoking Capabilities
 
@@ -10,7 +18,7 @@ The tag store and the rest of the meta SRAM are not software-visible; software o
 3.  **Describe the sweep:** Write the address of the first capability to [`TBRE_BASE_ADDR`](registers.md#tbre_base_addr) and the number of capabilities to [`TBRE_NUM_CAPS`](registers.md#tbre_num_caps).
     The address is 8-byte aligned by construction and must lie in a tagged region, the main SRAM or the NVM; a sweep reaching past the top of its region ends there.
     A capability to the freed memory can be stored in either region.
-    The topmost NVM pages (the emulated OTP, from `0x301F_F600` in Earl Grey) are not accessible to software and cannot be read, so sweeping them results in an error; end NVM sweeps below them.
+    The topmost NVM pages (the emulated OTP, from `0x301F_F400` in Earl Grey) are not accessible to software and cannot be read, so sweeping them results in an error; end NVM sweeps below them.
 4.  **Start the sweep:** Write 1 to [`TBRE_START`](registers.md#tbre_start).
     The start is ignored outside CHERIoT mode, with `TBRE_NUM_CAPS` zero, or with `TBRE_BASE_ADDR` outside the tagged regions.
     An ignored start sets `TBRE_STATUS.start_err`, which software clears by writing 1 to it; check it after a start to tell an ignored start from a completed sweep.

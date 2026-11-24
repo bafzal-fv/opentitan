@@ -333,6 +333,8 @@ module darjeeling_pd_main #(
   localparam int KeymgrDpeNumInstHwSlot = 8;
   localparam int KeymgrDpeNumBootStages = 2;
   localparam int KeymgrDpeNumRomDigestInputs = 2;
+  localparam keymgr_dpe_pkg::kdf_engine_sel_e KeymgrDpeKdfEngineSel =
+      keymgr_dpe_pkg::KdfEngineBoth;
   // local parameters for entropy_src
   localparam int EntropySrcEsFifoDepth = 3;
   localparam int unsigned EntropySrcDistrFifoDepth = 11;
@@ -1707,7 +1709,8 @@ module darjeeling_pd_main #(
     .RndCnstNoneSeed(RndCnstKeymgrDpeNoneSeed),
     .NumInstHwSlot(KeymgrDpeNumInstHwSlot),
     .NumBootStages(KeymgrDpeNumBootStages),
-    .NumRomDigestInputs(KeymgrDpeNumRomDigestInputs)
+    .NumRomDigestInputs(KeymgrDpeNumRomDigestInputs),
+    .KdfEngineSel(KeymgrDpeKdfEngineSel)
   ) u_keymgr_dpe (
     // Clock and reset connections
     .clk_i(clkmgr_clocks_i.clk_main_secure),
@@ -1906,7 +1909,7 @@ module darjeeling_pd_main #(
     .alert_rx_i(alert_rx[42]),
 
     // RACL policies
-    .racl_policy_sel_ranges_ram_i('{top_racl_pkg::RACL_RANGE_T_DEFAULT}),
+    .racl_policy_sel_ranges_ram_i(top_racl_pkg::RACL_RANGE_T_DEFAULT),
 
     // Inter-module signals
     .sram_otp_key_o(otp_ctrl_sram_otp_key_req[0]),
@@ -1953,7 +1956,7 @@ module darjeeling_pd_main #(
     .alert_rx_i(alert_rx[43]),
 
     // RACL policies
-    .racl_policy_sel_ranges_ram_i('{top_racl_pkg::RACL_RANGE_T_DEFAULT}),
+    .racl_policy_sel_ranges_ram_i(top_racl_pkg::RACL_RANGE_T_DEFAULT),
 
     // Inter-module signals
     .sram_otp_key_o(otp_ctrl_sram_otp_key_req[2]),

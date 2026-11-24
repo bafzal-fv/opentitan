@@ -10,6 +10,7 @@
 #include "sw/device/lib/base/abs_mmio.h"
 #include "sw/device/lib/base/hardened_memory.h"
 #include "sw/device/lib/base/macros.h"
+#include "sw/device/lib/base/multibits.h"
 #include "sw/device/lib/runtime/hart.h"
 #include "sw/device/silicon_creator/lib/base/sec_mmio.h"
 
@@ -28,6 +29,10 @@ KEYMGR_DPE_ASSERT(KEYMGR_DPE_METADATA_LOW_MULTIREG_COUNT,
                   KEYMGR_DPE_PARAM_NUM_MAX_HW_SLOT);
 KEYMGR_DPE_ASSERT(KEYMGR_DPE_METADATA_HIGH_MULTIREG_COUNT,
                   KEYMGR_DPE_PARAM_NUM_MAX_HW_SLOT);
+KEYMGR_DPE_ASSERT(kScKeymgrDPEKeyNumWords,
+                  KEYMGR_DPE_SW_SHARE0_OUTPUT_MULTIREG_COUNT);
+KEYMGR_DPE_ASSERT(kScKeymgrDPEKeyNumWords,
+                  KEYMGR_DPE_SW_SHARE1_OUTPUT_MULTIREG_COUNT);
 
 /**
  * Internal keymgr dpe operation definition
@@ -276,6 +281,26 @@ void sc_keymgr_dpe_entropy_reseed_interval_set(uint16_t reseed_interval) {
 }
 
 /**
+ * Selects the engine used by the key manager dpe for key derivation.
+ */
+void sc_keymgr_dpe_kdf_engine_set(sc_keymgr_dpe_kdf_engine_t engine) {
+  SEC_MMIO_ASSERT_WRITE_INCREMENT(kScKeymgrDPESecMmioKdfEngineSet, 1);
+  uint32_t reg = bitfield_field32_write(
+      0, KEYMGR_DPE_KDF_ENGINE_SHADOWED_SEL_FIELD, engine);
+  sec_mmio_write32_shadowed(
+      sc_keymgr_dpe_base() + KEYMGR_DPE_KDF_ENGINE_SHADOWED_REG_OFFSET, reg);
+}
+
+/**
+ * Locks the KDF engine selection until the next reset.
+ */
+void sc_keymgr_dpe_kdf_engine_lock(void) {
+  SEC_MMIO_ASSERT_WRITE_INCREMENT(kScKeymgrDPESecMmioKdfEngineLock, 1);
+  sec_mmio_write32(
+      sc_keymgr_dpe_base() + KEYMGR_DPE_KDF_ENGINE_REGWEN_REG_OFFSET, 0);
+}
+
+/**
  * Sets the key manager dpe software binding input.
  */
 void sc_keymgr_dpe_sw_binding_set(
@@ -478,7 +503,28 @@ rom_error_t sc_keymgr_dpe_advance_dpe_context(
 void sc_keymgr_dpe_lock_uds(void) {
   abs_mmio_write32(
       sc_keymgr_dpe_base() + KEYMGR_DPE_LOAD_ROOT_KEY_LOCK_REG_OFFSET,
-      1 << KEYMGR_DPE_LOAD_ROOT_KEY_LOCK_LOCK_BIT);
+      kMultiBitBool4True);
+}
+
+/**
+ * Set `ENFORCE_SW_BINDING` to enforce sw-binding-only DPE context derivation.
+ */
+rom_error_t sc_keymgr_dpe_enforce_sw_binding(void) {
+  abs_mmio_write32(
+      sc_keymgr_dpe_base() + KEYMGR_DPE_ENFORCE_SW_BINDING_REG_OFFSET,
+      kMultiBitBool4True << KEYMGR_DPE_ENFORCE_SW_BINDING_ENFORCE_OFFSET);
+
+  // Writing `kMultiBitBool4True` must always read back as `kMultiBitBool4True`,
+  // anything else is a fault.
+  uint32_t enforce = bitfield_field32_read(
+      abs_mmio_read32(sc_keymgr_dpe_base() +
+                      KEYMGR_DPE_ENFORCE_SW_BINDING_REG_OFFSET),
+      KEYMGR_DPE_ENFORCE_SW_BINDING_ENFORCE_FIELD);
+  if (launder32(enforce) != kMultiBitBool4True) {
+    return kErrorKeymgrInternal;
+  }
+  HARDENED_CHECK_EQ(enforce, kMultiBitBool4True);
+  return kErrorOk;
 }
 
 /**

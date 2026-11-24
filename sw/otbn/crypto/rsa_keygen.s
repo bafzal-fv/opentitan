@@ -34,6 +34,8 @@
 # 1024-bit exponentiation: 2'770'580 cycles -> ~0.028s
 # RSA-2048 key generation: 10-60s (extrapolated from a CW340 at 24MHz).
 
+.equ HARDENED_BOOL_FALSE, 0x1d4
+
 .text
 .globl rsa_keygen
 .globl gen_d
@@ -344,15 +346,15 @@ _gen_d_fail:
  * Clobbered flag groups: FG0, FG1
  */
 gen_p:
-  # Compute nlen, the bit length of the prime.
-  # x16 <= n << 8 = n * 256 = nlen
+  # Compute the bit length of the prime, nlen/2 in FIPS 186-5 notation.
+  # x26 <= n << 8 = n * 256 = nlen/2
   slli x26, x30, 8
 
-  # Initialize the attempt counter.
-  # x26 <= (((x26 << 2) + x26) << 2) = 10 * nlen
+  # Initialize the attempt counter to 5 * (nlen/2), the maximum number of
+  # candidates allowed for p by FIPS 186-5, Section A.1.3, step 4.7.
+  # x26 <= (x26 << 2) + x26 = 5 * (nlen/2)
   slli x27, x26, 2
   add  x26, x26, x27
-  slli x26, x26, 1
 
 _gen_p_loop:
   # Retry the prime generation as long as the attempt counter is non-zero.
@@ -697,8 +699,11 @@ _det_mul_pq:
   jal  x0, bignum_mul
 
 _rsa_keygen_fail:
-  la x16, mode
-  la x17, mode_tmp
-  lw x18, 0(x17)
-  sw x18, 0(x16)
+  la   x16, mode
+  la   x17, mode_tmp
+  lw   x18, 0(x17)
+  sw   x18, 0(x16)
+  la   x16, ok
+  addi x17, x0, HARDENED_BOOL_FALSE
+  sw   x17, 0(x16)
   ecall

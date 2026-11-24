@@ -35,13 +35,50 @@ enum {
 };
 
 /**
+ * Reset `AES_CTRL_SHADOWED` to its safe manual-operation state.
+ */
+static void aes_ctrl_reset(void) {
+  // Read `AES_CTRL_SHADOWED` first to clear the shadow register write phase.
+  (void)abs_mmio_read32(aes_base() + AES_CTRL_SHADOWED_REG_OFFSET);
+  uint32_t ctrl_reg =
+      bitfield_bit32_write(AES_CTRL_SHADOWED_REG_RESVAL,
+                           AES_CTRL_SHADOWED_MANUAL_OPERATION_BIT, true);
+  abs_mmio_write32_shadowed(aes_base() + AES_CTRL_SHADOWED_REG_OFFSET,
+                            ctrl_reg);
+}
+
+/**
+ * Drain any stalled output and wait for the AES control FSM to become idle.
+ */
+static status_t aes_ensure_idle(void) {
+  uint32_t reg = abs_mmio_read32(aes_base() + AES_STATUS_REG_OFFSET);
+  while (!bitfield_bit32_read(reg, AES_STATUS_IDLE_BIT)) {
+    if (bitfield_bit32_read(reg, AES_STATUS_ALERT_FATAL_FAULT_BIT)) {
+      return OTCRYPTO_RECOV_ERR;
+    }
+    if (bitfield_bit32_read(reg, AES_STATUS_STALL_BIT)) {
+      for (size_t i = 0; i < AES_PARAM_NUM_REGS_DATA; ++i) {
+        (void)abs_mmio_read32(aes_base() + AES_DATA_OUT_0_REG_OFFSET +
+                              i * sizeof(uint32_t));
+      }
+    }
+    reg = abs_mmio_read32(aes_base() + AES_STATUS_REG_OFFSET);
+  }
+  return OTCRYPTO_OK;
+}
+
+/**
  * Spins until the AES hardware reports a specific status bit.
  */
 static status_t spin_until(uint32_t bit) {
   while (true) {
     uint32_t reg = abs_mmio_read32(aes_base() + AES_STATUS_REG_OFFSET);
-    if (bitfield_bit32_read(reg, AES_STATUS_ALERT_RECOV_CTRL_UPDATE_ERR_BIT) ||
-        bitfield_bit32_read(reg, AES_STATUS_ALERT_FATAL_FAULT_BIT)) {
+    if (bitfield_bit32_read(reg, AES_STATUS_ALERT_FATAL_FAULT_BIT)) {
+      return OTCRYPTO_RECOV_ERR;
+    }
+    if (bitfield_bit32_read(reg, AES_STATUS_ALERT_RECOV_CTRL_UPDATE_ERR_BIT)) {
+      HARDENED_TRY(aes_ensure_idle());
+      aes_ctrl_reset();
       return OTCRYPTO_RECOV_ERR;
     }
     if (bitfield_bit32_read(reg, bit)) {
@@ -61,14 +98,14 @@ static status_t spin_until(uint32_t bit) {
  * @return result, OK or error.
  */
 static status_t aes_write_key(aes_key_t key) {
-  if (key.sideload != kHardenedBoolFalse) {
-    HARDENED_CHECK_EQ(key.sideload, launder32(kHardenedBoolTrue));
+  if (launder32(key.sideload) != kHardenedBoolFalse) {
+    HARDENED_CHECK_EQ(key.sideload, kHardenedBoolTrue);
     HARDENED_CHECK_EQ(aes_key_integrity_checksum_check(&key),
                       kHardenedBoolTrue);
     // Nothing to be done; key must be separately loaded from keymgr.
     return OTCRYPTO_OK;
   }
-  HARDENED_CHECK_EQ(key.sideload, launder32(kHardenedBoolFalse));
+  HARDENED_CHECK_EQ(key.sideload, kHardenedBoolFalse);
 
   uintptr_t share0 = aes_base() + AES_KEY_SHARE0_0_REG_OFFSET;
   uintptr_t share1 = aes_base() + AES_KEY_SHARE1_0_REG_OFFSET;
@@ -277,8 +314,8 @@ static status_t aes_begin(aes_key_t key, const aes_block_t *iv,
   HARDENED_TRY(aes_write_key(key));
 
   // All modes except ECB need to set an IV.
-  if (key.mode != kAesCipherModeEcb) {
-    HARDENED_CHECK_NE(launder32(key.mode), kAesCipherModeEcb);
+  if (launder32(key.mode) != kAesCipherModeEcb) {
+    HARDENED_CHECK_NE(key.mode, kAesCipherModeEcb);
     uint32_t iv_offset = aes_base() + AES_IV_0_REG_OFFSET;
     for (size_t i = 0; i < ARRAYSIZE(iv->data); ++i) {
       abs_mmio_write32(iv_offset + i * sizeof(uint32_t), iv->data[i]);
@@ -294,10 +331,17 @@ static status_t aes_begin(aes_key_t key, const aes_block_t *iv,
   if (!bitfield_bit32_read(status, AES_STATUS_INPUT_READY_BIT)) {
     return OTCRYPTO_RECOV_ERR;
   }
-  HARDENED_CHECK_EQ(launder32(bitfield_bit32_read(
-                        abs_mmio_read32(aes_base() + AES_STATUS_REG_OFFSET),
-                        AES_STATUS_INPUT_READY_BIT)),
-                    true);
+  uint32_t status_check = abs_mmio_read32(aes_base() + AES_STATUS_REG_OFFSET);
+  HARDENED_CHECK_EQ(
+      launder32(bitfield_bit32_read(status_check, AES_STATUS_INPUT_READY_BIT)),
+      true);
+  HARDENED_CHECK_EQ(
+      bitfield_bit32_read(status_check,
+                          AES_STATUS_ALERT_RECOV_CTRL_UPDATE_ERR_BIT),
+      false);
+  HARDENED_CHECK_EQ(
+      bitfield_bit32_read(status_check, AES_STATUS_ALERT_FATAL_FAULT_BIT),
+      false);
 
   return OTCRYPTO_OK;
 }
@@ -357,16 +401,16 @@ status_t aes_end(aes_block_t *iv) {
 
   // Update the control register. This may clear the key, IV and input data
   // registers.
-  uint32_t ctrl_reg = AES_CTRL_SHADOWED_REG_RESVAL;
-  ctrl_reg = bitfield_bit32_write(ctrl_reg,
-                                  AES_CTRL_SHADOWED_MANUAL_OPERATION_BIT, true);
-  abs_mmio_write32_shadowed(aes_base() + AES_CTRL_SHADOWED_REG_OFFSET,
-                            ctrl_reg);
+  aes_ctrl_reset();
 
   return spin_until(AES_STATUS_IDLE_BIT);
 }
 
 status_t aes_clear(void) {
+  HARDENED_TRY(aes_ensure_idle());
+  aes_ctrl_reset();
+  HARDENED_TRY(spin_until(AES_STATUS_IDLE_BIT));
+
   uint32_t trigger_reg = 0;
   trigger_reg = bitfield_bit32_write(
       trigger_reg, AES_TRIGGER_KEY_IV_DATA_IN_CLEAR_BIT, true);

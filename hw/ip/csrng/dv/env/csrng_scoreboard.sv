@@ -334,7 +334,21 @@ class csrng_scoreboard extends cip_base_scoreboard #(
       end
       "int_state_read_enable_regwen": begin
       end
+      "int_state_write_enable": begin
+      end
+      "int_state_write_enable_regwen": begin
+      end
+      "int_state_num_regwen": begin
+      end
       "int_state_num": begin
+        // Writes are ignored while INT_STATE_NUM_REGWEN is cleared or if they select a reserved
+        // instance.
+        if (addr_phase_write) begin
+          if (`gmv(ral.int_state_num_regwen) && item.a_data[3:0] < cfg.m_num_apps) begin
+            int_state_num = item.a_data[3:0];
+          end
+          void'(csr.predict(.value(int_state_num), .kind(UVM_PREDICT_WRITE)));
+        end
       end
       "int_state_val": begin
         do_read_check = 1'b0;
@@ -345,13 +359,11 @@ class csrng_scoreboard extends cip_base_scoreboard #(
             .read_int_state(ral.ctrl.read_int_state.get_mirrored_value()),
             .sw_app_enable(ral.ctrl.sw_app_enable.get_mirrored_value())
           );
-          csr_rd(.ptr(ral.int_state_num), .value(int_state_num), .backdoor(1'b1));
           csr_rd(.ptr(ral.int_state_read_enable), .value(int_state_read_enable), .backdoor(1'b1));
           // Unless reading of the selected internal state is enabled, the returned data must be 0.
           // If read access is indeed enabled, the actual check is performed by the
           // check_internal_state() task.
           if (`gmv(ral.ctrl.read_int_state) != MuBi4True ||
-              int_state_num >= cfg.m_num_apps ||
               int_state_read_enable[int_state_num] == 1'b0) begin
             `DV_CHECK_EQ_FATAL(item.d_data, 0)
           end
@@ -375,6 +387,11 @@ class csrng_scoreboard extends cip_base_scoreboard #(
       "int_state_halt_enable": begin
       end
       "int_state_halt": begin
+        // INT_STATE_NUM is locked while INT_STATE_HALT is set.
+        if (addr_phase_write) begin
+          void'(ral.int_state_num_regwen.predict(
+              .value(`gmv(ral.int_state_halt) != MuBi4True), .kind(UVM_PREDICT_DIRECT)));
+        end
       end
       "int_state_sts": begin
         do_read_check = 1'b0;
@@ -417,6 +434,7 @@ class csrng_scoreboard extends cip_base_scoreboard #(
   virtual function void reset(string kind = "HARD");
     super.reset(kind);
     // reset local fifos queues and variables
+    int_state_num = '0;
   endfunction
 
   function void check_phase(uvm_phase phase);
@@ -532,6 +550,7 @@ class csrng_scoreboard extends cip_base_scoreboard #(
 
   function void ctr_drbg_generate(uint app,
                                   bit [11:0] glen,
+                                  bit [3:0] clen,
                                   bit [CSRNG_BUS_WIDTH-1:0] additional_input = 'h0);
 
     bit [GENBITS_BUS_WIDTH-1:0]   genbits, hw_genbits;
@@ -550,7 +569,7 @@ class csrng_scoreboard extends cip_base_scoreboard #(
     end else if (cfg.reseed_counter[app] == `gmv(ral.reseed_interval)) begin
       cmd_sts[app] = CMD_STS_RESEED_CNT_EXCEEDED;
     end
-    if (additional_input) begin
+    if (clen != 0) begin
       ctr_drbg_update(app, additional_input);
     end
     for (int i = 0; i < glen; i++) begin
@@ -654,7 +673,7 @@ class csrng_scoreboard extends cip_base_scoreboard #(
           end
         end
         GEN: begin
-          ctr_drbg_generate(app, cs_item[app].glen, cs_data[app]);
+          ctr_drbg_generate(app, cs_item[app].glen, cs_item[app].clen, cs_data[app]);
           for (int i = 0; i < cs_item[app].glen; i++) begin
             `DV_CHECK_EQ_FATAL(cs_item[app].genbits_q[i], prd_genbits_q[app][i])
             // Check if the FIPS compliance bit is set correctly.

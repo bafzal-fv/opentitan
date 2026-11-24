@@ -9,6 +9,7 @@
 #include <stdint.h>
 
 #include "sw/device/lib/base/hardened.h"
+#include "sw/device/lib/base/multibits.h"
 #include "sw/device/silicon_creator/lib/error.h"
 #include "sw/device/silicon_creator/lib/keymgr_dpe_binding_value.h"
 
@@ -105,9 +106,9 @@ enum {
    */
   kScKeymgrDPESaltNumWords = 8,
   /**
-   * Number of 32-bit words for the key.
+   * Number of 32-bit words for each share of the SW output key.
    */
-  kScKeymgrDPEKeyNumWords = 8,
+  kScKeymgrDPEKeyNumWords = 12,
 };
 
 /**
@@ -200,6 +201,17 @@ typedef enum sc_keymgr_dpe_dest {
 } sc_keymgr_dpe_dest_t;
 
 /**
+ * Engine used by the keymgr dpe for key derivation.
+ *
+ * The values match the multi-bit encoding of the `KDF_ENGINE_SHADOWED`
+ * register.
+ */
+typedef enum sc_keymgr_dpe_kdf_engine {
+  kScKeymgrDPEKdfEngineKmac = kMultiBitBool4False,
+  kScKeymgrDPEKdfEngineOtbn = kMultiBitBool4True,
+} sc_keymgr_dpe_kdf_engine_t;
+
+/**
  * The following constants represent the expected number of sec_mmio register
  * writes performed by functions provided in this module. See
  * `SEC_MMIO_WRITE_INCREMENT()` for more details.
@@ -215,6 +227,8 @@ enum {
   kScKeymgrDPESecMmioSwBindingSet = 8,
   kScKeymgrDPESecMmioMaxVerSet = 1,
   kScKeymgrDPESecMmioSlotPolicy = 1,
+  kScKeymgrDPESecMmioKdfEngineSet = 1,
+  kScKeymgrDPESecMmioKdfEngineLock = 1,
 };
 
 /**
@@ -294,6 +308,24 @@ void sc_keymgr_dpe_start_operation(void);
  * entropy is reseeded.
  */
 void sc_keymgr_dpe_entropy_reseed_interval_set(uint16_t reseed_interval);
+
+/**
+ * Selects the engine used by the key manager dpe for key derivation.
+ *
+ * The selection only has an effect if the hardware is instantiated with
+ * `KdfEngineSel = KdfEngineBoth`, otherwise the selection is ignored.
+ *
+ * The hardware only takes over the new selection while no operation is
+ * ongoing. The write has no effect if the selection is locked.
+ *
+ * @param engine KDF engine to be used.
+ */
+void sc_keymgr_dpe_kdf_engine_set(sc_keymgr_dpe_kdf_engine_t engine);
+
+/**
+ * Locks the KDF engine selection until the next reset.
+ */
+void sc_keymgr_dpe_kdf_engine_lock(void);
 
 /**
  * Sets the key manager dpe software binding input.
@@ -428,6 +460,21 @@ rom_error_t sc_keymgr_dpe_advance_dpe_context(
  *
  */
 void sc_keymgr_dpe_lock_uds(void);
+
+/**
+ * Enforces the software binding as the only advance input until the next reset.
+ *
+ * Once called, every advance call from a parent slot that consumes hw binding
+ * values must set `kScKeymgrDPEUseExclusiveSwBinding`, otherwise the
+ * keymgr_dpe raises an `invalid_op` error and leaves the destination slot
+ * untouched. Advance calls from later boot stages are not affected. This lock
+ * can only be released by resetting the device.
+ *
+ * @return `kErrorOk` if the lock reads back as `kMultiBitBool4True`,
+ * `kErrorKeymgrInternal` otherwise.
+ */
+OT_WARN_UNUSED_RESULT
+rom_error_t sc_keymgr_dpe_enforce_sw_binding(void);
 
 /**
  * Load the UDS into an empty hw slot.

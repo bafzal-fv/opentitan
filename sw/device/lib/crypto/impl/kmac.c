@@ -96,6 +96,7 @@ static status_t kmac_key_construct(otcrypto_blinded_key_t *key,
     // Diversification call also checks that `key->keyblob_length` is 8 words
     // long.
     HARDENED_TRY(keyblob_to_keymgr_dpe_diversification(key, &diversification));
+    HARDENED_TRY(keymgr_dpe_sideload_clear_kmac());
     HARDENED_TRY(keymgr_dpe_generate_key_kmac(diversification));
   } else if (key->config.hw_backed == kHardenedBoolFalse) {
     // Check `key_len` matches `keyblob_length`.
@@ -121,7 +122,6 @@ otcrypto_status_t otcrypto_kmac(
     size_t required_output_len, otcrypto_word32_buf_t *tag) {
   OTCRYPTO_SET_CMVP_INDICATOR(OTCRYPTO_FUNCTION_KMAC);
   OTCRYPTO_HEALTH_CHECK(kTestKmac256Bit);
-  // TODO (#16410) Revisit/complete error checks
 
 #ifndef OTCRYPTO_DISABLE_NULL_CHECKS
   // Check for null pointers.
@@ -188,7 +188,7 @@ otcrypto_status_t otcrypto_kmac(
   HARDENED_TRY(kmac_key_construct(key, &kmac_key));
 
   // Preload the tag with randomness.
-  HARDENED_TRY(hardened_memshred(tag->data, tag->len));
+  hardened_memshred(tag->data, tag->len);
 
   if (launder32(key->config.security_level) == kOtcryptoKeySecurityLevelLow) {
     // No protection against FI.
@@ -208,7 +208,7 @@ otcrypto_status_t otcrypto_kmac(
                          required_output_len));
     // Second KMAC computation using the KMAC core.
     uint32_t tag_redundant_data[kOtcryptoWrappedKeyMaxWords];
-    HARDENED_TRY(hardened_memshred(tag_redundant_data, required_output_words));
+    hardened_memshred(tag_redundant_data, required_output_words);
     kmac_blinded_key_t kmac_key_redundant;
     HARDENED_TRY(kmac_key_construct(key, &kmac_key_redundant));
     HARDENED_TRY(kmac_fn(&kmac_key_redundant,
@@ -219,6 +219,10 @@ otcrypto_status_t otcrypto_kmac(
     HARDENED_CHECK_EQ(
         hardened_memeq(&tag->data[0], &tag_redundant_data[0], tag->len),
         kHardenedBoolTrue);
+  }
+
+  if (is_sideloaded == kHardenedBoolTrue) {
+    HARDENED_TRY(keymgr_dpe_sideload_clear_kmac());
   }
 
   // Verify the input buffer
